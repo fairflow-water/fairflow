@@ -7,7 +7,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from fairflow_engine import Basin, LensParams, Scheme, Scoring, allocate, resolve_season, value_of
+from fairflow_engine import FLOOR_RULES, Basin, LensParams, Scheme, Scoring, allocate, resolve_season, value_of
 from test_engine_vs_blueprint import BASIN, LENSES, SCORING, lens_params
 
 RNG = np.random.default_rng(20261005)
@@ -26,7 +26,7 @@ def random_schemes(rng, beta=None, uniform_depth=False):
 
 
 def params_for(lens, floor_scaling):
-    """Registry parameters, plus the one the blueprint leaves open (§2.3 floorScaling): tests run both options."""
+    """Registry parameters, with each ADR 0003 floor rule the table can choose."""
     p = lens_params(lens)
     return replace(p, floorScaling=floor_scaling) if lens == "sufficientarian" else p
 
@@ -41,7 +41,7 @@ def max_slope(schemes):
     return out
 
 
-@pytest.mark.parametrize("floor_scaling", ["proportional", "cea"])
+@pytest.mark.parametrize("floor_scaling", sorted(FLOOR_RULES))
 def test_allocations_sum_and_bounds(floor_scaling):
     """Σ Q = min(AW, ΣD); 0 ≤ Q_i ≤ D_i (rounded to 1e-6, §7.2)."""
     for _ in range(150):
@@ -93,7 +93,7 @@ def test_identities():
         assert eq["eSE"]["claimant"] == pytest.approx(1, abs=1e-6 / min(eq["W"]))
 
 
-@pytest.mark.parametrize("floor_scaling", ["proportional", "cea"])
+@pytest.mark.parametrize("floor_scaling", sorted(FLOOR_RULES))
 def test_aquifer_mass_balance(floor_scaling):
     """§9.1: the aquifer balance closes to 1e-6 every season."""
     for i in range(200):
@@ -133,3 +133,19 @@ def test_s_exceeds_one_iff_pumping_exceeds_recharge_at_beta_one():
 def test_s_property_with_beta_below_one_is_reported():
     """With β < 1 the §9.1 statement has counterexamples; this records the finding for the science reviewer."""
     assert search_s_vs_pumping(beta=0.75) > 0
+
+
+@pytest.mark.parametrize("rule", sorted(FLOOR_RULES))
+def test_floor_shortfall_rules(rule):
+    """ADR 0003: when the floors exceed AW, the chosen §2.3 rule cuts them: Σ Q = AW, 0 ≤ Q_i ≤ floor_i, and the result
+    equals that lens run on a basin whose demands are the floors."""
+    p = replace(lens_params("sufficientarian"), floorScaling=rule)
+    for _ in range(100):
+        s = random_schemes(RNG)
+        floors = [p.floor * x.demandMm3 for x in s]
+        AW = float(RNG.uniform(0, 1)) * sum(floors)
+        Q = allocate("sufficientarian", s, AW, p, SCORING.survivalFloor).Q
+        assert abs(sum(Q) - AW) <= 1e-5
+        assert all(0 <= q <= f + 1e-6 for q, f in zip(Q, floors))
+        on_floors = [replace(x, demandMm3=f) for x, f in zip(s, floors)]
+        assert Q == allocate(FLOOR_RULES[rule], on_floors, AW, p, SCORING.survivalFloor).Q

@@ -93,7 +93,7 @@ class LensParams:
     gamma: Optional[float] = None
     weight: Optional[Literal["1", "people"]] = None
     floor: Optional[float] = None
-    floorScaling: Optional[Literal["proportional", "cea"]] = None
+    floorScaling: Optional[Literal["proportional", "cea", "cel", "talmud", "capability"]] = None  # ADR 0003
     secondary: Optional[Literal["max_value", "prioritarian", "proportional"]] = None
 
     @staticmethod

@@ -27,9 +27,11 @@ def test_keys_unique():
 
 @pytest.mark.parametrize("p", PARAMS, ids=lambda p: p["key"])
 def test_quote_is_verbatim_in_blueprint(p):
+    """Quotes come from docs/blueprint.md, or from the decision record named in `sourceFile`."""
+    source = (ROOT / p["sourceFile"]).read_text(encoding="utf-8") if "sourceFile" in p else BLUEPRINT
     for field in ("quote", "alsoQuote"):
         if field in p:
-            assert p[field] in BLUEPRINT, f"{p['key']}: {field} not found verbatim in docs/blueprint.md"
+            assert p[field] in source, f"{p['key']}: {field} not found verbatim in {p.get('sourceFile', 'docs/blueprint.md')}"
 
 
 @pytest.mark.parametrize("p", PARAMS, ids=lambda p: p["key"])

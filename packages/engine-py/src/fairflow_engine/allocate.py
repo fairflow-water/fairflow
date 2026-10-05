@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Sequence
 
 import numpy as np
@@ -115,16 +115,23 @@ def max_value(schemes: Sequence[Scheme], estate: float, survival_floor: float, l
     return [round6(x[i] + x[n + i]) for i in range(n)]
 
 
+# ADR 0003 floor-shortfall options → the §2.3 lens that cuts the floors.
+FLOOR_RULES: dict[str, LensId] = {"proportional": "proportional", "cea": "egalitarian", "cel": "equal_sacrifice",
+                                  "talmud": "talmud", "capability": "capability"}
+
+
 def sufficientarian(schemes: Sequence[Scheme], estate: float, params: LensParams, survival_floor: float) -> list[float]:
     """§2.3: floor·D_i for all (proportional scaling or CEA on floors if short), remainder by a secondary rule."""
     lens = "sufficientarian"
     D = [s.demandMm3 for s in schemes]
     floors = [params.need("floor", lens) * d for d in D]
     if sum(floors) >= estate:
-        scaling = params.need("floorScaling", lens)
-        if scaling == "cea":
-            return weighted_cea(floors, [1.0] * len(floors), estate)
-        return [round6(f / sum(floors) * estate) for f in floors]
+        # ADR 0003: the table chooses how the floors are cut, among the §2.3 claims rules applied to the floors as claims.
+        rule = params.need("floorScaling", lens)
+        if rule not in FLOOR_RULES:
+            raise ValueError(f"sufficientarian: floorScaling must be one of {sorted(FLOOR_RULES)}, got {rule!r}")
+        on_floors = [replace(s, demandMm3=f) for s, f in zip(schemes, floors)]
+        return list(allocate(FLOOR_RULES[rule], on_floors, estate, params, survival_floor).Q)
     secondary = params.need("secondary", lens)
     if secondary == "max_value":
         return max_value(schemes, estate, survival_floor, lower=floors)
@@ -150,5 +157,5 @@ def allocate(lens: LensId, schemes: Sequence[Scheme], allocable: float, params: 
     return Allocation(lens, tuple(Q), round6(max(0.0, allocable - sum(D))))
 
 
-__all__ = ["Allocation", "MissingParameter", "allocate", "cel", "max_value", "sufficientarian", "talmud",
+__all__ = ["FLOOR_RULES", "Allocation", "MissingParameter", "allocate", "cel", "max_value", "sufficientarian", "talmud",
            "weighted_cea", "weights_for"]

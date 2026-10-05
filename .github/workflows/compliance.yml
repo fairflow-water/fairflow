@@ -6,13 +6,13 @@ jobs:
     name: REUSE compliance (every file carries an SPDX identifier)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: fsfe/reuse-action@v4
   citation:
     name: CITATION.cff validates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: citation-file-format/cffconvert-github-action@2.0.0
         with:
           args: "--validate"
@@ -20,8 +20,8 @@ jobs:
     name: Engine builds and fixtures pass
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: cd packages/engine && npm install && npx tsc -p tsconfig.json && npx vitest run
   tag-reminder:
@@ -29,7 +29,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: |
           grep -q "^version: ${GITHUB_REF_NAME#v}$" CITATION.cff || { echo "CITATION.cff version must equal the tag"; exit 1; }
           test -f LICENSE && test -f LICENSE-docs && test -f docs/blueprint.md

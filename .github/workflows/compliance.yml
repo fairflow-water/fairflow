@@ -73,7 +73,11 @@ jobs:
       - name: Install exactly what package-lock.json records
         run: npm ci
       - run: npm run build
-      - run: npm test
+      - name: Lint (typescript-eslint, type-aware)
+        if: matrix.node == 22
+        run: npm run lint -w packages/engine
+      - name: Tests, Python-vector conformance and coverage gate
+        run: npm run coverage -w packages/engine
       - name: engine serve answers over NDJSON
         run: cd packages/engine && echo '{"id":1,"cmd":"version"}' | node dist/cli.js serve | grep -q '"ok":true'
 

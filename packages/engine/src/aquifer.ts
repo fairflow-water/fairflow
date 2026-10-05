@@ -3,7 +3,7 @@
 
 // Mirror of packages/engine-py/src/fairflow_engine/aquifer.py (ADR 0002).
 
-import { round6, type Basin, type Scheme } from './types.js';
+import { at, round6, type Basin, type Scheme } from './types.js';
 
 /** ADR 0004: the level players see — the last full step of `tankResolution` below the true stock. */
 export function observedStock(basin: Basin, stock: number): number {
@@ -21,7 +21,7 @@ export function pumpCostPerMm3(basin: Basin, stock: number, seat: number): numbe
   const base = pump.costBase + pump.costSlope * (1 - seen / q.initial);
   if (seen >= q.lowThreshold) return base;
   const m = q.seatCostMultipliers;
-  return base * m[Math.min(seat, m.length) - 1];
+  return base * at(m, Math.min(seat, m.length) - 1);
 }
 
 /** Pumping draws only above B_res; requests beyond the available stock are rationed pro rata (§2.6). */
@@ -33,7 +33,7 @@ export function rationPumps(basin: Basin, stock: number, requests: number[]): nu
 }
 
 /** Return flows Σ(1 − β_i) W_i recharge the aquifer (§2.6). */
-export const returnFlow = (schemes: Scheme[], W: number[]): number => W.reduce((t, w, i) => t + (1 - schemes[i].beta) * w, 0);
+export const returnFlow = (schemes: Scheme[], W: number[]): number => W.reduce((t, w, i) => t + (1 - at(schemes, i).beta) * w, 0);
 
 /** §2.6 — B_{t+1} = max(B_res, B_t + surplus + r₀ + return flows − Σ P). */
 export function nextStock(basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number {

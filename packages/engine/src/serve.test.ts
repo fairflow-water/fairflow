@@ -17,6 +17,7 @@ const basin = fixtures.basin as Basin & { inflow: Record<'wet' | 'normal' | 'dry
 const scoring = registryScoring();
 const cap = basin.pump.cap;
 const send = (state: ReturnType<typeof createServeState>, msg: unknown) => handleLine(state, JSON.stringify(msg));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper reads arbitrary reply fields
 const ok = (r: Reply) => { if (!r.ok) throw new Error(`${r.error.code}: ${r.error.message}`); return r.result as Record<string, any>; };
 const err = (r: Reply) => { if (r.ok) throw new Error('expected an error reply'); return r.error.code; };
 

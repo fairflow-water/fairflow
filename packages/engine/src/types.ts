@@ -28,3 +28,10 @@ export type LensId = 'utilitarian' | 'weighted_utilitarian' | 'egalitarian' | 'p
 export interface Allocation { lens: LensId; Q: number[]; surplusToAquifer: number }
 /** §7.2 — every stored number rounded to 1e-6 at the event boundary, half up; same formula as the Python engine. */
 export const round6 = (x: number): number => Math.floor(x * 1e6 + 0.5) / 1e6; // §7.2 rounding
+
+/** Indexed read that cannot silently yield undefined (and NaN downstream): throws on an index outside the array. */
+export function at<T>(values: readonly T[], index: number): T {
+  const v = values[index];
+  if (v === undefined) throw new RangeError(`index ${index} outside 0..${values.length - 1}`);
+  return v;
+}

@@ -5,7 +5,7 @@ import { allocate, type LensParams } from './allocate.js';
 import { inflowLossNext, nextStock, observedStock, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
 import { efficiency, equityPJ, equitySE, gini, giniCorrected, sustainability, sustainabilityBand, triangle } from './indicators.js';
 import { yieldOf } from './production.js';
-import { round6, type Allocation, type Basin, type LensId, type Scheme } from './types.js';
+import { at, round6, type Allocation, type Basin, type LensId, type Scheme } from './types.js';
 import { welfare, type Welfare } from './welfare.js';
 
 export interface SeasonInput {
@@ -44,10 +44,10 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
   const allocation = allocate(input.lens, s, allocable, input.lensParams, floor);
   const pumpCost = s.map(x => pumpCostPerMm3(basin, stock, x.seat));
   const P = rationPumps(basin, stock, input.pumps);
-  const W = allocation.Q.map((q, i) => q + P[i]);
-  const A = W.map((w, i) => w / s[i].demandMm3);
-  const Y = W.map((w, i) => yieldOf(s[i], w, floor));
-  const dL = Y.map((y, i) => (s[i].price * y) / 100 - pumpCost[i] * P[i]); // §2.4 ΔL = pY/100 − c_p P
+  const W = allocation.Q.map((q, i) => q + at(P, i));
+  const A = W.map((w, i) => w / at(s, i).demandMm3);
+  const Y = W.map((w, i) => yieldOf(at(s, i), w, floor));
+  const dL = Y.map((y, i) => (at(s, i).price * y) / 100 - at(pumpCost, i) * at(P, i)); // §2.4 ΔL = pY/100 − c_p P
   const pumpsTotal = P.reduce((a, b) => a + b, 0);
   const returns = returnFlow(s, W);
   const stockNext = nextStock(basin, stock, allocation.surplusToAquifer, returns, pumpsTotal);

@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
 // SPDX-License-Identifier: MIT
 
-import { allocate, type LensParams } from './allocate.js';
+import { allocate } from './allocate.js';
 import { collectiveScore } from './indicators.js';
 import { resolveSeason, type SeasonInput, type SeasonResult } from './resolveSeason.js';
-import type { Basin, LensId, Scheme } from './types.js';
+import type { Basin, Scheme } from './types.js';
+import * as v from './validate.js';
 
 /**
  * Blueprint §7.2 — `engine serve`: NDJSON commands in, one NDJSON result per command out, many games per process.
@@ -39,9 +40,10 @@ const need = (cond: unknown, code: string, message: string): void => { if (!cond
 const CARDS: readonly string[] = ['wet', 'normal', 'dry'];
 
 function game(state: ServeState, msg: Record<string, unknown>): Game {
-  const g = state.games.get(String(msg.game));
-  need(g, 'unknown_game', `no game "${String(msg.game)}"`);
-  return g!;
+  const id = v.string(msg['game'], 'game');
+  const g = state.games.get(id);
+  if (g === undefined) throw new Rejection('unknown_game', `no game "${id}"`);
+  return g;
 }
 
 function viewOf(g: Game) {
@@ -51,58 +53,74 @@ function viewOf(g: Game) {
   };
 }
 
+function card(value: unknown, path: string): Card {
+  const c = v.string(value, path);
+  if (!CARDS.includes(c)) throw new v.InputError(`${path}: expected wet | normal | dry`);
+  return c as Card;
+}
+
 function run(state: ServeState, msg: Record<string, unknown>): unknown {
-  switch (msg.cmd) {
+  const cmd = msg['cmd'];
+  switch (cmd) {
     case 'version':
       return { protocol: PROTOCOL_VERSION, engine: state.engineVersion };
     case 'init': {
-      const id = String(msg.game ?? `g${state.games.size + 1}`);
+      const id = msg['game'] === undefined ? `g${state.games.size + 1}` : v.string(msg['game'], 'game');
       need(!state.games.has(id), 'game_exists', `game "${id}" already exists`);
-      const schemes = msg.schemes as Scheme[]; const basin = msg.basin as Game['basin']; const deck = msg.deck as Card[];
-      need(Array.isArray(schemes) && schemes.length >= 3 && schemes.length <= 5, 'bad_input', 'schemes: 3 to 5 required'); // §1.2 three to five schemes
-      need(basin?.aquifer && basin.pump && basin.inflow, 'bad_input', 'basin needs aquifer, pump and inflow');
-      need(Array.isArray(deck) && deck.length > 0 && deck.every(c => CARDS.includes(c)), 'bad_input', 'deck: non-empty list of wet | normal | dry');
-      need(msg.scoring, 'bad_input', 'scoring required');
-      state.games.set(id, { schemes, basin, scoring: msg.scoring as Scoring, deck, season: 0, stock: basin.aquifer.initial, inflowLoss: 0, scores: [] });
-      return { game: id, ...viewOf(state.games.get(id)!) };
+      const schemes = v.schemes(msg['schemes'], 'schemes');
+      need(schemes.length >= 3 && schemes.length <= 5, 'bad_input', 'schemes: 3 to 5 required'); // §1.2 three to five schemes
+      const inflowIn = v.object(v.object(msg['basin'], 'basin')['inflow'], 'basin.inflow');
+      const basin = { ...v.basin(msg['basin'], 'basin'),
+        inflow: { wet: v.number(inflowIn['wet'], 'basin.inflow.wet'), normal: v.number(inflowIn['normal'], 'basin.inflow.normal'),
+          dry: v.number(inflowIn['dry'], 'basin.inflow.dry') } };
+      const deck = v.array(msg['deck'], 'deck').map((c, i) => card(c, `deck[${i}]`));
+      need(deck.length > 0, 'bad_input', 'deck: at least one card');
+      const g: Game = { schemes, basin, scoring: v.scoring(msg['scoring'], 'scoring'), deck, season: 0,
+        stock: basin.aquifer.initial, inflowLoss: 0, scores: [] };
+      state.games.set(id, g);
+      return { game: id, ...viewOf(g) };
     }
     case 'apply': {
       const g = game(state, msg);
-      need(g.season < g.deck.length, 'game_over', 'every season has been played');
-      const pumps = (msg.pumps as number[] | undefined) ?? g.schemes.map(() => 0);
-      need(Array.isArray(pumps) && pumps.length === g.schemes.length, 'bad_input', 'pumps: one value per scheme');
-      const card = g.deck[g.season];
+      const next = g.deck[g.season];
+      if (next === undefined) throw new Rejection('game_over', 'every season has been played');
+      const pumps = msg['pumps'] === undefined ? g.schemes.map(() => 0) : v.numbers(msg['pumps'], 'pumps');
+      need(pumps.length === g.schemes.length, 'bad_input', 'pumps: one value per scheme');
       const result: SeasonResult = resolveSeason({
-        schemes: g.schemes, basin: g.basin, inflow: g.basin.inflow[card] - g.inflowLoss, stock: g.stock,
-        lens: msg.lens as LensId, lensParams: (msg.lensParams ?? {}) as LensParams, pumps, scoring: g.scoring,
+        schemes: g.schemes, basin: g.basin, inflow: g.basin.inflow[next] - g.inflowLoss, stock: g.stock,
+        lens: v.lensId(msg['lens'], 'lens'), lensParams: v.lensParams(msg['lensParams'], 'lensParams'), pumps, scoring: g.scoring,
       });
       g.season += 1; g.stock = result.stockNext; g.inflowLoss = result.inflowLossNext; g.scores.push(result.triangle.score);
-      return { card, result, ...viewOf(g) };
+      return { card: next, result, ...viewOf(g) };
     }
     case 'view':
       return viewOf(game(state, msg));
-    case 'close':
-      game(state, msg); state.games.delete(String(msg.game));
-      return { closed: String(msg.game) };
+    case 'close': {
+      const id = v.string(msg['game'], 'game');
+      game(state, msg); state.games.delete(id);
+      return { closed: id };
+    }
     case 'resolve':
-      return resolveSeason(msg as unknown as SeasonInput);
+      return resolveSeason(v.seasonInput(msg));
     case 'allocate':
-      need(typeof msg.survivalFloor === 'number', 'bad_input', 'allocate needs survivalFloor');
-      return allocate(msg.lens as LensId, msg.schemes as Scheme[], msg.allocable as number, (msg.params ?? {}) as LensParams, msg.survivalFloor as number);
+      return allocate(v.lensId(msg['lens'], 'lens'), v.schemes(msg['schemes'], 'schemes'), v.number(msg['allocable'], 'allocable'),
+        v.lensParams(msg['params'], 'params'), v.number(msg['survivalFloor'], 'survivalFloor'));
     default:
-      throw new Rejection('unknown_command', `unknown cmd "${String(msg.cmd)}"`);
+      throw new Rejection('unknown_command', `unknown cmd "${String(cmd)}"`);
   }
 }
 
 /** Handle one NDJSON line. Never throws: engine errors become `rejected`, protocol errors their own code. */
 export function handleLine(state: ServeState, line: string): Reply {
-  let msg: Record<string, unknown>;
-  try { msg = JSON.parse(line); } catch { return { id: null, ok: false, error: { code: 'bad_json', message: 'line is not JSON' } }; }
-  if (msg === null || typeof msg !== 'object' || Array.isArray(msg)) return { id: null, ok: false, error: { code: 'bad_json', message: 'line is not a JSON object' } };
+  let parsed: unknown;
+  try { parsed = JSON.parse(line); } catch { return { id: null, ok: false, error: { code: 'bad_json', message: 'line is not JSON' } }; }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return { id: null, ok: false, error: { code: 'bad_json', message: 'line is not a JSON object' } };
+  const msg = parsed as Record<string, unknown>; // checked just above: a non-null, non-array object
+  const id = msg['id'] ?? null;
   try {
-    return { id: msg.id ?? null, ok: true, result: run(state, msg) };
+    return { id, ok: true, result: run(state, msg) };
   } catch (e) {
-    const code = e instanceof Rejection ? e.code : 'rejected';
-    return { id: msg.id ?? null, ok: false, error: { code, message: e instanceof Error ? e.message : String(e) } };
+    const code = e instanceof Rejection ? e.code : e instanceof v.InputError ? 'bad_input' : 'rejected';
+    return { id, ok: false, error: { code, message: e instanceof Error ? e.message : String(e) } };
   }
 }

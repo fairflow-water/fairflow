@@ -67,7 +67,13 @@ def sustainability(schemes: Sequence[Scheme], W: Sequence[float], allocable: flo
     beta = np.array([s.beta for s in schemes])
     D = np.array([s.demandMm3 for s in schemes])
     beta_star = float((beta * D).sum() / D.sum())
-    return float((beta * np.asarray(W, dtype=float)).sum()) / (beta_star * allocable + natural_recharge)
+    renewable = beta_star * allocable + natural_recharge
+    if renewable <= 0:
+        raise ValueError(
+            "sustainability undefined: no renewable supply (β*·AW + r₀ = 0); a scenario needs allocable water or "
+            "natural recharge in every season (§5.2 hard checks)"
+        )
+    return float((beta * np.asarray(W, dtype=float)).sum()) / renewable
 
 
 def triangle(e_pj: float, F: float, S: float, r3_ramp: float) -> dict[str, float]:

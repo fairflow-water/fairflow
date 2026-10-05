@@ -15,9 +15,11 @@ import secrets as _secrets
 from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Literal, cast
 
 import numpy as np
+import scipy
 
 from .model import Basin, LensId, LensParams, Scheme, Scoring
 from .season import SeasonResult, resolve_season, verdict
@@ -88,6 +90,16 @@ class Secrets:
     nonce: str
     T: int
     deckOrder: list[str]
+
+
+def runtime_versions() -> dict[str, str]:
+    """Versions that determine a record's numbers: the engine, and NumPy (whose Generator streams can change between
+    feature releases, so the nonce → deck/T draw is only reproducible under the same NumPy) and SciPy (HiGHS)."""
+    try:
+        engine = version("fairflow-engine")
+    except PackageNotFoundError:  # running from a source checkout without installation
+        engine = "unknown"
+    return {"fairflowEngine": engine, "numpy": np.__version__, "scipy": scipy.__version__}
 
 
 def commitment(nonce: str, value: str) -> str:
@@ -233,6 +245,7 @@ class Game:
                 "lenses": [lens for lens, _ in setup.lenses],
                 "defaultLens": setup.defaultLens,
                 "floorRules": list(setup.floorRules),
+                "runtime": runtime_versions(),
             },
         )
         return game
@@ -617,4 +630,15 @@ def audit(setup: GameSetup, events: Sequence[Event]) -> list[str]:
     ended = next((e for e in events if e["type"] == "game.ended"), None)
     if created and ended and not verify_reveal(created, ended):
         problems.append("revealed T or deck does not match the commitments")
+    if created and ended:
+        recorded = created["payload"].get("runtime", {}).get("numpy")
+        if recorded == np.__version__:
+            drawn = draw_secrets(setup, ended["payload"]["nonce"])
+            if (drawn.T, drawn.deckOrder) != (ended["payload"]["T"], ended["payload"]["deckOrder"]):
+                problems.append("the revealed nonce does not reproduce the revealed T and deck")
+        else:
+            problems.append(
+                f"note: recorded under numpy {recorded}, audited under {np.__version__}; the commitments were checked, "
+                "but the deck/T draw from the nonce cannot be re-derived across NumPy versions"
+            )
     return problems

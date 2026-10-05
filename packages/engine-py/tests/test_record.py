@@ -266,3 +266,13 @@ def test_replay_reproduces_the_record():
     a = play_game(new_game(5), pumps={"C": BASIN.pump.cap})
     b = play_game(new_game(5), pumps={"C": BASIN.pump.cap})
     assert a.events == b.events
+
+
+def test_audit_reports_a_numpy_version_change_instead_of_assuming():
+    """NumPy Generator streams can change between feature releases; the deck/T draw is only re-derivable under the
+    NumPy recorded at game.created, and audit() says so rather than passing silently."""
+    g = play_game(new_game())
+    assert audit(g.setup, g.events) == []
+    moved = copy.deepcopy(g.events)
+    moved[0]["payload"]["runtime"]["numpy"] = "0.0.0"
+    assert any("cannot be re-derived" in p for p in audit(g.setup, moved))

@@ -4,7 +4,7 @@
 // Mirror of packages/engine-py/src/fairflow_engine/indicators.py (ADR 0002).
 
 import { valueOf } from './production.js';
-import type { Scheme } from './types.js';
+import { at, type Scheme } from './types.js';
 
 const sum = (a: number[]): number => a.reduce((x, y) => x + y, 0);
 const mean = (a: number[]): number => sum(a) / a.length;
@@ -31,12 +31,12 @@ export const giniCorrected = (values: number[]): number => (gini(values) * value
 export type Equalisandum = 'claimant' | 'hectare' | 'person';
 
 /** E_PJ: proportional-justice equity on adequacy A = W/D (Cherry 2025 Eq. 3-13). */
-export const equityPJ = (s: Scheme[], W: number[]): number => oneMinusCV(W.map((w, i) => w / s[i].demandMm3));
+export const equityPJ = (s: Scheme[], W: number[]): number => oneMinusCV(W.map((w, i) => w / at(s, i).demandMm3));
 
 /** E_SE(u): strict-egalitarian equity on water per unit of the equalisandum (claimant, hectare or person). */
 export function equitySE(s: Scheme[], W: number[], u: Equalisandum): number {
   const unit = (x: Scheme) => (u === 'hectare' ? x.areaHa : u === 'person' ? x.people : 1);
-  return oneMinusCV(W.map((w, i) => w / unit(s[i])));
+  return oneMinusCV(W.map((w, i) => w / unit(at(s, i))));
 }
 
 /**
@@ -45,9 +45,9 @@ export function equitySE(s: Scheme[], W: number[], u: Equalisandum): number {
  */
 export function efficiency(s: Scheme[], W: number[], basis: 'consumed' | 'diverted', survivalFloor: number): number {
   const b = (x: Scheme) => (basis === 'consumed' ? x.beta : 1);
-  const used = sum(W.map((w, i) => b(s[i]) * w));
+  const used = sum(W.map((w, i) => b(at(s, i)) * w));
   if (used === 0) return 0;
-  const realised = sum(W.map((w, i) => valueOf(s[i], w, survivalFloor))) / used;
+  const realised = sum(W.map((w, i) => valueOf(at(s, i), w, survivalFloor))) / used;
   const design = sum(s.map(x => x.price * x.capacityT)) / sum(s.map(x => b(x) * x.demandMm3));
   return realised / design;
 }
@@ -55,7 +55,11 @@ export function efficiency(s: Scheme[], W: number[], basis: 'consumed' | 'divert
 /** S: consumptive use over renewable supply, Σ β W / (β* AW + r₀), β* the demand-weighted mean β (§2.5). */
 export function sustainability(s: Scheme[], W: number[], allocable: number, naturalRecharge: number): number {
   const betaStar = sum(s.map(x => x.beta * x.demandMm3)) / sum(s.map(x => x.demandMm3));
-  return sum(W.map((w, i) => s[i].beta * w)) / (betaStar * allocable + naturalRecharge);
+  const renewable = betaStar * allocable + naturalRecharge;
+  if (renewable <= 0) {
+    throw new RangeError('sustainability undefined: no renewable supply (β*·AW + r₀ = 0); a scenario needs allocable water or natural recharge in every season (§5.2 hard checks)');
+  }
+  return sum(W.map((w, i) => at(s, i).beta * w)) / renewable;
 }
 
 /** Triangle vertices (§2.5): r₁ = E_PJ clipped to [0, 1], r₂ = min(F, 1), r₃ = 1 − clip((S − 1)/ramp, 0, 1). */
@@ -66,7 +70,7 @@ export function triangle(ePJ: number, F: number, S: number, r3Ramp: number): { r
 
 /** §2.2 'sustainability good ≤ 1.00 / warning 1.00–1.15 / unsustainable > 1.15', with the edges from the registry. */
 export const sustainabilityBand = (S: number, edges: number[]): 'good' | 'warning' | 'unsustainable' =>
-  S <= edges[0] ? 'good' : S <= edges[1] ? 'warning' : 'unsustainable';
+  S <= at(edges, 0) ? 'good' : S <= at(edges, 1) ? 'warning' : 'unsustainable';
 
 /** Collective score (R14): mean over seasons of the per-season geometric mean. */
 export const collectiveScore = (seasonScores: number[]): number => (seasonScores.length ? mean(seasonScores) : 0);

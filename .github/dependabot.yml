@@ -11,6 +11,10 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly }
+    ignore:
+      # typescript-eslint 8.x supports TypeScript < 6.1; lift when it supports newer TypeScript.
+      - dependency-name: typescript
+        versions: [">=6.1"]
     groups:
       npm: { patterns: ["*"] }
   - package-ecosystem: github-actions

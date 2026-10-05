@@ -5,7 +5,7 @@
 // file must reproduce fixtures/conformance.json. No parameter has a default here: missing values throw MissingParameter.
 
 import { valueOf } from './production.js';
-import { round6, type Allocation, type LensId, type Scheme } from './types.js';
+import { at, round6, type Allocation, type LensId, type Scheme } from './types.js';
 
 /** A parameter the computation needs was not supplied by the scenario or the registry. */
 export class MissingParameter extends Error {}
@@ -24,13 +24,13 @@ export function weightedCEA(demand: number[], weights: number[], estate: number)
   const n = demand.length; const Q = new Array<number>(n).fill(0);
   let uncapped = demand.map((_, i) => i); let remaining = Math.min(estate, demand.reduce((a, b) => a + b, 0));
   while (uncapped.length > 0 && remaining > EPS_WATER) {
-    const W = uncapped.reduce((s, i) => s + weights[i], 0);
+    const W = uncapped.reduce((s, i) => s + at(weights, i), 0);
     const capped: number[] = [];
     for (const i of uncapped) {
-      const share = (weights[i] / W) * remaining;
-      if (share >= demand[i] - Q[i]) { Q[i] = demand[i]; capped.push(i); }
+      const share = (at(weights, i) / W) * remaining;
+      if (share >= at(demand, i) - at(Q, i)) { Q[i] = at(demand, i); capped.push(i); }
     }
-    if (capped.length === 0) { for (const i of uncapped) Q[i] += (weights[i] / W) * remaining; break; }
+    if (capped.length === 0) { for (const i of uncapped) Q[i] = at(Q, i) + (at(weights, i) / W) * remaining; break; }
     remaining = Math.min(estate, demand.reduce((a, b) => a + b, 0)) - Q.reduce((a, b) => a + b, 0);
     uncapped = uncapped.filter(i => !capped.includes(i));
   }
@@ -52,7 +52,7 @@ export function cel(demand: number[], estate: number): number[] {
 export function talmud(demand: number[], estate: number): number[] {
   const half = demand.map(d => d / 2); const sumHalf = half.reduce((a, b) => a + b, 0); // §2.3 Talmud half-claims
   if (estate <= sumHalf) return weightedCEA(half, half.map(() => 1), estate);
-  const rest = cel(half, estate - sumHalf); return half.map((h, i) => round6(h + rest[i]));
+  const rest = cel(half, estate - sumHalf); return half.map((h, i) => round6(h + at(rest, i)));
 }
 
 /** Lens parameters (scenario `lenses[]`, §6.1; ADR 0003 for floorScaling). Required only by the lens that uses them. */
@@ -64,7 +64,7 @@ export interface LensParams {
 function need<K extends keyof LensParams>(params: LensParams, name: K, lens: LensId): NonNullable<LensParams[K]> {
   const v = params[name];
   if (v === undefined || v === null) throw new MissingParameter(`lens ${lens} needs parameter '${name}'`);
-  return v as NonNullable<LensParams[K]>;
+  return v;
 }
 
 /** ADR 0003 floor-shortfall options → the §2.3 lens that cuts the floors. */
@@ -84,16 +84,16 @@ export function maxValue(schemes: Scheme[], allocable: number, survivalFloor: nu
   const n = schemes.length;
   const hi = schemes.map(s => s.demandMm3);
   const budget = Math.min(allocable, hi.reduce((a, b) => a + b, 0));
-  const points = schemes.map((s, i) => [...new Set([lo[i], survivalFloor * s.demandMm3, hi[i]])].filter(x => x >= lo[i] && x <= hi[i]));
+  const points = schemes.map((s, i) => [...new Set([at(lo, i), survivalFloor * s.demandMm3, at(hi, i)])].filter(x => x >= at(lo, i) && x <= at(hi, i)));
   let best: number[] | null = null; let bestValue = 0;
   for (let k = 0; k < n; k++) {
     const others = [...Array(n).keys()].filter(i => i !== k);
     const visit = (j: number, x: number[]): void => {
-      if (j < others.length) { for (const p of points[others[j]]) { x[others[j]] = p; visit(j + 1, x); } return; }
-      const rest = budget - others.reduce((t, i) => t + x[i], 0);
-      if (rest < lo[k] - EPS_FEASIBLE || rest > hi[k] + EPS_FEASIBLE) return;
-      x[k] = Math.min(hi[k], Math.max(lo[k], rest));
-      const v = schemes.reduce((t, s, i) => t + valueOf(s, x[i], survivalFloor), 0);
+      if (j < others.length) { for (const p of at(points, at(others, j))) { x[at(others, j)] = p; visit(j + 1, x); } return; }
+      const rest = budget - others.reduce((t, i) => t + at(x, i), 0);
+      if (rest < at(lo, k) - EPS_FEASIBLE || rest > at(hi, k) + EPS_FEASIBLE) return;
+      x[k] = Math.min(at(hi, k), Math.max(at(lo, k), rest));
+      const v = schemes.reduce((t, s, i) => t + valueOf(s, at(x, i), survivalFloor), 0);
       if (best === null || v > bestValue + EPS_TIE * Math.max(1, Math.abs(bestValue))) { bestValue = v; best = x.slice(); }
     };
     visit(0, new Array<number>(n).fill(0));
@@ -111,15 +111,15 @@ export function sufficientarian(schemes: Scheme[], allocable: number, params: Le
   if (sumFloors >= allocable) {
     const rule = need(params, 'floorScaling', lens);
     if (!(rule in FLOOR_RULES)) throw new Error(`sufficientarian: unknown floorScaling '${rule}'`);
-    const onFloors = schemes.map((s, i) => ({ ...s, demandMm3: floors[i] }));
+    const onFloors = schemes.map((s, i) => ({ ...s, demandMm3: at(floors, i) }));
     return allocate(FLOOR_RULES[rule], onFloors, allocable, params, survivalFloor).Q;
   }
   const secondary = need(params, 'secondary', lens);
   if (secondary === 'max_value') return maxValue(schemes, allocable, survivalFloor, floors);
-  const residual = D.map((d, i) => d - floors[i]);
+  const residual = D.map((d, i) => d - at(floors, i));
   const weights = secondary === 'prioritarian' ? weightsFor('prioritarian', schemes, params) : residual;
   const extra = weightedCEA(residual, weights, allocable - sumFloors);
-  return floors.map((f, i) => round6(f + extra[i]));
+  return floors.map((f, i) => round6(f + at(extra, i)));
 }
 
 /** §2.3 weights C_i of the weighted-CEA lenses. */

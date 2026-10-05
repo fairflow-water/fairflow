@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { resolveSeason, type SeasonInput } from './resolveSeason.js';
+import { verdict } from './verdict.js';
 import conformance from '../fixtures/conformance.json' with { type: 'json' };
 import beta from '../fixtures/default-basin-beta.json' with { type: 'json' };
 
@@ -52,5 +53,17 @@ describe('mirror reproduces the Python β fixture set (§3)', () => {
         expect(diffs).toEqual([]);
       });
     }
+  }
+});
+
+describe('mirror reproduces the Python verdicts (§2.7)', () => {
+  type VerdictCase = { label: string; input: { schemes: SeasonInput['schemes']; allocable: number; W: number[]; voted: SeasonInput['lens'];
+    pumpingGap: number; lenses: { id: SeasonInput['lens']; params: SeasonInput['lensParams'] }[]; survivalFloor: number }; expected: unknown };
+  for (const c of conformance.verdicts as unknown as VerdictCase[]) {
+    it(c.label, () => {
+      const i = c.input; const diffs: string[] = [];
+      compare(verdict(i.schemes, i.allocable, i.W, i.voted, i.pumpingGap, i.lenses, i.survivalFloor), c.expected, 'verdict', diffs);
+      expect(diffs).toEqual([]);
+    });
   }
 });

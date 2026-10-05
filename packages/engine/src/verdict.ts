@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { allocate, type LensParams } from './allocate.js';
-import type { LensId, Scheme } from './types.js';
+import { at, type LensId, type Scheme } from './types.js';
 
 export interface Verdict { voted: LensId; satisfied: LensId; distance: number; pumpingGap: number }
 
@@ -15,11 +15,11 @@ export function verdict(
   schemes: Scheme[], allocable: number, W: number[], voted: LensId, pumpingGap: number,
   lenses: { id: LensId; params: LensParams }[], survivalFloor: number,
 ): Verdict {
-  const A = W.map((w, i) => w / schemes[i].demandMm3);
+  const A = W.map((w, i) => w / at(schemes, i).demandMm3);
   let best: Verdict | null = null;
   for (const l of lenses) {
     const ideal = allocate(l.id, schemes, allocable, l.params, survivalFloor).Q;
-    const distance = ideal.reduce((t, q, i) => t + Math.abs(A[i] - q / schemes[i].demandMm3), 0);
+    const distance = ideal.reduce((t, q, i) => t + Math.abs(at(A, i) - q / at(schemes, i).demandMm3), 0);
     if (best === null || distance < best.distance - 1e-9) best = { voted, satisfied: l.id, distance, pumpingGap }; // tolerance for ties (§2.7)
   }
   if (best === null) throw new Error('verdict: no lenses to compare');

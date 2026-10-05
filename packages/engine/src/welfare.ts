@@ -4,7 +4,7 @@
 // Mirror of packages/engine-py/src/fairflow_engine/welfare.py (ADR 0002).
 
 import { gini } from './indicators.js';
-import type { Scheme } from './types.js';
+import { at, type Scheme } from './types.js';
 
 export interface Welfare { UWF: number; PWF: number; PWFede: number; SWF: number; EWF: number; CWF: number }
 
@@ -30,6 +30,6 @@ export function welfare(schemes: Scheme[], A: number[], opts: { gamma: number; f
   const SWF = s.some(x => x < m) ? 0 : (s.reduce((t, x) => t + Math.min(1, x / m), 0) + s.reduce((t, x) => t + (x - m) / (1 - m), 0)) / (2 * n); // §2.7 SWF
   const EWF = 1 - gini(s);
   const N = schemes.map(x => x.people);
-  const CWF = s.reduce((t, x, i) => t + N[i] * x, 0) / N.reduce((a, b) => a + b, 0);
+  const CWF = s.reduce((t, x, i) => t + at(N, i) * x, 0) / N.reduce((a, b) => a + b, 0);
   return { UWF, PWF, PWFede, SWF, EWF, CWF };
 }

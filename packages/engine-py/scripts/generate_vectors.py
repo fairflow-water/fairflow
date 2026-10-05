@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "tests"))
 import blueprint as bp  # noqa: E402  (reads the blueprint; no hand-typed values)
 
-from fairflow_engine import FLOOR_RULES, Basin, LensParams, Scheme, Scoring, resolve_season  # noqa: E402
+from fairflow_engine import FLOOR_RULES, Basin, LensParams, Scheme, Scoring, resolve_season, verdict  # noqa: E402
 
 OUT = bp.FIXTURES
 LENSES = [
@@ -221,6 +221,40 @@ def beta_set(params: dict) -> dict:
     return out
 
 
+def verdict_cases(cases: list[dict], params: dict) -> list[dict]:
+    """§2.7 verdicts on every season above: the lens whose ideal allocation is nearest the realised one."""
+    out = []
+    for c in cases:
+        inp, res = c["input"], c["expected"]
+        default = c["label"].startswith("default")
+        lenses = [(lens, registry_lens_params(lens, params) if default else inp["lensParams"]) for lens in LENSES]
+        v = verdict(
+            [Scheme.from_dict(s) for s in inp["schemes"]],
+            res["allocable"],
+            res["W"],
+            inp["lens"],
+            res["pumpsTotal"],
+            [(lens, LensParams.from_dict(lp)) for lens, lp in lenses],
+            inp["scoring"]["survivalFloor"],
+        )
+        out.append(
+            {
+                "label": c["label"],
+                "input": {
+                    "schemes": inp["schemes"],
+                    "allocable": res["allocable"],
+                    "W": res["W"],
+                    "voted": inp["lens"],
+                    "pumpingGap": res["pumpsTotal"],
+                    "lenses": [{"id": lens, "params": lp} for lens, lp in lenses],
+                    "survivalFloor": inp["scoring"]["survivalFloor"],
+                },
+                "expected": dict(v),
+            }
+        )
+    return out
+
+
 def jsonable(x):
     return float(x) if isinstance(x, (np.floating, bp.Num)) else x
 
@@ -243,6 +277,7 @@ def build() -> tuple[dict, dict]:
         "seed": SEED,
         "cases": default_basin_cases(params) + random_cases(params, 400),
     }
+    vectors["verdicts"] = verdict_cases(vectors["cases"], params)
     return vectors, beta_set(params)
 
 

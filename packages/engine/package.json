@@ -1,17 +1,35 @@
 {
   "name": "@fairflow/engine",
   "version": "1.0.0",
-  "description": "Pure allocation, production, indicator and welfare engine for Fairflow. Nothing but this package computes a number.",
+  "description": "TypeScript mirror of the authoritative Python engine (ADR 0002), for offline table mode; verified against Python-generated golden vectors.",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": { "fairflow-engine": "dist/cli.js" },
-  "files": ["dist", "fixtures"],
+  "bin": {
+    "fairflow-engine": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint .",
     "serve": "node dist/cli.js serve"
   },
-  "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0" }
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^5.0.3",
+    "eslint": "^10.12.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
 }

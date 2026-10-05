@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT
+#
+# On a version tag: build the Python engine (sdist + wheel) and the TypeScript mirror, generate CycloneDX SBOMs
+# for both, and publish a GitHub release with those files. With the Zenodo GitHub integration enabled, each release
+# is archived and receives a DOI (FAIR4RS F1). Build provenance is attested once the repository is public
+# (artifact attestations need a public repository or GitHub Enterprise Cloud).
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 22, cache: npm }
+      - name: Python engine — build and SBOM
+        working-directory: packages/engine-py
+        run: |
+          uv sync --locked
+          uv run pytest -q
+          uv build --out-dir ../../dist
+          uv export --format cyclonedx1.5 --no-dev --locked > ../../dist/fairflow-engine.cdx.json
+      - name: TypeScript mirror — build, pack and SBOM
+        run: |
+          npm ci
+          npm run build
+          npm test
+          npm pack -w packages/engine --pack-destination dist
+          npm sbom -w packages/engine --sbom-format cyclonedx > dist/fairflow-engine-ts.cdx.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with: { name: dist, path: dist/, if-no-files-found: error }
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
+      id-token: write # provenance (public repository only)
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with: { name: dist, path: dist }
+      - name: Attest build provenance
+        if: github.event.repository.visibility == 'public'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with: { subject-path: "dist/*" }
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: gh release create "$TAG" dist/* --repo "$REPO" --title "Fairflow $TAG" --generate-notes --verify-tag

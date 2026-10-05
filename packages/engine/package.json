@@ -9,8 +9,7 @@
   "files": ["dist", "fixtures"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "vitest run",
-    "serve": "node dist/serve.js"
+    "test": "vitest run"
   },
   "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0" }
 }

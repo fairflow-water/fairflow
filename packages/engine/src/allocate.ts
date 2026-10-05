@@ -39,25 +39,32 @@ export function talmud(demand: number[], estate: number): number[] {
   const rest = cel(half, estate - sumD / 2); return half.map((h, i) => round6(h + rest[i]));
 }
 
-export function weightsFor(lens: LensId, s: Scheme[], gamma = 2): number[] {
+/** Lens parameters (scenario `lenses[].params`, blueprint §6.1). Prioritarian: Q_i ∝ w_i^(1/γ) · D_i^(1−1/γ), default γ = 2, w = 1. */
+export interface LensParams { gamma?: number; weight?: '1' | 'people' }
+
+export function weightsFor(lens: LensId, s: Scheme[], params: LensParams = {}): number[] {
+  const gamma = params.gamma ?? 2;
   switch (lens) {
     case 'egalitarian': return s.map(() => 1);
     case 'proportional': return s.map(x => x.demandMm3);
     case 'weighted_utilitarian': return s.map(x => x.capacityT / x.demandMm3);
     case 'capability': return s.map(x => x.people * x.kappa);
-    case 'prioritarian': return s.map(x => Math.pow(1, 1 / gamma) * Math.pow(x.demandMm3, 1 - 1 / gamma));
+    case 'prioritarian': {
+      if (!(gamma >= 1)) throw new Error(`prioritarian: gamma must be ≥ 1, got ${gamma}`);
+      return s.map(x => Math.pow(params.weight === 'people' ? x.people : 1, 1 / gamma) * Math.pow(x.demandMm3, 1 - 1 / gamma));
+    }
     default: throw new Error(`${lens} is not a weight rule`);
   }
 }
 
 /** Entry point. Utilitarian (greedy maximiser) and sufficientarian (floor + secondary) are TODO for build day 2 (§8.2). */
-export function allocate(lens: LensId, schemes: Scheme[], allocable: number): Allocation {
+export function allocate(lens: LensId, schemes: Scheme[], allocable: number, params: LensParams = {}): Allocation {
   const D = schemes.map(x => x.demandMm3);
   let Q: number[];
   if (lens === 'equal_sacrifice') Q = cel(D, allocable);
   else if (lens === 'talmud') Q = talmud(D, allocable);
   else if (lens === 'utilitarian' || lens === 'sufficientarian') throw new Error(`${lens}: not implemented in the scaffold (blueprint §2.3)`);
-  else Q = weightedCEA(D, weightsFor(lens, schemes), allocable);
+  else Q = weightedCEA(D, weightsFor(lens, schemes, params), allocable);
   const surplus = round6(Math.max(0, allocable - Q.reduce((a, b) => a + b, 0)));
   return { lens, Q, surplusToAquifer: surplus };
 }

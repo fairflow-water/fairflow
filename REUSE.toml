@@ -26,7 +26,7 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Seleshi Yalew, IHE Delft, and Fairflow contributors"
 SPDX-License-Identifier = "CC-BY-4.0"
 
-# Scenario and fixture JSON (CC BY 4.0) override the MIT *.json rule above via closest precedence
+# Scenario and fixture JSON (CC BY 4.0) override the MIT packages/** rule above; "override" also stops REUSE parsing the "$comment" SPDX line, which is not a valid expression
 [[annotations]]
 path = ["packages/scenarios/**", "packages/engine/fixtures/**"]
 precedence = "override"

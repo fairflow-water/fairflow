@@ -1,5 +1,5 @@
 {
-  "$comment": "SPDX-License-Identifier: CC-BY-4.0 · Blueprint §3.1–3.2 reference vectors, β = 1, r₀ = 0, no actions, no pumping. Two decimals. The β set is generated on build day 3.",
+  "$comment": "SPDX-License-Identifier: CC-BY-4.0 · Blueprint §3.1–3.2 reference vectors, β = 1, r₀ = 0, no actions, no pumping. Two decimals (Talmud dry A is exactly 3.125, rounded half up). The β set is generated on build day 3.",
   "schemes": [
     { "id": "A", "name": "Orchard Estate", "seat": 1, "demandMm3": 6.25, "capacityT": 5000, "ky": 0.8, "beta": 1, "people": 81, "kappa": 1, "price": 1, "areaHa": 625 },
     { "id": "B", "name": "Paddy Cooperative", "seat": 2, "demandMm3": 9.0, "capacityT": 4500, "ky": 1.1, "beta": 1, "people": 2000, "kappa": 1, "price": 1, "areaHa": 900 },
@@ -12,14 +12,16 @@
     { "lens": "proportional",         "Q": [3.35, 4.83, 1.82], "A": [0.54, 0.54, 0.54], "Y": [3145, 2204, 1072], "ePJ": 1.00, "eSE": 0.63, "F": 1.04 },
     { "lens": "capability",           "Q": [0.66, 9.00, 0.34], "A": [0.11, 1.00, 0.10], "Y": [632, 4500, 201],   "ePJ": -0.05, "eSE": -0.20, "F": 0.86 },
     { "lens": "sufficientarian",      "Q": [3.80, 4.50, 1.70], "A": [0.61, 0.50, 0.50], "Y": [3432, 2025, 1000], "ePJ": 0.91, "eSE": 0.64, "F": 1.05 },
+    { "lens": "prioritarian", "params": { "gamma": 3 }, "Q": [3.40, 4.34, 2.27], "A": [0.54, 0.48, 0.67], "Y": [3176, 1951, 1333], "ePJ": 0.86, "eSE": 0.75, "F": 1.05 },
     { "lens": "equal_sacrifice",      "Q": [3.37, 6.12, 0.52], "A": [0.54, 0.68, 0.15], "Y": [3155, 2914, 304],  "ePJ": 0.51, "eSE": 0.31, "F": 1.03 },
-    { "lens": "talmud",               "Q": [3.12, 5.18, 1.70], "A": [0.50, 0.58, 0.50], "Y": [3000, 2396, 1000], "ePJ": 0.93, "eSE": 0.57, "F": 1.04 }
+    { "lens": "talmud",               "Q": [3.13, 5.18, 1.70], "A": [0.50, 0.58, 0.50], "Y": [3000, 2396, 1000], "ePJ": 0.93, "eSE": 0.57, "F": 1.04 }
   ],
   "normal": [
     { "lens": "utilitarian",  "Q": [6.25, 5.35, 3.40], "ePJ": 0.78, "eSE": 0.76, "F": 1.03 },
     { "lens": "egalitarian",  "Q": [5.80, 5.80, 3.40], "ePJ": 0.82, "eSE": 0.77, "F": 1.02 },
     { "lens": "proportional", "Q": [5.03, 7.24, 2.73], "ePJ": 1.00, "eSE": 0.63, "F": 1.01 },
     { "lens": "capability",   "Q": [3.95, 9.00, 2.05], "ePJ": 0.76, "eSE": 0.41, "F": 1.00 },
+    { "lens": "prioritarian", "params": { "gamma": 3 }, "Q": [5.10, 6.50, 3.40], "ePJ": 0.86, "eSE": 0.75, "F": 1.02 },
     { "lens": "equal_sacrifice", "Q": [5.03, 7.78, 2.18], "ePJ": 0.88, "eSE": 0.54, "F": 1.01 }
   ]
 }

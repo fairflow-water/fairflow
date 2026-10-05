@@ -1,45 +1,89 @@
 # SPDX-License-Identifier: MIT
-name: licence-and-citation
+#
+# Actions are pinned to full commit SHAs (the only immutable reference; OpenSSF Scorecard "Pinned-Dependencies");
+# Dependabot keeps the pins current. The token is read-only unless a job says otherwise ("Token-Permissions").
+name: ci
 on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   reuse:
     name: REUSE compliance (every file carries an SPDX identifier)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: fsfe/reuse-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
+
   citation:
     name: CITATION.cff validates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: citation-file-format/cffconvert-github-action@2.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: citation-file-format/cffconvert-github-action@4cf11baa70a673bfdf9dad0acc7ee33b3f4b6084 # 2.0.0
         with:
           args: "--validate"
-  engine:
-    name: Engine builds and fixtures pass
+
+  python-engine:
+    name: Python engine (authoritative) · Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"] # SPEC 0 support window
+    defaults:
+      run:
+        working-directory: packages/engine-py
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with: { node-version: 22 }
-      - run: cd packages/engine && npm install && npx tsc -p tsconfig.json && npx vitest run
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install the locked environment (fails if uv.lock is stale)
+        run: uv sync --locked
+      - name: Lint and format (Ruff)
+        if: matrix.python == '3.12'
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Type check (mypy --strict)
+        if: matrix.python == '3.12'
+        run: uv run mypy
+      - name: Tests, blueprint reproduction and coverage gate
+        run: uv run pytest -q --cov
+
+  engine-mirror:
+    name: TypeScript mirror reproduces the Python vectors · Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install exactly what package-lock.json records
+        run: npm ci
+      - run: npm run build
+      - run: npm test
       - name: engine serve answers over NDJSON
         run: cd packages/engine && echo '{"id":1,"cmd":"version"}' | node dist/cli.js serve | grep -q '"ok":true'
-  python-engine:
-    name: Python engine reproduces the blueprint (authoritative)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: "3.12" }
-      - run: cd packages/engine-py && pip install -e ".[test]" && python -m pytest -q
+
   tag-reminder:
     name: Release checklist (tags only)
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
       - run: |
           grep -q "^version: ${GITHUB_REF_NAME#v}$" CITATION.cff || { echo "CITATION.cff version must equal the tag"; exit 1; }
           test -f LICENSE && test -f LICENSE-docs && test -f docs/blueprint.md

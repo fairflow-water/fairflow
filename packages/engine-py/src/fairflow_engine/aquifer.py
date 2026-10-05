@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 from .model import Basin, Scheme, round6
 
@@ -40,7 +40,7 @@ def ration_pumps(basin: Basin, stock: float, requests: Sequence[float]) -> list[
 
 def return_flow(schemes: Sequence[Scheme], W: Sequence[float]) -> float:
     """Σ (1 − β_i) W_i (§2.6)."""
-    return sum((1 - s.beta) * w for s, w in zip(schemes, W))
+    return sum((1 - s.beta) * w for s, w in zip(schemes, W, strict=True))
 
 
 def next_stock(basin: Basin, stock: float, surplus: float, returns: float, pumped: float) -> float:

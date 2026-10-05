@@ -8,11 +8,10 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from blueprint import FIXTURES
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from generate_vectors import build, jsonable  # noqa: E402
+from generate_vectors import build, jsonable
 
 ROUNDING_STEP, RELATIVE = 1e-6, 1e-9  # tolerance: §7.2 rounding step; relative for large raw sums
 
@@ -25,7 +24,7 @@ def diffs(got, want, path="", out=None):
     elif isinstance(want, list):
         if len(got) != len(want):
             out.append(f"{path}: length")
-        for i, (g, w) in enumerate(zip(got, want)):
+        for i, (g, w) in enumerate(zip(got, want, strict=True)):
             diffs(g, w, f"{path}[{i}]", out)
     elif isinstance(want, dict):
         for k, w in want.items():

@@ -4,19 +4,118 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
+from typing import Literal, TypedDict
 
 from .allocate import allocate
 from .aquifer import inflow_loss_next, next_stock, observed_stock, pump_cost_per_mm3, ration_pumps, return_flow
-from .indicators import (efficiency, equity_pj, equity_se, gini, gini_corrected, sustainability, sustainability_band,
-                         triangle)
+from .indicators import efficiency, equity_pj, equity_se, gini, gini_corrected, sustainability, sustainability_band, triangle
 from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
 from .production import yield_of
 from .welfare import welfare
 
 
-def resolve_season(schemes: Sequence[Scheme], basin: Basin, inflow: float, stock: float, lens: LensId,
-                   lens_params: LensParams, pumps: Sequence[float], scoring: Scoring) -> dict:
+class ByEqualisandum(TypedDict):
+    claimant: float
+    hectare: float
+    person: float
+
+
+class ByBasis(TypedDict):
+    consumed: float
+    diverted: float
+
+
+class Dials(TypedDict):
+    ePJ: float
+    eSE: ByEqualisandum
+    F: ByBasis
+
+
+class AllocationResult(TypedDict):
+    lens: LensId
+    Q: list[float]
+    surplusToAquifer: float
+
+
+class Triangle(TypedDict):
+    r1: float
+    r2: float
+    r3: float
+    area: float
+    score: float
+
+
+class WelfareScores(TypedDict):
+    UWF: float
+    PWF: float
+    PWFede: float
+    SWF: float
+    EWF: float
+    CWF: float
+
+
+class SeasonResult(TypedDict):
+    """Everything one season produces; record.py decides which fields are public during play (ADR 0004)."""
+
+    observedStockNext: float
+    asAllocated: Dials
+    sustainabilityBand: Literal["good", "warning", "unsustainable"]
+    allocable: float
+    allocation: AllocationResult
+    pumpCost: list[float]
+    P: list[float]
+    W: list[float]
+    A: list[float]
+    Y: list[float]
+    dL: list[float]
+    pumpsTotal: float
+    returnFlow: float
+    stockNext: float
+    inflowLossNext: float
+    ePJ: float
+    eSE: ByEqualisandum
+    gini: float
+    giniCorrected: float
+    F: ByBasis
+    S: float
+    triangle: Triangle
+    welfare: WelfareScores
+
+
+class Verdict(TypedDict):
+    voted: LensId
+    satisfied: LensId
+    distance: float
+    pumpingGap: float
+
+
+def _dials(schemes: Sequence[Scheme], W: Sequence[float], floor: float) -> Dials:
+    r = round6
+    return {
+        "ePJ": r(equity_pj(schemes, W)),
+        "eSE": {
+            "claimant": r(equity_se(schemes, W, "claimant")),
+            "hectare": r(equity_se(schemes, W, "hectare")),
+            "person": r(equity_se(schemes, W, "person")),
+        },
+        "F": {
+            "consumed": r(efficiency(schemes, W, "consumed", floor)),
+            "diverted": r(efficiency(schemes, W, "diverted", floor)),
+        },
+    }
+
+
+def resolve_season(
+    schemes: Sequence[Scheme],
+    basin: Basin,
+    inflow: float,
+    stock: float,
+    lens: LensId,
+    lens_params: LensParams,
+    pumps: Sequence[float],
+    scoring: Scoring,
+) -> SeasonResult:
     """Allocate, ration pumps, deliver, produce, score and step the aquifer. Every output rounded to 1e-6 (§7.2)."""
     if len(pumps) != len(schemes):
         raise ValueError("pumps: one value per scheme")
@@ -25,51 +124,75 @@ def resolve_season(schemes: Sequence[Scheme], basin: Basin, inflow: float, stock
     alloc = allocate(lens, schemes, allocable, lens_params, floor)
     cost = [pump_cost_per_mm3(basin, stock, s.seat) for s in schemes]
     P = ration_pumps(basin, stock, pumps)
-    W = [q + p for q, p in zip(alloc.Q, P)]
-    A = [w / s.demandMm3 for s, w in zip(schemes, W)]
-    Y = [yield_of(s, w, floor) for s, w in zip(schemes, W)]
-    dL = [s.price * y / 100 - c * p for s, y, c, p in zip(schemes, Y, cost, P)]  # §2.4 ΔL = pY/100 − c_p P
+    W = [q + p for q, p in zip(alloc.Q, P, strict=True)]
+    A = [w / s.demandMm3 for s, w in zip(schemes, W, strict=True)]
+    Y = [yield_of(s, w, floor) for s, w in zip(schemes, W, strict=True)]
+    dL = [s.price * y / 100 - c * p for s, y, c, p in zip(schemes, Y, cost, P, strict=True)]  # §2.4 ΔL = pY/100 − c_p P
     pumped = sum(P)
     returns = return_flow(schemes, W)
     stock_next = next_stock(basin, stock, alloc.surplusToAquifer, returns, pumped)
     e_pj = equity_pj(schemes, W)
-    F = {"consumed": efficiency(schemes, W, "consumed", floor), "diverted": efficiency(schemes, W, "diverted", floor)}
     S = sustainability(schemes, W, allocable, basin.aquifer.naturalRecharge)
     s_capped = [max(scoring.welfareSupplyFloor, min(a, 1.0)) for a in A]
-    tri = triangle(e_pj, F["consumed"], S, scoring.r3Ramp)
+    tri = triangle(e_pj, efficiency(schemes, W, "consumed", floor), S, scoring.r3Ramp)
     wf = welfare(schemes, A, scoring.welfareGamma, floor, scoring.welfareSupplyFloor)
-    Q = list(alloc.Q)
-    as_allocated = {  # ADR 0004: the in-play dials, on the public allocation only
-        "ePJ": equity_pj(schemes, Q), "eSE": {u: equity_se(schemes, Q, u) for u in ("claimant", "hectare", "person")},
-        "F": {"consumed": efficiency(schemes, Q, "consumed", floor), "diverted": efficiency(schemes, Q, "diverted", floor)}}
+    actual = _dials(schemes, W, floor)
     r = round6
     return {
         "observedStockNext": r(observed_stock(basin, stock_next)),
-        "asAllocated": {"ePJ": r(as_allocated["ePJ"]), "eSE": {k: r(v) for k, v in as_allocated["eSE"].items()},
-                        "F": {k: r(v) for k, v in as_allocated["F"].items()}},
+        "asAllocated": _dials(schemes, list(alloc.Q), floor),  # ADR 0004: the in-play dials, on the public allocation
         "sustainabilityBand": sustainability_band(S, scoring.sustainabilityBands),
         "allocable": r(allocable),
         "allocation": {"lens": lens, "Q": list(alloc.Q), "surplusToAquifer": alloc.surplusToAquifer},
-        "pumpCost": [r(x) for x in cost], "P": [r(x) for x in P], "W": [r(x) for x in W], "A": [r(x) for x in A],
-        "Y": [r(x) for x in Y], "dL": [r(x) for x in dL],
-        "pumpsTotal": r(pumped), "returnFlow": r(returns), "stockNext": r(stock_next),
+        "pumpCost": [r(x) for x in cost],
+        "P": [r(x) for x in P],
+        "W": [r(x) for x in W],
+        "A": [r(x) for x in A],
+        "Y": [r(x) for x in Y],
+        "dL": [r(x) for x in dL],
+        "pumpsTotal": r(pumped),
+        "returnFlow": r(returns),
+        "stockNext": r(stock_next),
         "inflowLossNext": r(inflow_loss_next(basin, stock_next)),
-        "ePJ": r(e_pj), "eSE": {u: r(equity_se(schemes, W, u)) for u in ("claimant", "hectare", "person")},
-        "gini": r(gini(s_capped)), "giniCorrected": r(gini_corrected(s_capped)),
-        "F": {k: r(v) for k, v in F.items()}, "S": r(S),
-        "triangle": {k: r(v) for k, v in tri.items()},
-        "welfare": {k: r(v) for k, v in wf.items()},
+        "ePJ": actual["ePJ"],
+        "eSE": actual["eSE"],
+        "gini": r(gini(s_capped)),
+        "giniCorrected": r(gini_corrected(s_capped)),
+        "F": actual["F"],
+        "S": r(S),
+        "triangle": {
+            "r1": r(tri["r1"]),
+            "r2": r(tri["r2"]),
+            "r3": r(tri["r3"]),
+            "area": r(tri["area"]),
+            "score": r(tri["score"]),
+        },
+        "welfare": {
+            "UWF": r(wf["UWF"]),
+            "PWF": r(wf["PWF"]),
+            "PWFede": r(wf["PWFede"]),
+            "SWF": r(wf["SWF"]),
+            "EWF": r(wf["EWF"]),
+            "CWF": r(wf["CWF"]),
+        },
     }
 
 
-def verdict(schemes: Sequence[Scheme], allocable: float, W: Sequence[float], voted: LensId, pumping_gap: float,
-            lenses: Sequence[tuple[LensId, LensParams]], survival_floor: float) -> dict:
+def verdict(
+    schemes: Sequence[Scheme],
+    allocable: float,
+    W: Sequence[float],
+    voted: LensId,
+    pumping_gap: float,
+    lenses: Sequence[tuple[LensId, LensParams]],
+    survival_floor: float,
+) -> Verdict:
     """§2.7: the lens whose ideal allocation is nearest the realised one by Σ|A_i − A_i*|; ties to the earlier card."""
-    A = [w / s.demandMm3 for s, w in zip(schemes, W)]
-    best = None
+    A = [w / s.demandMm3 for s, w in zip(schemes, W, strict=True)]
+    best: Verdict | None = None
     for lens, params in lenses:
         ideal = allocate(lens, schemes, allocable, params, survival_floor).Q
-        d = sum(abs(a - q / s.demandMm3) for a, q, s in zip(A, ideal, schemes))
+        d = sum(abs(a - q / s.demandMm3) for a, q, s in zip(A, ideal, schemes, strict=True))
         if best is None or d < best["distance"] - 1e-9:  # tolerance for ties (§2.7: ties to the earlier card)
             best = {"voted": voted, "satisfied": lens, "distance": d, "pumpingGap": pumping_gap}
     if best is None:

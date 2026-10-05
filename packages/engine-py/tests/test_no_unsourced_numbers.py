@@ -6,7 +6,6 @@ a blueprint section (§…), an ADR, or marks a numerical tolerance, the §7.2 r
 
 import ast
 import re
-from pathlib import Path
 
 from blueprint import ROOT
 
@@ -23,7 +22,10 @@ def py_literals():
 
 def ts_literals():
     """Numeric literals in the TypeScript mirror's source, outside comments and strings (a lexer is enough here)."""
-    token = re.compile(r"//[^\n]*|/\*.*?\*/|'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"|`(?:\\.|[^`\\])*`|(?<![\w.])(\d+(?:\.\d+)?(?:e-?\d+)?)(?![\w.])", re.S)
+    token = re.compile(
+        r"//[^\n]*|/\*.*?\*/|'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"|`(?:\\.|[^`\\])*`|(?<![\w.])(\d+(?:\.\d+)?(?:e-?\d+)?)(?![\w.])",
+        re.S,
+    )
     for f in sorted((ROOT / "packages" / "engine" / "src").glob("*.ts")):
         if f.name.endswith((".test.ts", ".testutil.ts")):
             continue

@@ -1,11 +1,4 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
-node_modules/
-dist/
-*.log
-.venv/
-__pycache__/
-*.egg-info/
-.pytest_cache/
-.coverage
-coverage/
+* text=auto eol=lf
+*.json text eol=lf

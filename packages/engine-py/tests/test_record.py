@@ -6,33 +6,51 @@ nonces and the clock are test inputs."""
 import copy
 import hashlib
 import json
-from dataclasses import replace
-
-import pytest
 
 import blueprint as bp
-from fairflow_engine import (AUTHORITY, WHATEVER_WORKS, Basin, Game, GameSetup, LensParams, Rejection, Scheme, audit,
-                             draw_secrets, project, replay, verify_reveal)
-from test_engine_vs_blueprint import BASE, BASIN, INFLOW, LENSES, SCHEMES, SCORING, lens_params
+import pytest
+from test_engine_vs_blueprint import BASIN, INFLOW, LENSES, SCHEMES, SCORING, lens_params
+
+from fairflow_engine import (
+    AUTHORITY,
+    WHATEVER_WORKS,
+    Game,
+    GameSetup,
+    Rejection,
+    audit,
+    draw_secrets,
+    project,
+    replay,
+    verify_reveal,
+)
 
 SECTION = bp.section("### 2.2 Parameters and grounding")
-DECK = dict(zip(["wet", "normal", "dry"], bp.grab(r"deck NUM W / NUM N / NUM D", SECTION)))
+DECK = dict(zip(["wet", "normal", "dry"], bp.grab(r"deck NUM W / NUM N / NUM D", SECTION), strict=True))
 T_MIN, T_MAX = bp.grab(r"Uniform\{NUM, NUM\}", SECTION)
-DEFAULT_LENS = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))["defaultLens"]
+DEFAULT_LENS = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))[
+    "defaultLens"
+]
 ROLES = [s.id for s in SCHEMES]
 SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L"}
 
 
 def setup(**over) -> GameSetup:
-    base = dict(schemes=tuple(SCHEMES), basin=BASIN, inflow=dict(INFLOW), deck={k: int(v) for k, v in DECK.items()},
-                gameLength=(int(T_MIN), int(T_MAX)), scoring=SCORING,
-                lenses=tuple((l, lens_params(l)) for l in LENSES), defaultLens=DEFAULT_LENS,
-                floorRules=("proportional", "cea", "cel", "talmud", "capability"))
+    base = dict(
+        schemes=tuple(SCHEMES),
+        basin=BASIN,
+        inflow=dict(INFLOW),
+        deck={k: int(v) for k, v in DECK.items()},
+        gameLength=(int(T_MIN), int(T_MAX)),
+        scoring=SCORING,
+        lenses=tuple((lens, lens_params(lens)) for lens in LENSES),
+        defaultLens=DEFAULT_LENS,
+        floorRules=("proportional", "cea", "cel", "talmud", "capability"),
+    )
     return GameSetup(**{**base, **over})
 
 
 def clock():
-    n = iter(range(10 ** 6))
+    n = iter(range(10**6))
     return lambda: f"2026-10-05T10:00:{next(n):06d}Z"
 
 
@@ -42,17 +60,17 @@ def nonce(i: int) -> str:
 
 def new_game(i=0, **over) -> Game:
     g = Game.create(setup(**over), f"g{i}", "room", {"appVersion": "test", "engineVersion": "test"}, clock(), nonce(i))
-    for role in ROLES + [AUTHORITY]:
+    for role in [*ROLES, AUTHORITY]:
         g.submit(role, "join", deviceHash=f"h-{role}", consentGiven=True, presurveyComplete=True)
     return g
 
 
 def play_season(g: Game, lenses=("proportional", "utilitarian"), votes=None, pumps=None):
     g.submit(AUTHORITY, "start_season")
-    for l in lenses:
-        g.submit(AUTHORITY, "propose", lens=l)
-    for role, l in (votes or {r: lenses[0] for r in ROLES}).items():
-        g.submit(role, "vote", lens=l)
+    for lens in lenses:
+        g.submit(AUTHORITY, "propose", lens=lens)
+    for role, lens in (votes or {r: lenses[0] for r in ROLES}).items():
+        g.submit(role, "vote", lens=lens)
     g.submit(AUTHORITY, "close_vote")
     for role in ROLES:
         g.submit(role, "commit", pumps=(pumps or {}).get(role, 0.0))
@@ -85,7 +103,9 @@ def test_game_length_and_deck():
     draw of 100 misses ±0.05 about a quarter of the time (finding for the science reviewer); the test keeps the
     blueprint's share and tolerance and uses enough nonces that a fair draw fails with probability < 0.1 %."""
     from scipy.stats import binom
+
     share, tol = bp.grab(r"each NUM ± NUM", bp.BLUEPRINT)
+
     def false_alarm(n):
         return 1 - (binom.cdf((share + tol) * n, n, share) - binom.cdf((share - tol) * n - 1, n, share))
 
@@ -101,6 +121,7 @@ def test_privacy_projection_before_debrief():
     """§9.1 and ADR 0004: before the debrief the public view of a season holds only the in-play fields — no per-scheme
     figure and nothing computed on actual use."""
     from fairflow_engine.record import PUBLIC_RESULT_FIELDS
+
     g = play_game(new_game(), pumps={"A": BASIN.pump.cap})
     public = project(g.events, "public")
     assert not keys_in(public) & SEALED_KEYS
@@ -134,12 +155,12 @@ def test_rejections_leave_the_record_unchanged():
             g.submit(actor, intent, **args)
         assert g.events == before
 
-    refused(AUTHORITY, "close_vote")                 # wrong phase (lobby)
-    refused("A", "start_season")                     # not the Authority
-    refused(AUTHORITY, "fly")                        # unknown intent
+    refused(AUTHORITY, "close_vote")  # wrong phase (lobby)
+    refused("A", "start_season")  # not the Authority
+    refused(AUTHORITY, "fly")  # unknown intent
     g.submit(AUTHORITY, "start_season")
-    refused("A", "vote", lens="talmud")              # not proposed
-    refused("A", "commit", pumps=0.0)                # wrong phase (vote)
+    refused("A", "vote", lens="talmud")  # not proposed
+    refused("A", "commit", pumps=0.0)  # wrong phase (vote)
     refused(AUTHORITY, "vote", lens="proportional")  # the Authority does not vote
     g.submit(AUTHORITY, "propose", lens="proportional")
     g.submit(AUTHORITY, "close_vote")
@@ -174,8 +195,8 @@ def test_timeout_applies_default_then_previous_lens():
 def test_tie_goes_to_the_authority():
     g = new_game()
     g.submit(AUTHORITY, "start_season")
-    for l in ("egalitarian", "capability"):
-        g.submit(AUTHORITY, "propose", lens=l)
+    for lens in ("egalitarian", "capability"):
+        g.submit(AUTHORITY, "propose", lens=lens)
     g.submit("A", "vote", lens="egalitarian")
     g.submit("B", "vote", lens="capability")
     g.submit(AUTHORITY, "close_vote")
@@ -186,9 +207,14 @@ def test_tie_goes_to_the_authority():
     assert replay(g.events).lens == "capability"
 
 
-@pytest.mark.parametrize("votes,expected", [({}, ("whatever_works", "proportional")),
-                                            ({"A": "cea", "B": "cea", "C": "cel"}, ("cea", "cea")),
-                                            ({"A": WHATEVER_WORKS}, (WHATEVER_WORKS, "proportional"))])
+@pytest.mark.parametrize(
+    "votes,expected",
+    [
+        ({}, ("whatever_works", "proportional")),
+        ({"A": "cea", "B": "cea", "C": "cel"}, ("cea", "cea")),
+        ({"A": WHATEVER_WORKS}, (WHATEVER_WORKS, "proportional")),
+    ],
+)
 def test_floor_vote_when_floors_exceed_the_water(votes, expected):
     """ADR 0003. Inflows here are test inputs chosen so that the sufficientarian floors cannot all be met."""
     floor = lens_params("sufficientarian").floor

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# Weekly version updates, grouped to keep PR volume low for a two-person team. Security updates are separate
+# (enable "Dependabot security updates" in the repository settings).
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /packages/engine-py
+    schedule: { interval: weekly }
+    groups:
+      python: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      npm: { patterns: ["*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }

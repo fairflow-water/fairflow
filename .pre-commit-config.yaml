@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+# Local checks that mirror CI. Install once: `pipx install pre-commit && pre-commit install`.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=2048"] # the golden-vector corpus is ~1.2 MB
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: \.md$
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^packages/engine-py/
+      - id: ruff-format
+        files: ^packages/engine-py/
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v6.2.0
+    hooks:
+      - id: reuse

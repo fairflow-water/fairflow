@@ -6,9 +6,9 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
-
-from fairflow_engine import FLOOR_RULES, Basin, LensParams, Scheme, Scoring, allocate, resolve_season, value_of
 from test_engine_vs_blueprint import BASIN, LENSES, SCORING, lens_params
+
+from fairflow_engine import FLOOR_RULES, LensParams, Scheme, allocate, resolve_season, value_of
 
 RNG = np.random.default_rng(20261005)
 
@@ -18,10 +18,21 @@ def random_schemes(rng, beta=None, uniform_depth=False):
     out = []
     for i in range(n):
         D = float(rng.uniform(1, 10))
-        out.append(Scheme(id=str(i), name=str(i), seat=i + 1, demandMm3=D, capacityT=float(rng.uniform(500, 5500)),
-                          ky=float(rng.uniform(0.5, 1.3)), beta=float(rng.uniform(0.5, 1)) if beta is None else beta,
-                          people=float(rng.uniform(10, 2000)), kappa=1.0, price=float(rng.uniform(0.5, 1.5)),
-                          areaHa=D * 100 if uniform_depth else float(rng.uniform(100, 1000))))
+        out.append(
+            Scheme(
+                id=str(i),
+                name=str(i),
+                seat=i + 1,
+                demandMm3=D,
+                capacityT=float(rng.uniform(500, 5500)),
+                ky=float(rng.uniform(0.5, 1.3)),
+                beta=float(rng.uniform(0.5, 1)) if beta is None else beta,
+                people=float(rng.uniform(10, 2000)),
+                kappa=1.0,
+                price=float(rng.uniform(0.5, 1.5)),
+                areaHa=D * 100 if uniform_depth else float(rng.uniform(100, 1000)),
+            )
+        )
     return out
 
 
@@ -61,7 +72,7 @@ def test_utilitarian_is_never_beaten_by_random_feasible_allocations():
         D = np.array([x.demandMm3 for x in s])
         AW = float(RNG.uniform(0, 1)) * D.sum()
         Q = allocate("utilitarian", s, AW, LensParams(), SCORING.survivalFloor).Q
-        best = sum(value_of(x, q, SCORING.survivalFloor) for x, q in zip(s, Q))
+        best = sum(value_of(x, q, SCORING.survivalFloor) for x, q in zip(s, Q, strict=True))
         rounding = len(s) * 0.5e-6 * max_slope(s)  # Q is rounded to 1e-6 at the event boundary (§7.2)
         for _ in range(1000):
             w = RNG.dirichlet(np.ones(len(s)))
@@ -72,7 +83,7 @@ def test_utilitarian_is_never_beaten_by_random_feasible_allocations():
                 if left <= 1e-12 or room.sum() <= 0:
                     break
                 q = q + room / room.sum() * min(left, room.sum())
-            assert sum(value_of(x, v, SCORING.survivalFloor) for x, v in zip(s, q)) <= best + rounding
+            assert sum(value_of(x, v, SCORING.survivalFloor) for x, v in zip(s, q, strict=True)) <= best + rounding
 
 
 def test_identities():
@@ -81,15 +92,33 @@ def test_identities():
     for _ in range(100):
         s = random_schemes(RNG, uniform_depth=True)
         D = np.array([x.demandMm3 for x in s])
-        full = resolve_season(s, BASIN, BASIN.reserve + D.sum() * 1.5, 20, "egalitarian", LensParams(), [0] * len(s), SCORING)
+        full = resolve_season(
+            s, BASIN, BASIN.reserve + D.sum() * 1.5, 20, "egalitarian", LensParams(), [0] * len(s), SCORING
+        )
         assert full["F"]["consumed"] == pytest.approx(1, abs=1e-6) and full["F"]["diverted"] == pytest.approx(1, abs=1e-6)
-        part = resolve_season(s, BASIN, BASIN.reserve + float(RNG.uniform(0, 1)) * D.sum(), 20, "proportional",
-                              LensParams(), [0] * len(s), SCORING)
+        part = resolve_season(
+            s,
+            BASIN,
+            BASIN.reserve + float(RNG.uniform(0, 1)) * D.sum(),
+            20,
+            "proportional",
+            LensParams(),
+            [0] * len(s),
+            SCORING,
+        )
         tol = 1e-6 / min(part["W"])  # relative effect of rounding the smallest share to 1e-6
         assert part["ePJ"] == pytest.approx(1, abs=tol)
         assert part["eSE"]["hectare"] == pytest.approx(part["ePJ"], abs=tol)
-        eq = resolve_season(s, BASIN, BASIN.reserve + D.min() * len(s) * float(RNG.uniform(0, 1)), 20, "egalitarian",
-                            LensParams(), [0] * len(s), SCORING)
+        eq = resolve_season(
+            s,
+            BASIN,
+            BASIN.reserve + D.min() * len(s) * float(RNG.uniform(0, 1)),
+            20,
+            "egalitarian",
+            LensParams(),
+            [0] * len(s),
+            SCORING,
+        )
         assert eq["eSE"]["claimant"] == pytest.approx(1, abs=1e-6 / min(eq["W"]))
 
 
@@ -102,8 +131,16 @@ def test_aquifer_mass_balance(floor_scaling):
         basin = replace(BASIN, aquifer=replace(BASIN.aquifer, naturalRecharge=r0))
         D = sum(x.demandMm3 for x in s)
         stock = float(RNG.uniform(5, 25))
-        r = resolve_season(s, basin, basin.reserve + float(RNG.uniform(0, 1.3)) * D, stock, LENSES[i % len(LENSES)],
-                           params_for(LENSES[i % len(LENSES)], floor_scaling), list(RNG.uniform(0, 2, len(s))), SCORING)
+        r = resolve_season(
+            s,
+            basin,
+            basin.reserve + float(RNG.uniform(0, 1.3)) * D,
+            stock,
+            LENSES[i % len(LENSES)],
+            params_for(LENSES[i % len(LENSES)], floor_scaling),
+            list(RNG.uniform(0, 2, len(s))),
+            SCORING,
+        )
         balance = stock + r["allocation"]["surplusToAquifer"] + r0 + r["returnFlow"] - r["pumpsTotal"]
         assert abs(r["stockNext"] - max(basin.aquifer.reserve, balance)) <= 1e-5
         assert r["pumpsTotal"] <= max(0.0, stock - basin.aquifer.reserve) + 1e-6
@@ -118,8 +155,16 @@ def search_s_vs_pumping(beta):
         r0 = float(rng.uniform(0, 2))
         basin = replace(BASIN, aquifer=replace(BASIN.aquifer, naturalRecharge=r0, reserve=0.0))
         D = sum(x.demandMm3 for x in s)
-        r = resolve_season(s, basin, basin.reserve + float(rng.uniform(0.2, 1)) * D, 50, "proportional", LensParams(),
-                           list(rng.uniform(0, 2, len(s))), SCORING)
+        r = resolve_season(
+            s,
+            basin,
+            basin.reserve + float(rng.uniform(0.2, 1)) * D,
+            50,
+            "proportional",
+            LensParams(),
+            list(rng.uniform(0, 2, len(s))),
+            SCORING,
+        )
         if abs(r["pumpsTotal"] - r0) > 1e-4 and (r["S"] > 1) != (r["pumpsTotal"] > r0):
             disagree += 1
     return disagree
@@ -146,6 +191,6 @@ def test_floor_shortfall_rules(rule):
         AW = float(RNG.uniform(0, 1)) * sum(floors)
         Q = allocate("sufficientarian", s, AW, p, SCORING.survivalFloor).Q
         assert abs(sum(Q) - AW) <= 1e-5
-        assert all(0 <= q <= f + 1e-6 for q, f in zip(Q, floors))
-        on_floors = [replace(x, demandMm3=f) for x, f in zip(s, floors)]
+        assert all(0 <= q <= f + 1e-6 for q, f in zip(Q, floors, strict=True))
+        on_floors = [replace(x, demandMm3=f) for x, f in zip(s, floors, strict=True)]
         assert Q == allocate(FLOOR_RULES[rule], on_floors, AW, p, SCORING.survivalFloor).Q

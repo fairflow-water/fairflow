@@ -5,32 +5,52 @@ is read from docs/blueprint.md. Nothing here is typed by hand."""
 
 from dataclasses import replace
 
+import blueprint as bp
 import pytest
 
-import blueprint as bp
-from fairflow_engine import (Basin, LensParams, Scheme, Scoring, pump_cost_per_mm3, inflow_loss_next, resolve_season,
-                             verdict)
+from fairflow_engine import Basin, LensParams, Scheme, Scoring, inflow_loss_next, pump_cost_per_mm3, resolve_season, verdict
 
 BASE = bp.basin_v1()
 SCHEMES = [Scheme.from_dict(s) for s in BASE["schemes"]]
 BASIN = Basin.from_dict(BASE["basin"])
 INFLOW = BASE["inflow"]
 PARAMS = bp.fixture_parameters()
-SCORING = Scoring(r3Ramp=PARAMS["indicators.r3Ramp"], welfareGamma=PARAMS["indicators.welfareGamma"],
-                  survivalFloor=PARAMS["indicators.survivalFloor"], welfareSupplyFloor=PARAMS["indicators.welfareSupplyFloor"],
-                  sustainabilityBands=tuple(PARAMS["indicators.sustainabilityBands"]))
-LENSES = ["utilitarian", "weighted_utilitarian", "egalitarian", "proportional", "capability", "sufficientarian",
-          "prioritarian", "equal_sacrifice", "talmud"]
+SCORING = Scoring(
+    r3Ramp=PARAMS["indicators.r3Ramp"],
+    welfareGamma=PARAMS["indicators.welfareGamma"],
+    survivalFloor=PARAMS["indicators.survivalFloor"],
+    welfareSupplyFloor=PARAMS["indicators.welfareSupplyFloor"],
+    sustainabilityBands=tuple(PARAMS["indicators.sustainabilityBands"]),
+)
+LENSES = [
+    "utilitarian",
+    "weighted_utilitarian",
+    "egalitarian",
+    "proportional",
+    "capability",
+    "sufficientarian",
+    "prioritarian",
+    "equal_sacrifice",
+    "talmud",
+]
 
 
 def lens_params(lens: str) -> LensParams:
     prefix = f"lenses.{lens}."
-    return LensParams(**{k[len(prefix):]: v for k, v in PARAMS.items() if k.startswith(prefix)})
+    return LensParams(**{k[len(prefix) :]: v for k, v in PARAMS.items() if k.startswith(prefix)})
 
 
 def season(lens="proportional", card="normal", pumps=(0, 0, 0), stock=None, schemes=SCHEMES, basin=BASIN, inflow=None):
-    return resolve_season(schemes, basin, INFLOW[card] if inflow is None else inflow,
-                          basin.aquifer.initial if stock is None else stock, lens, lens_params(lens), list(pumps), SCORING)
+    return resolve_season(
+        schemes,
+        basin,
+        INFLOW[card] if inflow is None else inflow,
+        basin.aquifer.initial if stock is None else stock,
+        lens,
+        lens_params(lens),
+        list(pumps),
+        SCORING,
+    )
 
 
 def near(got: float, want: bp.Num, what: str):
@@ -40,7 +60,7 @@ def near(got: float, want: bp.Num, what: str):
 def test_fixture_file_basin_equals_blueprint():
     """The TypeScript fixtures carry a copy of the basin; it must equal the blueprint's."""
     v1 = bp.fixture("default-basin-v1.json")
-    assert v1["schemes"] == [{**s, "name": f["name"]} for s, f in zip(BASE["schemes"], v1["schemes"])]
+    assert v1["schemes"] == [{**s, "name": f["name"]} for s, f in zip(BASE["schemes"], v1["schemes"], strict=True)]
     for k in ("reserve",):
         assert v1["basin"][k] == BASE["basin"][k]
     assert v1["basin"]["aquifer"] == BASE["basin"]["aquifer"]
@@ -94,7 +114,7 @@ def test_pumping():
     near(r["S"], want["S"], "S")
     near(r["triangle"]["r3"], want["r3"], "r3")
     near(r["stockNext"], want["B"], "B")
-    for c, p in zip(r["pumpCost"], r["P"]):
+    for c, p in zip(r["pumpCost"], r["P"], strict=True):
         near(c * p, want["spend"], "pump spend")
 
 
@@ -105,7 +125,7 @@ def test_depletion():
         r = season("proportional", card, pumps=[2, 2, 2], stock=stock, inflow=INFLOW[card] - loss)
         stock, loss = r["stockNext"], r["inflowLossNext"]
         stocks.append(stock)
-    for got, w in zip(stocks, want["B"]):
+    for got, w in zip(stocks, want["B"], strict=True):
         near(got, w, "B path")
     near(r["pumpsTotal"], want["rationedTotal"], "rationed total")
     for p in r["P"]:
@@ -124,10 +144,10 @@ def test_pump_cost_and_seat_multipliers():
 def test_return_flow_beta_set():
     *parts, total = bp.dynamic()["returnFlow"]
     beta = bp.beta_by_method()
-    schemes = [replace(s, beta=beta[m]) for s, m in zip(SCHEMES, ["drip", "flood", "sprinkler"])]
+    schemes = [replace(s, beta=beta[m]) for s, m in zip(SCHEMES, ["drip", "flood", "sprinkler"], strict=True)]
     basin = replace(BASIN, aquifer=replace(BASIN.aquifer, naturalRecharge=bp.natural_recharge()))
     r = season("proportional", "normal", schemes=schemes, basin=basin)
-    for s, w, part in zip(schemes, r["W"], parts):
+    for s, w, part in zip(schemes, r["W"], parts, strict=True):
         near((1 - s.beta) * w, part, "return part")
     near(r["returnFlow"], total, "return total")
     assert r["stockNext"] == pytest.approx(BASIN.aquifer.initial + r["returnFlow"] + bp.natural_recharge())
@@ -151,15 +171,22 @@ def test_capability_per_person_is_highest():
     cap = season("capability", "dry")
     assert cap["ePJ"] < 0
     near(cap["eSE"]["person"], want, "capability per-person E_SE")
-    assert all(season(l, "dry")["eSE"]["person"] <= cap["eSE"]["person"] for l in LENSES)
+    assert all(season(lens, "dry")["eSE"]["person"] <= cap["eSE"]["person"] for lens in LENSES)
 
 
 def test_verdict_match():
     r = season("proportional", "dry")
-    v = verdict(SCHEMES, r["allocable"], r["W"], "proportional", r["pumpsTotal"], [(l, lens_params(l)) for l in LENSES],
-                SCORING.survivalFloor)
+    v = verdict(
+        SCHEMES,
+        r["allocable"],
+        r["W"],
+        "proportional",
+        r["pumpsTotal"],
+        [(lens, lens_params(lens)) for lens in LENSES],
+        SCORING.survivalFloor,
+    )
     assert (v["satisfied"], v["pumpingGap"]) == ("proportional", 0)
-    assert all(season(l, "dry")["welfare"]["EWF"] <= r["welfare"]["EWF"] for l in LENSES)
+    assert all(season(lens, "dry")["welfare"]["EWF"] <= r["welfare"]["EWF"] for lens in LENSES)
 
 
 def test_verdict_mismatch_utilitarian():
@@ -168,7 +195,7 @@ def test_verdict_mismatch_utilitarian():
     near(u["welfare"]["UWF"], uwf, "UWF")
     near(u["welfare"]["PWF"], pwf3, "PWF3")
     near(u["welfare"]["SWF"], swf, "SWF")
-    assert all(season(l, "dry")["welfare"]["UWF"] <= u["welfare"]["UWF"] for l in LENSES)
+    assert all(season(lens, "dry")["welfare"]["UWF"] <= u["welfare"]["UWF"] for lens in LENSES)
 
 
 def test_prioritarian_limits():
@@ -176,7 +203,15 @@ def test_prioritarian_limits():
     g_low, g_high = bp.grab(r"γ = NUM and NUM \| within", bp.BLUEPRINT)
     egal, prop = season("egalitarian", "dry"), season("proportional", "dry")
     for g, ref in ((g_low, egal), (g_high, prop)):
-        r = resolve_season(SCHEMES, BASIN, INFLOW["dry"], BASIN.aquifer.initial, "prioritarian",
-                           replace(lens_params("prioritarian"), gamma=float(g)), [0, 0, 0], SCORING)
-        for q, q_ref in zip(r["allocation"]["Q"], ref["allocation"]["Q"]):
+        r = resolve_season(
+            SCHEMES,
+            BASIN,
+            INFLOW["dry"],
+            BASIN.aquifer.initial,
+            "prioritarian",
+            replace(lens_params("prioritarian"), gamma=float(g)),
+            [0, 0, 0],
+            SCORING,
+        )
+        for q, q_ref in zip(r["allocation"]["Q"], ref["allocation"]["Q"], strict=True):
             assert abs(q - q_ref) <= tol

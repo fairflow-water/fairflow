@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Literal, Sequence
+from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 
@@ -35,23 +36,28 @@ def gini_corrected(values: Sequence[float]) -> float:
 
 def equity_pj(schemes: Sequence[Scheme], W: Sequence[float]) -> float:
     """E_PJ = 1 − σ(A)/Ā on adequacy A = W/D (Cherry 2025 Eq. 3-13)."""
-    return one_minus_cv([w / s.demandMm3 for s, w in zip(schemes, W)])
+    return one_minus_cv([w / s.demandMm3 for s, w in zip(schemes, W, strict=True)])
 
 
 def equity_se(schemes: Sequence[Scheme], W: Sequence[float], u: Equalisandum) -> float:
     """E_SE(u) = 1 − σ(W/u)/mean(W/u), u ∈ {1, ha_i, N_i}."""
-    unit = {"claimant": lambda s: 1.0, "hectare": lambda s: s.areaHa, "person": lambda s: s.people}[u]
-    return one_minus_cv([w / unit(s) for s, w in zip(schemes, W)])
+
+    def unit(s: Scheme) -> float:
+        return s.areaHa if u == "hectare" else s.people if u == "person" else 1.0
+
+    return one_minus_cv([w / unit(s) for s, w in zip(schemes, W, strict=True)])
 
 
-def efficiency(schemes: Sequence[Scheme], W: Sequence[float], basis: Literal["consumed", "diverted"], survival_floor: float) -> float:
+def efficiency(
+    schemes: Sequence[Scheme], W: Sequence[float], basis: Literal["consumed", "diverted"], survival_floor: float
+) -> float:
     """F = (Σ p_iY_i / Σ β_iW_i) / (Σ p_iK_i / Σ β_iD_i); `diverted` drops β (§2.5)."""
     beta = np.array([s.beta if basis == "consumed" else 1.0 for s in schemes])
     Wv = np.asarray(W, dtype=float)
     used = float((beta * Wv).sum())
     if used == 0:
         return 0.0
-    realised = sum(value_of(s, w, survival_floor) for s, w in zip(schemes, W)) / used
+    realised = sum(value_of(s, w, survival_floor) for s, w in zip(schemes, W, strict=True)) / used
     design = sum(s.price * s.capacityT for s in schemes) / float((beta * [s.demandMm3 for s in schemes]).sum())
     return realised / design
 
@@ -69,11 +75,16 @@ def triangle(e_pj: float, F: float, S: float, r3_ramp: float) -> dict[str, float
     area (√3/4)(r₁r₂ + r₂r₃ + r₃r₁); score = geometric mean (r₁r₂r₃)^(1/3)."""
     r1, r2 = float(np.clip(e_pj, 0, 1)), float(np.clip(F, 0, 1))
     r3 = 1 - float(np.clip((S - 1) / r3_ramp, 0, 1))
-    return {"r1": r1, "r2": r2, "r3": r3, "area": float(np.sqrt(3) / 4 * (r1 * r2 + r2 * r3 + r3 * r1)),  # §2.5 triangle area
-            "score": float(np.cbrt(r1 * r2 * r3))}
+    return {
+        "r1": r1,
+        "r2": r2,
+        "r3": r3,
+        "area": float(np.sqrt(3) / 4 * (r1 * r2 + r2 * r3 + r3 * r1)),  # §2.5 triangle area
+        "score": float(np.cbrt(r1 * r2 * r3)),
+    }
 
 
-def sustainability_band(S: float, edges: Sequence[float]) -> str:
+def sustainability_band(S: float, edges: Sequence[float]) -> Literal["good", "warning", "unsustainable"]:
     """§2.2 'sustainability good ≤ 1.00 / warning 1.00–1.15 / unsustainable > 1.15', with the edges from the registry."""
     return "good" if S <= edges[0] else "warning" if S <= edges[1] else "unsustainable"
 

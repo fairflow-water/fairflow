@@ -1,22 +1,62 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
 # SPDX-License-Identifier: MIT
 [build-system]
-requires = ["setuptools>=69"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "fairflow-engine"
 version = "1.0.0.dev0"
-description = "Fairflow reference engine: the authoritative implementation of blueprint §2 (allocation, production, indicators, aquifer, welfare)."
+description = "Fairflow reference engine: the authoritative implementation of blueprint §2 (allocation, production, indicators, aquifer, welfare) and the Season Record."
+readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
-dependencies = ["numpy>=1.26", "scipy>=1.11"]
+license-files = ["LICENSE"]
+authors = [{ name = "Seleshi Yalew", email = "seleshiget@gmail.com" }]
+# Supported versions follow SPEC 0 (https://scientific-python.org/specs/spec-0000/).
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.2", "scipy>=1.15"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Education",
+  "Topic :: Scientific/Engineering :: Hydrology",
+  "Typing :: Typed",
+]
 
-[project.optional-dependencies]
-test = ["pytest>=8"]
+[project.urls]
+Repository = "https://github.com/fairflow-water/fairflow"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[dependency-groups]
+dev = ["pytest>=8", "pytest-cov>=7", "hypothesis>=6", "ruff>=0.16", "mypy>=2", "scipy-stubs>=1.15"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fairflow_engine"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = ["--strict-markers"]
+
+[tool.coverage.run]
+source = ["fairflow_engine"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 125
+target-version = "py312"
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, bugbear, pyupgrade, numpy-specific, ruff-specific
+select = ["E", "W", "F", "I", "B", "UP", "NPY", "RUF"]
+# RUF001–RUF003: the engine deliberately uses mathematical symbols (σ, γ, −, ×) taken verbatim from the blueprint.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]

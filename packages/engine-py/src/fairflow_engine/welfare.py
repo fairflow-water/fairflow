@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -27,5 +27,11 @@ def welfare(schemes: Sequence[Scheme], A: Sequence[float], gamma: float, m: floa
         ede = float(((1 - gamma) * pwf / n) ** (1 / (1 - gamma)))
     swf = 0.0 if (s < m).any() else float((np.minimum(1, s / m).sum() + ((s - m) / (1 - m)).sum()) / (2 * n))  # §2.7 SWF
     N = np.array([x.people for x in schemes], dtype=float)
-    return {"UWF": float(s.mean()), "PWF": pwf, "PWFede": ede, "SWF": swf, "EWF": 1 - gini(s),
-            "CWF": float((N * s).sum() / N.sum())}
+    return {
+        "UWF": float(s.mean()),
+        "PWF": pwf,
+        "PWFede": ede,
+        "SWF": swf,
+        "EWF": 1 - gini(s),
+        "CWF": float((N * s).sum() / N.sum()),
+    }

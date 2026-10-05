@@ -6,7 +6,6 @@ import json
 import re
 
 import pytest
-
 from blueprint import BLUEPRINT, ROOT
 
 REGISTRY = json.loads((ROOT / "packages" / "scenarios" / "parameters.json").read_text(encoding="utf-8"))
@@ -31,7 +30,9 @@ def test_quote_is_verbatim_in_blueprint(p):
     source = (ROOT / p["sourceFile"]).read_text(encoding="utf-8") if "sourceFile" in p else BLUEPRINT
     for field in ("quote", "alsoQuote"):
         if field in p:
-            assert p[field] in source, f"{p['key']}: {field} not found verbatim in {p.get('sourceFile', 'docs/blueprint.md')}"
+            assert p[field] in source, (
+                f"{p['key']}: {field} not found verbatim in {p.get('sourceFile', 'docs/blueprint.md')}"
+            )
 
 
 @pytest.mark.parametrize("p", PARAMS, ids=lambda p: p["key"])
@@ -43,7 +44,8 @@ def test_default_is_printed_in_its_quote(p):
     tokens = set(re.findall(r"[\w.]+", p["quote"].replace("–", " ").replace("·", " ")))
     for v in value if isinstance(value, list) else [value]:
         assert printed_forms(v) & (tokens | {p["quote"]} | set(p["quote"].split(" / "))) or any(
-            f in p["quote"] for f in printed_forms(v)), f"{p['key']}: default {v!r} is not printed in its quote"
+            f in p["quote"] for f in printed_forms(v)
+        ), f"{p['key']}: default {v!r} is not printed in its quote"
 
 
 def test_checks_reject_fabrication():

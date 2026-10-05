@@ -6,12 +6,20 @@ or the parameter registry, each with a source. Missing values are errors, never 
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Any, Literal
 
 LensId = Literal[
-    "utilitarian", "weighted_utilitarian", "egalitarian", "proportional", "capability",
-    "sufficientarian", "prioritarian", "equal_sacrifice", "talmud",
+    "utilitarian",
+    "weighted_utilitarian",
+    "egalitarian",
+    "proportional",
+    "capability",
+    "sufficientarian",
+    "prioritarian",
+    "equal_sacrifice",
+    "talmud",
 ]
 
 
@@ -24,17 +32,17 @@ class Scheme:
     id: str
     name: str
     seat: int
-    demandMm3: float   # D_i
-    capacityT: float   # K_i
-    ky: float          # FAO-33 K_y
-    beta: float        # consumptive fraction
+    demandMm3: float  # D_i
+    capacityT: float  # K_i
+    ky: float  # FAO-33 K_y
+    beta: float  # consumptive fraction
     people: float
     kappa: float
     price: float
     areaHa: float
 
     @staticmethod
-    def from_dict(d: dict) -> "Scheme":
+    def from_dict(d: Mapping[str, Any]) -> Scheme:
         return Scheme(**{k: d[k] for k in Scheme.__dataclass_fields__})
 
 
@@ -46,7 +54,7 @@ class Aquifer:
     naturalRecharge: float
     seatCostMultipliers: tuple[float, ...]
     maxInflowLossMm3: float
-    tankResolution: float      # ADR 0004: resolution of the observed level (prices pumping, drives coupling)
+    tankResolution: float  # ADR 0004: resolution of the observed level (prices pumping, drives coupling)
 
 
 @dataclass(frozen=True)
@@ -63,46 +71,61 @@ class Basin:
     pump: Pump
 
     @staticmethod
-    def from_dict(d: dict) -> "Basin":
+    def from_dict(d: Mapping[str, Any]) -> Basin:
         a = d["aquifer"]
         return Basin(
             reserve=d["reserve"],
-            aquifer=Aquifer(a["initial"], a["reserve"], a["lowThreshold"], a["naturalRecharge"],
-                            tuple(a["seatCostMultipliers"]), a["maxInflowLossMm3"], a["tankResolution"]),
+            aquifer=Aquifer(
+                a["initial"],
+                a["reserve"],
+                a["lowThreshold"],
+                a["naturalRecharge"],
+                tuple(a["seatCostMultipliers"]),
+                a["maxInflowLossMm3"],
+                a["tankResolution"],
+            ),
             pump=Pump(d["pump"]["cap"], d["pump"]["costBase"], d["pump"]["costSlope"]),
         )
 
 
 @dataclass(frozen=True)
 class Scoring:
-    r3Ramp: float              # §2.5
-    welfareGamma: float        # §2.7 PWF_γ
-    survivalFloor: float       # §2.4 survival threshold; §2.7 m_i
+    r3Ramp: float  # §2.5
+    welfareGamma: float  # §2.7 PWF_γ
+    survivalFloor: float  # §2.4 survival threshold; §2.7 m_i
     welfareSupplyFloor: float  # §2.7 "s_i = min(A_i, 1) floored at …"
     sustainabilityBands: tuple[float, float]  # §2.2 band edges; ADR 0004 shows S during play as its band word only
 
     @staticmethod
-    def from_dict(d: dict) -> "Scoring":
+    def from_dict(d: Mapping[str, Any]) -> Scoring:
         missing = [k for k in Scoring.__dataclass_fields__ if k not in d]
         if missing:
             raise MissingParameter(f"scoring needs {missing}")
-        return Scoring(**{k: (tuple(d[k]) if k == "sustainabilityBands" else d[k]) for k in Scoring.__dataclass_fields__})
+        low, high = d["sustainabilityBands"]
+        return Scoring(
+            r3Ramp=d["r3Ramp"],
+            welfareGamma=d["welfareGamma"],
+            survivalFloor=d["survivalFloor"],
+            welfareSupplyFloor=d["welfareSupplyFloor"],
+            sustainabilityBands=(low, high),
+        )
 
 
 @dataclass(frozen=True)
 class LensParams:
     """Per-lens parameters (§6.1 `lenses[]`). Required only by the lens that uses them; None means not supplied."""
-    gamma: Optional[float] = None
-    weight: Optional[Literal["1", "people"]] = None
-    floor: Optional[float] = None
-    floorScaling: Optional[Literal["proportional", "cea", "cel", "talmud", "capability"]] = None  # ADR 0003
-    secondary: Optional[Literal["max_value", "prioritarian", "proportional"]] = None
+
+    gamma: float | None = None
+    weight: Literal["1", "people"] | None = None
+    floor: float | None = None
+    floorScaling: Literal["proportional", "cea", "cel", "talmud", "capability"] | None = None  # ADR 0003
+    secondary: Literal["max_value", "prioritarian", "proportional"] | None = None
 
     @staticmethod
-    def from_dict(d: Optional[dict]) -> "LensParams":
+    def from_dict(d: Mapping[str, Any] | None) -> LensParams:
         return LensParams(**(d or {}))
 
-    def need(self, name: str, lens: str):
+    def need(self, name: str, lens: str) -> Any:
         value = getattr(self, name)
         if value is None:
             raise MissingParameter(f"lens {lens} needs parameter {name!r}")

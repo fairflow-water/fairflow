@@ -1,15 +1,95 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
 # SPDX-License-Identifier: MIT
-"""fairflow_engine — the authoritative implementation of blueprint §2. Every function cites its section; no parameter
-has a default in code (values come from a scenario or the sourced parameter registry)."""
+"""fairflow_engine — the authoritative implementation of blueprint §2 and the Season Record (§6.2). Every function cites
+its section; no parameter has a default in code (values come from a scenario or the sourced parameter registry)."""
 
 from .allocate import FLOOR_RULES, Allocation, allocate, cel, max_value, sufficientarian, talmud, weighted_cea, weights_for
-from .aquifer import inflow_loss_next, observed_stock, next_stock, pump_cost_per_mm3, ration_pumps, return_flow
-from .indicators import (collective_score, efficiency, equity_pj, equity_se, gini, gini_corrected, one_minus_cv,
-                         sustainability, sustainability_band, triangle)
+from .aquifer import inflow_loss_next, next_stock, observed_stock, pump_cost_per_mm3, ration_pumps, return_flow
+from .indicators import (
+    collective_score,
+    efficiency,
+    equity_pj,
+    equity_se,
+    gini,
+    gini_corrected,
+    one_minus_cv,
+    sustainability,
+    sustainability_band,
+    triangle,
+)
 from .model import Aquifer, Basin, LensId, LensParams, MissingParameter, Pump, Scheme, Scoring, round6
 from .production import value_of, yield_of
+from .record import (
+    AUTHORITY,
+    WHATEVER_WORKS,
+    Game,
+    GameSetup,
+    Rejection,
+    Secrets,
+    State,
+    apply_event,
+    audit,
+    commitment,
+    draw_secrets,
+    project,
+    replay,
+    verify_reveal,
+)
 from .season import resolve_season, verdict
 from .welfare import welfare
-from .record import (AUTHORITY, WHATEVER_WORKS, Game, GameSetup, Rejection, Secrets, State, apply_event, audit,
-                     commitment, draw_secrets, project, replay, verify_reveal)
+
+__all__ = [
+    "AUTHORITY",
+    "FLOOR_RULES",
+    "WHATEVER_WORKS",
+    "Allocation",
+    "Aquifer",
+    "Basin",
+    "Game",
+    "GameSetup",
+    "LensId",
+    "LensParams",
+    "MissingParameter",
+    "Pump",
+    "Rejection",
+    "Scheme",
+    "Scoring",
+    "Secrets",
+    "State",
+    "allocate",
+    "apply_event",
+    "audit",
+    "cel",
+    "collective_score",
+    "commitment",
+    "draw_secrets",
+    "efficiency",
+    "equity_pj",
+    "equity_se",
+    "gini",
+    "gini_corrected",
+    "inflow_loss_next",
+    "max_value",
+    "next_stock",
+    "observed_stock",
+    "one_minus_cv",
+    "project",
+    "pump_cost_per_mm3",
+    "ration_pumps",
+    "replay",
+    "resolve_season",
+    "return_flow",
+    "round6",
+    "sufficientarian",
+    "sustainability",
+    "sustainability_band",
+    "talmud",
+    "triangle",
+    "value_of",
+    "verdict",
+    "verify_reveal",
+    "weighted_cea",
+    "weights_for",
+    "welfare",
+    "yield_of",
+]

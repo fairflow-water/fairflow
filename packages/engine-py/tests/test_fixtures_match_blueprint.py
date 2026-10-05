@@ -3,17 +3,31 @@
 """Every value in fixtures/default-basin-v1.json that the blueprint prints must equal the blueprint, exactly."""
 
 import pytest
-
 from blueprint import dry_year, fixture, normal_year, wet_year
 
 V1 = fixture("default-basin-v1.json")
 
 
 def test_tables_parse():
-    assert set(dry_year()) == {"utilitarian", "weighted_utilitarian", "egalitarian", "proportional", "capability",
-                               "sufficientarian", "prioritarian", "equal_sacrifice", "talmud"}
-    assert set(normal_year()) == {"utilitarian", "egalitarian", "proportional", "capability", "prioritarian",
-                                  "equal_sacrifice"}
+    assert set(dry_year()) == {
+        "utilitarian",
+        "weighted_utilitarian",
+        "egalitarian",
+        "proportional",
+        "capability",
+        "sufficientarian",
+        "prioritarian",
+        "equal_sacrifice",
+        "talmud",
+    }
+    assert set(normal_year()) == {
+        "utilitarian",
+        "egalitarian",
+        "proportional",
+        "capability",
+        "prioritarian",
+        "equal_sacrifice",
+    }
 
 
 @pytest.mark.parametrize("year,table", [("dry", dry_year), ("normal", normal_year)])

@@ -1,0 +1,21 @@
+Fairflow documentation and teaching content
+(docs/, content/, scenario files and fixtures)
+
+Copyright (c) 2026 Seleshi Yalew, IHE Delft, and Fairflow contributors
+
+Licensed under the Creative Commons Attribution 4.0 International License
+(CC BY 4.0). You are free to share and adapt this material for any purpose,
+including commercially, provided you give appropriate credit, link to the
+licence, and indicate if changes were made.
+
+Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
+SPDX-License-Identifier: CC-BY-4.0
+
+Suggested attribution:
+  Yalew, S. (2026). Fairflow — Development Blueprint (v3.1). IHE Delft.
+  https://github.com/fairflow-water/fairflow . CC BY 4.0.
+
+Source studies on which scenario numbers rest keep their own copyright and
+are cited in each scenario's "source" fields and in docs/blueprint.md §12.4.
+Participant data are never distributed under this licence; see
+fairflow-water/fairflow-data.

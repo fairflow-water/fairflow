@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+name: dco
+on: [pull_request]
+jobs:
+  dco:
+    name: Developer Certificate of Origin sign-off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: |
+          for c in $(git rev-list origin/${{ github.base_ref }}..HEAD); do
+            git log -1 --format=%B "$c" | grep -q '^Signed-off-by: ' || { echo "commit $c lacks Signed-off-by (git commit -s)"; exit 1; }
+          done

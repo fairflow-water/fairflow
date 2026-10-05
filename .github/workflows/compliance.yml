@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+name: licence-and-citation
+on: [push, pull_request]
+jobs:
+  reuse:
+    name: REUSE compliance (every file carries an SPDX identifier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fsfe/reuse-action@v4
+  citation:
+    name: CITATION.cff validates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: citation-file-format/cffconvert-github-action@2.0.0
+        with:
+          args: "--validate"
+  engine:
+    name: Engine builds and fixtures pass
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: cd packages/engine && npm install && npx tsc -p tsconfig.json && npx vitest run
+  tag-reminder:
+    name: Release checklist (tags only)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          grep -q "^version: ${GITHUB_REF_NAME#v}$" CITATION.cff || { echo "CITATION.cff version must equal the tag"; exit 1; }
+          test -f LICENSE && test -f LICENSE-docs && test -f docs/blueprint.md

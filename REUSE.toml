@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
+# SPDX-License-Identifier: MIT
+version = 1
+SPDX-PackageName = "fairflow"
+SPDX-PackageSupplier = "fairflow-water <seleshiget@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/fairflow-water/fairflow"
+
+# Code: MIT
+[[annotations]]
+path = ["packages/**", "apps/**", "scripts/**", "*.json", "*.toml", "*.yml", "*.yaml", ".github/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Seleshi Yalew and Fairflow contributors (code copyright holder to be confirmed with IHE Delft before the first public tag)"
+SPDX-License-Identifier = "MIT"
+
+# Documentation, teaching content, scenarios and fixtures: CC BY 4.0
+[[annotations]]
+path = ["docs/**", "content/**", "packages/scenarios/**/*.json", "packages/engine/fixtures/**", "README.md", "CITATION.cff"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Seleshi Yalew, IHE Delft, and Fairflow contributors"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Paper and project files without a header slot
+[[annotations]]
+path = ["paper/**", "CODE_OF_CONDUCT.md", "LICENSE-docs", ".zenodo.json"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Seleshi Yalew, IHE Delft, and Fairflow contributors"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Scenario and fixture JSON (CC BY 4.0) override the MIT *.json rule above via closest precedence
+[[annotations]]
+path = ["packages/scenarios/**", "packages/engine/fixtures/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Seleshi Yalew, IHE Delft, and Fairflow contributors"
+SPDX-License-Identifier = "CC-BY-4.0"

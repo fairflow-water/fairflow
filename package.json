@@ -1,0 +1,13 @@
+{
+  "name": "fairflow",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "lint:licenses": "reuse lint",
+    "lint:citation": "cffconvert --validate"
+  }
+}

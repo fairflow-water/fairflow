@@ -28,6 +28,14 @@ jobs:
         run: cd packages/engine && echo '{"id":1,"cmd":"version"}' | node dist/cli.js serve | grep -q '"ok":true'
       - name: β fixtures are up to date with the engine
         run: cd packages/engine && npm run fixtures:beta && git diff --exit-code fixtures/default-basin-beta.json
+  python-engine:
+    name: Python engine reproduces the blueprint (authoritative)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: cd packages/engine-py && pip install -e ".[test]" && python -m pytest -q
   tag-reminder:
     name: Release checklist (tags only)
     if: startsWith(github.ref, 'refs/tags/v')

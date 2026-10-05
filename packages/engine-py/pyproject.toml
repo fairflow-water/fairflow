@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-License-Identifier: MIT
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fairflow-engine"
+version = "1.0.0.dev0"
+description = "Fairflow reference engine: the authoritative implementation of blueprint §2 (allocation, production, indicators, aquifer, welfare)."
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26", "scipy>=1.11"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

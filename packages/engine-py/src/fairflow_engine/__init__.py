@@ -11,3 +11,5 @@ from .model import Aquifer, Basin, LensId, LensParams, MissingParameter, Pump, S
 from .production import value_of, yield_of
 from .season import resolve_season, verdict
 from .welfare import welfare
+from .record import (AUTHORITY, WHATEVER_WORKS, Game, GameSetup, Rejection, Secrets, State, apply_event, audit,
+                     commitment, draw_secrets, project, replay, verify_reveal)

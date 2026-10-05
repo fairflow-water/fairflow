@@ -33,6 +33,10 @@ class Num(float):
         obj.tol = 0.5 * 10 ** -decimals
         return obj
 
+    def __reduce__(self):
+        """Copies (e.g. deepcopy inside the engine) become plain floats."""
+        return (float, (float(self),))
+
 
 def number(text: str) -> Num:
     """Blueprint numbers use thousands commas and the Unicode minus sign."""
@@ -151,7 +155,8 @@ def basin_v1() -> dict:
              "aquifer": {"initial": B0, "reserve": Bres, "lowThreshold": Blow, "naturalRecharge": 0.0,
                          "seatCostMultipliers": pump[3:6], "maxInflowLossMm3": coupling[0]},
              "pump": {"cap": pump[0], "costBase": pump[1], "costSlope": pump[2]}}
-    return {"schemes": schemes, "basin": basin, "inflow": dict(zip(["wet", "normal", "dry"], inflow))}
+    plain = json.loads(json.dumps({"schemes": schemes, "basin": basin, "inflow": dict(zip(["wet", "normal", "dry"], inflow))}))
+    return plain  # engine inputs as plain floats; expected values keep their printed precision (Num)
 
 
 def beta_by_method() -> dict[str, Num]:

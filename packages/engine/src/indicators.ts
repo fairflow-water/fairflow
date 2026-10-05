@@ -64,5 +64,9 @@ export function triangle(ePJ: number, F: number, S: number, r3Ramp: number): { r
   return { r1, r2, r3, area: (Math.sqrt(3) / 4) * (r1 * r2 + r2 * r3 + r3 * r1), score: Math.cbrt(r1 * r2 * r3) }; // §2.5 triangle
 }
 
+/** §2.2 'sustainability good ≤ 1.00 / warning 1.00–1.15 / unsustainable > 1.15', with the edges from the registry. */
+export const sustainabilityBand = (S: number, edges: number[]): 'good' | 'warning' | 'unsustainable' =>
+  S <= edges[0] ? 'good' : S <= edges[1] ? 'warning' : 'unsustainable';
+
 /** Collective score (R14): mean over seasons of the per-season geometric mean. */
 export const collectiveScore = (seasonScores: number[]): number => (seasonScores.length ? mean(seasonScores) : 0);

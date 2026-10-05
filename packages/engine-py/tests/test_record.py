@@ -98,10 +98,15 @@ def test_game_length_and_deck():
 
 
 def test_privacy_projection_before_debrief():
-    """§9.1: with any non-zero pump, no public projection or pre-debrief export contains W, A, Y, ΔL or P per scheme."""
+    """§9.1 and ADR 0004: before the debrief the public view of a season holds only the in-play fields — no per-scheme
+    figure and nothing computed on actual use."""
+    from fairflow_engine.record import PUBLIC_RESULT_FIELDS
     g = play_game(new_game(), pumps={"A": BASIN.pump.cap})
     public = project(g.events, "public")
     assert not keys_in(public) & SEALED_KEYS
+    for e in public:
+        if e["type"] == "season.resolved":
+            assert set(e["payload"]["public"]) == set(PUBLIC_RESULT_FIELDS) and "sealed" not in e["payload"]
     assert not any(e["type"] == "action.played" for e in public)
     assert all("pumpsTotal" in e["payload"]["public"] for e in public if e["type"] == "season.resolved")
     mine = project(g.events, "A")

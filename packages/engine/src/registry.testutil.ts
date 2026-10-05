@@ -27,4 +27,5 @@ export const scoring = (): SeasonInput['scoring'] => ({
   welfareGamma: registry('indicators.welfareGamma') as number,
   survivalFloor: registry('indicators.survivalFloor') as number,
   welfareSupplyFloor: registry('indicators.welfareSupplyFloor') as number,
+  sustainabilityBands: registry('indicators.sustainabilityBands') as number[],
 });

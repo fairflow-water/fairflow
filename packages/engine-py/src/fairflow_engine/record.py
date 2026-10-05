@@ -26,9 +26,11 @@ Visibility = Literal["public", "self", "sealed", "mixed"]
 AUTHORITY = "authority"
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
 
-# §6.2 season.resolved: which result fields are public and which are sealed until the debrief.
-SEALED_RESULT_FIELDS = ("pumpCost", "P", "W", "A", "Y", "dL")
-PUBLIC_RESULT_FIELDS = ("allocable", "pumpsTotal", "returnFlow", "stockNext", "inflowLossNext", "ePJ", "eSE", "gini",
+# §6.2 as amended by ADR 0004: during play only these are public; every figure computed on actual use is sealed
+# until the debrief (each one, with the public allocation, lets the table solve for individual pumping).
+PUBLIC_RESULT_FIELDS = ("allocable", "pumpsTotal", "observedStockNext", "inflowLossNext", "asAllocated",
+                        "sustainabilityBand")
+SEALED_RESULT_FIELDS = ("pumpCost", "P", "W", "A", "Y", "dL", "stockNext", "returnFlow", "ePJ", "eSE", "gini",
                         "giniCorrected", "F", "S", "triangle", "welfare")
 
 
@@ -144,8 +146,8 @@ def apply_event(state: State, event: dict) -> State:
         s.committed.add(p["role"])
     elif kind == "season.resolved":
         pub, sealed = p["public"], p["sealed"]
-        s.stock, s.inflowLoss, s.phase = pub["stockNext"], pub["inflowLossNext"], "reveal"
-        s.scores.append(pub["triangle"]["score"])
+        s.stock, s.inflowLoss, s.phase = sealed["stockNext"], pub["inflowLossNext"], "reveal"
+        s.scores.append(sealed["triangle"]["score"])
         for role, L, run, failed in zip(sealed["roles"], sealed["L"], sealed["lowRun"], sealed["cropFailure"]):
             s.livelihood[role], s.lowRun[role], s.cropFailure[role] = L, run, failed
     elif kind == "game.timeboxed":
@@ -363,11 +365,10 @@ class Game:
         L = [s.livelihood[role] + d for role, d in zip(roles, r["dL"])]
         v = verdict(self.setup.schemes, r["allocable"], r["W"], s.lens, r["pumpsTotal"], self.setup.lenses, floor)
         public = {k: r[k] for k in PUBLIC_RESULT_FIELDS}
-        public.update({"verdict": {k: v[k] for k in ("voted", "satisfied", "pumpingGap")},
-                       "cropFailureFlag": any(failed)})
         sealed = {k: r[k] for k in SEALED_RESULT_FIELDS}
         sealed.update({"roles": roles, "pumpsBy": dict(zip(roles, r["P"])), "L": L, "lowRun": low_run,
-                       "cropFailure": failed})
+                       "cropFailure": failed, "cropFailureFlag": any(failed),
+                       "verdict": {k: v[k] for k in ("voted", "satisfied", "pumpingGap")}})
         self._emit("season.resolved", "engine", "mixed", {"public": public, "sealed": sealed}, season=s.season)
         after = replay(self.events)
         if after.season >= self.secrets.T or after.timeboxed:

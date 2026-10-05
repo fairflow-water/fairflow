@@ -40,7 +40,8 @@ def registry_lens_params(lens: str, params: dict) -> dict:
 
 def scoring_from(params: dict) -> dict:
     return {"r3Ramp": params["indicators.r3Ramp"], "welfareGamma": params["indicators.welfareGamma"],
-            "survivalFloor": params["indicators.survivalFloor"], "welfareSupplyFloor": params["indicators.welfareSupplyFloor"]}
+            "survivalFloor": params["indicators.survivalFloor"], "welfareSupplyFloor": params["indicators.welfareSupplyFloor"],
+            "sustainabilityBands": params["indicators.sustainabilityBands"]}
 
 
 def case(schemes: list[dict], basin: dict, inflow: float, stock: float, lens: str, lens_params: dict,
@@ -82,7 +83,8 @@ def random_cases(params: dict, n: int) -> list[dict]:
                  "aquifer": {"initial": b0, "reserve": res, "lowThreshold": float(rng.uniform(res, b0)),
                              "naturalRecharge": float(rng.uniform(0, 2)),
                              "seatCostMultipliers": sorted(float(x) for x in rng.uniform(1, 3, int(rng.integers(1, 6)))),
-                             "maxInflowLossMm3": float(rng.uniform(0, 2))},
+                             "maxInflowLossMm3": float(rng.uniform(0, 2)),
+                             "tankResolution": float(rng.choice([0.25, 0.5, 1.0, 2.0]))},
                  "pump": {"cap": float(rng.uniform(0.5, 3)), "costBase": float(rng.uniform(0, 4)),
                           "costSlope": float(rng.uniform(0, 10))}}
         demand = sum(s["demandMm3"] for s in schemes)
@@ -95,7 +97,8 @@ def random_cases(params: dict, n: int) -> list[dict]:
         pumps = [float(x) for x in rng.uniform(0, basin["pump"]["cap"], m) * (rng.uniform(0, 1, m) < 0.6)]
         g = float(rng.choice([1.0, float(rng.uniform(0.3, 5))]))
         scoring = {"r3Ramp": float(rng.uniform(0.2, 1.2)), "welfareGamma": g,
-                   "survivalFloor": float(rng.uniform(0.3, 0.7)), "welfareSupplyFloor": float(rng.uniform(0.001, 0.05))}
+                   "survivalFloor": float(rng.uniform(0.3, 0.7)), "welfareSupplyFloor": float(rng.uniform(0.001, 0.05)),
+                   "sustainabilityBands": sorted(float(x) for x in rng.uniform(0.8, 1.4, 2))}
         out.append(case(schemes, basin, inflow, stock, lens, lp, pumps, scoring, f"random {k} {lens}"))
     return out
 

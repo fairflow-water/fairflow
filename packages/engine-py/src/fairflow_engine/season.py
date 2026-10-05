@@ -7,8 +7,9 @@ from __future__ import annotations
 from typing import Sequence
 
 from .allocate import allocate
-from .aquifer import inflow_loss_next, next_stock, pump_cost_per_mm3, ration_pumps, return_flow
-from .indicators import efficiency, equity_pj, equity_se, gini, gini_corrected, sustainability, triangle
+from .aquifer import inflow_loss_next, next_stock, observed_stock, pump_cost_per_mm3, ration_pumps, return_flow
+from .indicators import (efficiency, equity_pj, equity_se, gini, gini_corrected, sustainability, sustainability_band,
+                         triangle)
 from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
 from .production import yield_of
 from .welfare import welfare
@@ -37,8 +38,16 @@ def resolve_season(schemes: Sequence[Scheme], basin: Basin, inflow: float, stock
     s_capped = [max(scoring.welfareSupplyFloor, min(a, 1.0)) for a in A]
     tri = triangle(e_pj, F["consumed"], S, scoring.r3Ramp)
     wf = welfare(schemes, A, scoring.welfareGamma, floor, scoring.welfareSupplyFloor)
+    Q = list(alloc.Q)
+    as_allocated = {  # ADR 0004: the in-play dials, on the public allocation only
+        "ePJ": equity_pj(schemes, Q), "eSE": {u: equity_se(schemes, Q, u) for u in ("claimant", "hectare", "person")},
+        "F": {"consumed": efficiency(schemes, Q, "consumed", floor), "diverted": efficiency(schemes, Q, "diverted", floor)}}
     r = round6
     return {
+        "observedStockNext": r(observed_stock(basin, stock_next)),
+        "asAllocated": {"ePJ": r(as_allocated["ePJ"]), "eSE": {k: r(v) for k, v in as_allocated["eSE"].items()},
+                        "F": {k: r(v) for k, v in as_allocated["F"].items()}},
+        "sustainabilityBand": sustainability_band(S, scoring.sustainabilityBands),
         "allocable": r(allocable),
         "allocation": {"lens": lens, "Q": list(alloc.Q), "surplusToAquifer": alloc.surplusToAquifer},
         "pumpCost": [r(x) for x in cost], "P": [r(x) for x in P], "W": [r(x) for x in W], "A": [r(x) for x in A],

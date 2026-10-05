@@ -46,6 +46,7 @@ class Aquifer:
     naturalRecharge: float
     seatCostMultipliers: tuple[float, ...]
     maxInflowLossMm3: float
+    tankResolution: float      # ADR 0004: resolution of the observed level (prices pumping, drives coupling)
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,7 @@ class Basin:
         return Basin(
             reserve=d["reserve"],
             aquifer=Aquifer(a["initial"], a["reserve"], a["lowThreshold"], a["naturalRecharge"],
-                            tuple(a["seatCostMultipliers"]), a["maxInflowLossMm3"]),
+                            tuple(a["seatCostMultipliers"]), a["maxInflowLossMm3"], a["tankResolution"]),
             pump=Pump(d["pump"]["cap"], d["pump"]["costBase"], d["pump"]["costSlope"]),
         )
 
@@ -78,13 +79,14 @@ class Scoring:
     welfareGamma: float        # §2.7 PWF_γ
     survivalFloor: float       # §2.4 survival threshold; §2.7 m_i
     welfareSupplyFloor: float  # §2.7 "s_i = min(A_i, 1) floored at …"
+    sustainabilityBands: tuple[float, float]  # §2.2 band edges; ADR 0004 shows S during play as its band word only
 
     @staticmethod
     def from_dict(d: dict) -> "Scoring":
         missing = [k for k in Scoring.__dataclass_fields__ if k not in d]
         if missing:
             raise MissingParameter(f"scoring needs {missing}")
-        return Scoring(**{k: d[k] for k in Scoring.__dataclass_fields__})
+        return Scoring(**{k: (tuple(d[k]) if k == "sustainabilityBands" else d[k]) for k in Scoring.__dataclass_fields__})
 
 
 @dataclass(frozen=True)

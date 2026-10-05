@@ -123,5 +123,55 @@ def main():
           f"candidates within {IDENTIFIED} Mm³; insider = another player who knows their own pumping.")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "--implemented" not in sys.argv:
     main()
+
+
+def audit_implemented(seasons_normal: int = 30, seasons_low: int = 15) -> None:
+    """The audit on the real code path: what `season.resolved` makes public during play (record.PUBLIC_RESULT_FIELDS),
+    computed by resolve_season itself. Low-stock seasons start near B_res, where pumping can be rationed."""
+    from fairflow_engine import Scoring, resolve_season
+    from fairflow_engine.record import PUBLIC_RESULT_FIELDS
+    scoring = Scoring.from_dict({"r3Ramp": params["indicators.r3Ramp"], "welfareGamma": params["indicators.welfareGamma"],
+                                 "survivalFloor": FLOOR, "welfareSupplyFloor": params["indicators.welfareSupplyFloor"],
+                                 "sustainabilityBands": params["indicators.sustainabilityBands"]})
+    rng = np.random.default_rng(7)  # analysis setting
+    grid = np.round(np.arange(0, CAP + 1e-9, GRID_STEP), 6)
+    candidates = [tuple(c) for c in itertools.product(grid, repeat=len(SCHEMES))]
+    rows = {}
+    for k in range(seasons_normal + seasons_low):
+        low = k >= seasons_normal
+        card, lens = ["dry", "normal", "wet"][k % 3], ["proportional", "egalitarian", "capability", "equal_sacrifice"][k % 4]
+        aq = BASIN.aquifer
+        stock = float(rng.uniform(aq.reserve, aq.reserve + 2 * CAP) if low else rng.uniform(aq.lowThreshold, aq.initial))
+        true_P = tuple(float(rng.choice(grid)) if rng.uniform() < 0.6 else 0.0 for _ in SCHEMES)
+
+        def public(P):
+            r = resolve_season(SCHEMES, BASIN, base["inflow"][card], stock, lens, lens_params(lens), list(P), scoring)
+            return repr({f: r[f] for f in PUBLIC_RESULT_FIELDS})
+
+        obs = public(true_P)
+        feasible = np.array([c for c in candidates if public(c) == obs])
+        s = rows.setdefault("low stock (rationing possible)" if low else "normal stock", {"out_who": 0, "in_id": 0, "in_who": 0, "out_id": 0, "n": 0})
+        s["n"] += len(SCHEMES)
+        for i in range(len(SCHEMES)):
+            col = feasible[:, i]
+            s["out_id"] += np.ptp(col) <= IDENTIFIED
+            s["out_who"] += len(set(col > 0)) == 1
+            ins_id = ins_who = False
+            for j in range(len(SCHEMES)):
+                if j != i:
+                    sub = feasible[np.isclose(feasible[:, j], true_P[j])][:, i]
+                    ins_id |= np.ptp(sub) <= IDENTIFIED
+                    ins_who |= len(set(sub > 0)) == 1
+            s["in_id"] += ins_id
+            s["in_who"] += ins_who
+    print("\n| As implemented (season.resolved, public part) | Outsider: identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |")
+    print("|---|---|---|---|---|")
+    for name, s in rows.items():
+        pct = lambda x: f"{100 * x / s['n']:.0f} %"
+        print(f"| {name} | {pct(s['out_id'])} | {pct(s['out_who'])} | {pct(s['in_id'])} | {pct(s['in_who'])} |")
+
+
+if __name__ == "__main__" and "--implemented" in sys.argv:
+    audit_implemented()

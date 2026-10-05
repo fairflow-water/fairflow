@@ -153,7 +153,8 @@ def basin_v1() -> dict:
                 "people": N[i], "kappa": kappa, "price": price, "areaHa": areas[i]} for i, n in enumerate(names)]
     basin = {"reserve": reserve,
              "aquifer": {"initial": B0, "reserve": Bres, "lowThreshold": Blow, "naturalRecharge": 0.0,
-                         "seatCostMultipliers": pump[3:6], "maxInflowLossMm3": coupling[0]},
+                         "seatCostMultipliers": pump[3:6], "maxInflowLossMm3": coupling[0],
+                         "tankResolution": registry()["basin.aquifer.tankResolution"]},  # ADR 0004
              "pump": {"cap": pump[0], "costBase": pump[1], "costSlope": pump[2]}}
     plain = json.loads(json.dumps({"schemes": schemes, "basin": basin, "inflow": dict(zip(["wet", "normal", "dry"], inflow))}))
     return plain  # engine inputs as plain floats; expected values keep their printed precision (Num)

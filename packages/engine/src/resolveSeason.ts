@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 import { allocate, type LensParams } from './allocate.js';
-import { inflowLossNext, nextStock, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
-import { efficiency, equityPJ, equitySE, gini, giniCorrected, sustainability, triangle } from './indicators.js';
+import { inflowLossNext, nextStock, observedStock, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
+import { efficiency, equityPJ, equitySE, gini, giniCorrected, sustainability, sustainabilityBand, triangle } from './indicators.js';
 import { yieldOf } from './production.js';
 import { round6, type Allocation, type Basin, type LensId, type Scheme } from './types.js';
 import { welfare, type Welfare } from './welfare.js';
@@ -16,10 +16,13 @@ export interface SeasonInput {
   lens: LensId;
   lensParams: LensParams;
   pumps: number[];          // requested pumping per scheme, 0..cap
-  scoring: { r3Ramp: number; welfareGamma: number; survivalFloor: number; welfareSupplyFloor: number };
+  scoring: { r3Ramp: number; welfareGamma: number; survivalFloor: number; welfareSupplyFloor: number; sustainabilityBands: number[] };
 }
 
 export interface SeasonResult {
+  observedStockNext: number;
+  asAllocated: { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } };
+  sustainabilityBand: 'good' | 'warning' | 'unsustainable';
   allocable: number; allocation: Allocation;
   pumpCost: number[]; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[];
   pumpsTotal: number; returnFlow: number; stockNext: number; inflowLossNext: number;
@@ -52,10 +55,18 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
   const F = { consumed: efficiency(s, W, 'consumed', floor), diverted: efficiency(s, W, 'diverted', floor) };
   const S = sustainability(s, W, allocable, basin.aquifer.naturalRecharge);
   const sCapped = A.map(a => Math.max(input.scoring.welfareSupplyFloor, Math.min(a, 1)));
+  const Q = allocation.Q; // ADR 0004: the in-play dials, on the public allocation only
   const r = round6;
   const tri = triangle(ePJ, F.consumed, S, input.scoring.r3Ramp);
   const wf = welfare(s, A, { gamma: input.scoring.welfareGamma, floor, supplyFloor: input.scoring.welfareSupplyFloor });
   return {
+    observedStockNext: r(observedStock(basin, stockNext)),
+    asAllocated: {
+      ePJ: r(equityPJ(s, Q)),
+      eSE: { claimant: r(equitySE(s, Q, 'claimant')), hectare: r(equitySE(s, Q, 'hectare')), person: r(equitySE(s, Q, 'person')) },
+      F: { consumed: r(efficiency(s, Q, 'consumed', floor)), diverted: r(efficiency(s, Q, 'diverted', floor)) },
+    },
+    sustainabilityBand: sustainabilityBand(S, input.scoring.sustainabilityBands),
     allocable: r(allocable), allocation,
     pumpCost: pumpCost.map(r), P: P.map(r), W: W.map(r), A: A.map(r), Y: Y.map(r), dL: dL.map(r),
     pumpsTotal: r(pumpsTotal), returnFlow: r(returns), stockNext: r(stockNext), inflowLossNext: r(inflowLossNext(basin, stockNext)),

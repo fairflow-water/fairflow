@@ -17,7 +17,8 @@ BASIN = Basin.from_dict(BASE["basin"])
 INFLOW = BASE["inflow"]
 PARAMS = bp.fixture_parameters()
 SCORING = Scoring(r3Ramp=PARAMS["indicators.r3Ramp"], welfareGamma=PARAMS["indicators.welfareGamma"],
-                  survivalFloor=PARAMS["indicators.survivalFloor"], welfareSupplyFloor=PARAMS["indicators.welfareSupplyFloor"])
+                  survivalFloor=PARAMS["indicators.survivalFloor"], welfareSupplyFloor=PARAMS["indicators.welfareSupplyFloor"],
+                  sustainabilityBands=tuple(PARAMS["indicators.sustainabilityBands"]))
 LENSES = ["utilitarian", "weighted_utilitarian", "egalitarian", "proportional", "capability", "sufficientarian",
           "prioritarian", "equal_sacrifice", "talmud"]
 

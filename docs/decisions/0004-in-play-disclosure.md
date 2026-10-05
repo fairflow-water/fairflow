@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0004 — What the table sees during play, so that individual pumping stays private
 
-- Status: **proposed**, 2026-10-05. Direction chosen by the maintainer: allocation-based dials during play, plus coarse words for actual outcomes. Three model questions remain for the science reviewer (below). Amends R17–R19, S3, S6, S7 and §6.2.
+- Status: **accepted** in part, 2026-10-05: the maintainer chose option (ii) below with a 1 Mm³ tank (recommended after the research and measurements here). Items 5–6 (audit threshold, claim wording) remain proposed. Amends R17–R19, S3, S6, S7, S9 and §6.2, §2.2, §2.6.
 
 ## Context
 
@@ -66,12 +66,27 @@ Also to decide:
 - the audit thresholds;
 - whether 4–5-scheme tables (less leakage) may use a finer tank.
 
+## Maintainer decision (2026-10-05)
+
+| Question | Decision |
+|---|---|
+| Exact-stock channels | option (ii): pump cost and GW–SW coupling are computed from the observed tank level |
+| Tank resolution | 1 Mm³ (admin-settable per scenario) |
+| Observed level | the last full step below the true stock, floor(B / resolution) × resolution, as a tank gauge shows completed segments |
+
+The true stock, return flows by irrigation method and the mass balance are unchanged and exact in the record. Only what players perceive, and what prices their pumping, is coarse. Rationing at B_res uses the true stock: it is physical.
+
 ## Consequences
 
 - Engine:
   - `season.resolved` public part: ΣP, allocation-based dials, sustainability band, coarse tank. Sealed part: exact stock, actual-use dials, per-scheme values.
   - New registry parameter: tank display resolution.
   - The projection tests extend to the feasibility audit.
+- Moved to the debrief by this decision, because each is computed on actual use:
+  - the per-season verdict, welfare scores, Gini and triangle;
+  - the crop-failure flag.
+
+  The collective score and crop-failure flag appear at game end (S8), after play. **Open for the maintainer:** S7 beat 3 (the triangle during play) needs a design that uses only the as-allocated dials and the sustainability band.
 - Screens:
   - S7 beat 2 shows the allocation-based equity needles, labelled "as allocated".
   - S7 beat 1 shows the sustainability band word and the coarse tank.

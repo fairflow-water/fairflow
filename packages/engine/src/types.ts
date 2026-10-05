@@ -20,6 +20,7 @@ export interface Basin {
     initial: number; reserve: number; lowThreshold: number; naturalRecharge: number;
     seatCostMultipliers: number[];   // by seat, applied once B < B_low; seats beyond the list use its last value
     maxInflowLossMm3: number;        // GW–SW coupling; 0 disables it
+    tankResolution: number;          // ADR 0004: resolution of the observed level (prices pumping, drives coupling)
   };
   pump: { cap: number; costBase: number; costSlope: number };
 }

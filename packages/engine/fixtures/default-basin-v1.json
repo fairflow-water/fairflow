@@ -1,7 +1,7 @@
 {
   "$comment": "SPDX-License-Identifier: CC-BY-4.0 · Blueprint §3.1–3.2 reference vectors, β = 1, r₀ = 0, no actions, no pumping (the §2.6 v1 reduction). Two decimals; welfare columns are §3.1 (PWF3 is the raw sum, γ = 3). Model parameters come from packages/scenarios/parameters.json. The β set is generated on build day 3.",
   "basin": { "reserve": 2, "inflow": { "wet": 22, "normal": 17, "dry": 12 },
-    "aquifer": { "initial": 20, "reserve": 5, "lowThreshold": 10, "naturalRecharge": 0, "seatCostMultipliers": [1.0, 1.5, 2.0], "maxInflowLossMm3": 1.0 },
+    "aquifer": { "initial": 20, "reserve": 5, "lowThreshold": 10, "naturalRecharge": 0, "seatCostMultipliers": [1.0, 1.5, 2.0], "maxInflowLossMm3": 1.0, "tankResolution": 1 },
     "pump": { "cap": 2, "costBase": 2, "costSlope": 6 } },
   "wet": { "Q": [6.25, 9.00, 3.40], "surplusToAquifer": 1.35, "sumY": 11500, "ePJ": 1.00, "eSE": 0.63, "F": 1.00, "S": 0.93 },
   "schemes": [

@@ -1,16 +1,25 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
 // SPDX-License-Identifier: MIT
 
-import type { Basin, Scheme } from './types.js';
+// Mirror of packages/engine-py/src/fairflow_engine/aquifer.py (ADR 0002).
+
+import { round6, type Basin, type Scheme } from './types.js';
+
+/** ADR 0004: the level players see — the last full step of `tankResolution` below the true stock. */
+export function observedStock(basin: Basin, stock: number): number {
+  const res = basin.aquifer.tankResolution;
+  return Math.floor(round6(stock / res)) * res;
+}
 
 /**
- * Blueprint §2.2 — pump cost per Mm³ from the stock at the start of the season:
+ * Blueprint §2.2 — pump cost per Mm³ from the observed level at the start of the season (ADR 0004):
  * c = costBase + costSlope·(1 − B/B₀), times the seat multiplier once B < B_low.
  */
 export function pumpCostPerMm3(basin: Basin, stock: number, seat: number): number {
   const { aquifer: q, pump } = basin;
-  const base = pump.costBase + pump.costSlope * (1 - stock / q.initial);
-  if (stock >= q.lowThreshold) return base;
+  const seen = observedStock(basin, stock);
+  const base = pump.costBase + pump.costSlope * (1 - seen / q.initial);
+  if (seen >= q.lowThreshold) return base;
   const m = q.seatCostMultipliers;
   return base * m[Math.min(seat, m.length) - 1];
 }
@@ -31,8 +40,8 @@ export function nextStock(basin: Basin, stock: number, surplus: number, returns:
   return Math.max(basin.aquifer.reserve, stock + surplus + basin.aquifer.naturalRecharge + returns - pumped);
 }
 
-/** §2.6 GW–SW coupling — next season's inflow falls by maxLoss·(B_low − B)/B_low while B < B_low. */
+/** §2.6 GW–SW coupling — next inflow falls by maxLoss·(B_low − B)/B_low while B < B_low, B the observed level (ADR 0004). */
 export function inflowLossNext(basin: Basin, stockNext: number): number {
   const { lowThreshold: low, maxInflowLossMm3: loss } = basin.aquifer;
-  return loss * Math.max(0, (low - stockNext) / low);
+  return loss * Math.max(0, (low - observedStock(basin, stockNext)) / low);
 }

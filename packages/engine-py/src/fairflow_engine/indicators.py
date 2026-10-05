@@ -73,6 +73,11 @@ def triangle(e_pj: float, F: float, S: float, r3_ramp: float) -> dict[str, float
             "score": float(np.cbrt(r1 * r2 * r3))}
 
 
+def sustainability_band(S: float, edges: Sequence[float]) -> str:
+    """§2.2 'sustainability good ≤ 1.00 / warning 1.00–1.15 / unsustainable > 1.15', with the edges from the registry."""
+    return "good" if S <= edges[0] else "warning" if S <= edges[1] else "unsustainable"
+
+
 def collective_score(season_scores: Sequence[float]) -> float:
     """R14: mean over seasons of the per-season geometric mean."""
     return float(np.mean(season_scores)) if len(season_scores) else 0.0

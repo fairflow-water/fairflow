@@ -36,6 +36,9 @@
       "role": "pump cost at a full aquifer" },
     { "key": "actions.pump.costSlope", "default": 6, "unit": "points per Mm³", "section": "§2.2", "quote": "c = 2 + 6(1 − Bₜ/B₀)",
       "role": "pump cost rise with depletion" },
+    { "key": "basin.aquifer.tankResolution", "default": 1, "unit": "Mm³", "section": "ADR 0004",
+      "sourceFile": "docs/decisions/0004-in-play-disclosure.md", "quote": "| Tank resolution | 1 Mm³ (admin-settable per scenario) |",
+      "role": "resolution of the observed aquifer level, which players see and which prices pumping and drives the GW–SW coupling (ADR 0004)" },
     { "key": "basin.aquifer.seatCostMultipliers", "default": [1.0, 1.5, 2.0], "unit": "× cost by seat", "section": "§2.2", "quote": "× seat multiplier 1.0 / 1.5 / 2.0",
       "role": "position-dependent pump cost once B < B_low" }
   ]

@@ -17,24 +17,36 @@ SPDX-License-Identifier: CC-BY-4.0
   - Statistical disclosure control (Hundepool et al. 2025): with 3 contributors only exact disclosure can be prevented, and rounding or banding can be "unpicked" by combining outputs.
   - Differential privacy is unsuitable here: with n = 3 the noise is the size of the signal.
 
-## Measured leakage (`packages/engine-py/analysis/privacy_leakage.py`)
+## Measured leakage (`packages/engine-py/analysis/privacy_leakage.py`; results in `analysis/privacy_leakage_results.md` and `privacy_leakage_rationing.md`)
 
-- **Method:** the default basin with the shipped β, 45 seasons over 3 cards and 5 lenses, and every pumping vector on a 0.1 Mm³ grid.
+- **Method:**
+  - The default basin with the shipped β; candidate pumping vectors on a 0.1 Mm³ grid.
+  - 400 seasons at normal stock (B_low to B₀).
+  - 200 seasons at low stock through the real engine path, with rationing (111 of the 200 seasons were rationed).
 - **Definitions:**
-  - "Identified" means all candidates consistent with the display agree within 0.1 Mm³.
-  - An "insider" is another player who knows their own pumping.
+  - "Identified" means every candidate consistent with the display agrees within 0.1 Mm³.
+  - An insider is another player who knows their own pumping.
+  - Brackets are 95 % Wilson intervals.
+- An earlier 30–45-season run was too small: its estimates moved by up to 27 points with the random seed. It is superseded by these results.
 
-| In-play display | Outsider: identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |
+| In-play display (normal stock) | Outsider: identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |
 |---|---|---|---|---|
 | A. §6.2 as written | 100 % | 100 % | 100 % | 100 % |
-| B. ΣP + exact tank, dials on allocation only | 25 % | 60 % | 100 % | 100 % |
-| C. ΣP + tank to 1 Mm³ | 4 % | 13 % | 35 % | 59 % |
-| E. ΣP only (floor while ΣP is public) | 2 % | 7 % | 32 % | 51 % |
-| G. ΣP + tank to 1 Mm³ + all actual-use band words | 10 % | 36 % | 45 % | 79 % |
-| **I. ΣP + tank to 1 Mm³ + sustainability band only** | **4 %** | **17 %** | **35 %** | **60 %** |
-| J. ΣP + tank to 1 Mm³ + equity bands only | 9 % | 30 % | 42 % | 74 % |
+| B. ΣP + exact tank, dials on allocation only | 37 % (34–40) | 65 % (62–68) | 100 % | 100 % |
+| E. ΣP only — the floor while ΣP is public | 9 % (7–10) | 10 % (9–12) | 38 % (35–40) | 57 % (54–59) |
+| G. ΣP + tank to 1 Mm³ + all actual-use band words | 17 % (15–19) | 38 % (36–41) | 50 % (47–52) | 82 % (80–84) |
+| **I. ΣP + tank to 1 Mm³ + sustainability band only (implemented)** | **10 % (9–12)** | **18 % (16–21)** | **41 % (39–44)** | **68 % (65–70)** |
 
-Row E is inherent: with three schemes, the public total tells each player what the other two did together. This is standard in commons games and acceptable under SDC norms. Anything above row E is extra disclosure.
+| Low stock, real engine path with rationing | Outsider: identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |
+|---|---|---|---|---|
+| Floor: rationed ΣP only | 8 % (7–11) | 6 % (4–8) | 22 % (18–25) | 30 % (26–33) |
+| **Implemented: public part of season.resolved** | **9 % (7–12)** | **12 % (10–15)** | **23 % (20–26)** | **40 % (36–44)** |
+
+**What the numbers show:**
+- On identical seasons the implemented public output and the simulated design I give identical feasible sets.
+- Exact identification is indistinguishable from the floor at both stock levels.
+- What remains is knowledge of *whether* a scheme pumped: +6 to +11 points above the floor, mostly from the tank level.
+- The floor itself is inherent: with three schemes, the public total tells each player what the other two did together. This is standard in commons games and acceptable under SDC norms.
 
 ## Decision (proposed)
 
@@ -42,7 +54,7 @@ Row E is inherent: with three schemes, the public total tells each player what t
 2. **Total pumping ΣP is public and exact** (R17, as in every commons game).
 3. **Sustainability is shown during play as its band word only** (good / warning / unsustainable, with the registry's fixed band edges), keeping "the pumps move sustainability" (§1). Equity and efficiency get no actual-use band words during play: they cost the most privacy (row J).
 4. **The aquifer tank is shown at a coarse resolution.** The resolution is an admin-settable display parameter; 1 Mm³ was measured. The exact stock moves from the public to the sealed part of `season.resolved`. The public part carries the coarse level.
-5. **A feasibility audit is a release gate:** `analysis/privacy_leakage.py` is run on every shipped scenario, and the in-play display may not exceed thresholds the maintainer sets (proposal: no more than row I + 5 points).
+5. **A feasibility audit is a release gate:** `analysis/privacy_leakage.py` is run on every shipped scenario, and the in-play display may not exceed thresholds the maintainer sets (proposal: "identified" within the floor's 95 % interval, and "knows whether pumped" no more than 12 points above the floor).
 6. **Claims are worded to match.** R17 changes to "individual pumping is not displayed and cannot be computed from what is displayed beyond what the total implies". The JOSS draft's "provably hidden" is replaced by this measured statement.
 
 ## Open — science reviewer (model equations, not display)

@@ -27,7 +27,7 @@ from fairflow_engine import (allocate, efficiency, equity_pj, equity_se, LensPar
                              return_flow, Scheme, Basin, sustainability)
 
 GRID_STEP = 0.1          # analysis setting: resolution of the candidate grid (Mm³)
-SEASONS = 45             # analysis setting
+SEASONS = 400            # analysis setting (45 was too few: estimates swung 0–27 % with the seed)
 IDENTIFIED = 0.1         # analysis setting: a scheme's pumping counts as identified if all candidates agree within this
 
 params = bp.registry()
@@ -81,7 +81,14 @@ def displays(Q, P, allocable, stock, surplus):
     }
 
 
-def main():
+def wilson(k: int, n: int) -> tuple[float, float]:
+    """95 % Wilson score interval for a proportion (scipy.stats.binomtest)."""
+    from scipy.stats import binomtest
+    ci = binomtest(int(k), int(n)).proportion_ci(confidence_level=0.95, method="wilson")
+    return ci.low, ci.high
+
+
+def main(low_stock: bool = False):
     rng = np.random.default_rng(20261005)  # analysis setting
     grid = np.round(np.arange(0, CAP + 1e-9, GRID_STEP), 6)
     candidates = [tuple(c) for c in itertools.product(grid, repeat=len(SCHEMES))]
@@ -92,7 +99,8 @@ def main():
         inflow = base["inflow"][card]
         allocable = max(0.0, inflow - BASIN.reserve)
         alloc = allocate(lens, SCHEMES, allocable, lens_params(lens), FLOOR)
-        stock = float(rng.uniform(BASIN.aquifer.lowThreshold, BASIN.aquifer.initial))
+        aq = BASIN.aquifer
+        stock = float(rng.uniform(aq.reserve, aq.reserve + 2 * CAP) if low_stock else rng.uniform(aq.lowThreshold, aq.initial))
         true_P = tuple(float(rng.choice(grid)) if rng.uniform() < 0.6 else 0.0 for _ in SCHEMES)
         observed = displays(alloc.Q, true_P, allocable, stock, alloc.surplusToAquifer)
         signatures = [displays(alloc.Q, c, allocable, stock, alloc.surplusToAquifer) for c in candidates]
@@ -114,17 +122,23 @@ def main():
                     ins_who |= len(set(sub > 0)) == 1
                 s["in_id"] += ins_id
                 s["in_who"] += ins_who
+    title = ("Low stock (B_res to B_res + 2·cap); this fast path does not apply rationing — see --implemented"
+             if low_stock else "Normal stock (B_low to B₀)")
+    print(f"\n### {title}\n")
     print("| In-play display | Outsider: pumping identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |")
     print("|---|---|---|---|---|")
     for design, s in stats.items():
-        pct = lambda x: f"{100 * x / s['n']:.0f} %"
-        print(f"| {design} | {pct(s['out_id'])} | {pct(s['out_who'])} | {pct(s['in_id'])} | {pct(s['in_who'])} |")
-    print(f"\n{SEASONS} seasons × {len(SCHEMES)} schemes; grid {GRID_STEP} Mm³ (0..{CAP}); identified = all consistent "
-          f"candidates within {IDENTIFIED} Mm³; insider = another player who knows their own pumping.")
+        def cell(k, n=s["n"]):
+            lo, hi = wilson(k, n)
+            return f"{100 * k / n:.0f} % ({100 * lo:.0f}–{100 * hi:.0f})"
+        print(f"| {design} | {cell(s['out_id'])} | {cell(s['out_who'])} | {cell(s['in_id'])} | {cell(s['in_who'])} |")
+    print(f"\n{SEASONS} seasons × {len(SCHEMES)} schemes; 95 % Wilson intervals; grid {GRID_STEP} Mm³ (0..{CAP}); "
+          f"identified = all consistent candidates within {IDENTIFIED} Mm³; insider = another player who knows their own pumping.")
 
 
 if __name__ == "__main__" and "--implemented" not in sys.argv:
-    main()
+    main(low_stock=False)
+    main(low_stock=True)
 
 
 def audit_implemented(seasons_normal: int = 30, seasons_low: int = 15) -> None:
@@ -146,32 +160,49 @@ def audit_implemented(seasons_normal: int = 30, seasons_low: int = 15) -> None:
         stock = float(rng.uniform(aq.reserve, aq.reserve + 2 * CAP) if low else rng.uniform(aq.lowThreshold, aq.initial))
         true_P = tuple(float(rng.choice(grid)) if rng.uniform() < 0.6 else 0.0 for _ in SCHEMES)
 
-        def public(P):
-            r = resolve_season(SCHEMES, BASIN, base["inflow"][card], stock, lens, lens_params(lens), list(P), scoring)
-            return repr({f: r[f] for f in PUBLIC_RESULT_FIELDS})
-
-        obs = public(true_P)
-        feasible = np.array([c for c in candidates if public(c) == obs])
-        s = rows.setdefault("low stock (rationing possible)" if low else "normal stock", {"out_who": 0, "in_id": 0, "in_who": 0, "out_id": 0, "n": 0})
-        s["n"] += len(SCHEMES)
-        for i in range(len(SCHEMES)):
-            col = feasible[:, i]
-            s["out_id"] += np.ptp(col) <= IDENTIFIED
-            s["out_who"] += len(set(col > 0)) == 1
-            ins_id = ins_who = False
-            for j in range(len(SCHEMES)):
-                if j != i:
-                    sub = feasible[np.isclose(feasible[:, j], true_P[j])][:, i]
-                    ins_id |= np.ptp(sub) <= IDENTIFIED
-                    ins_who |= len(set(sub > 0)) == 1
-            s["in_id"] += ins_id
-            s["in_who"] += ins_who
-    print("\n| As implemented (season.resolved, public part) | Outsider: identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |")
+        results = {c: resolve_season(SCHEMES, BASIN, base["inflow"][card], stock, lens, lens_params(lens), list(c), scoring)
+                   for c in candidates + [true_P]}
+        signatures = {
+            "implemented: public part of season.resolved": lambda r: repr({f: r[f] for f in PUBLIC_RESULT_FIELDS}),
+            "floor: rationed ΣP only": lambda r: repr(r["pumpsTotal"]),
+        }
+        prefix = "low stock" if low else "normal stock"
+        truth = results[true_P]
+        rows.setdefault(f"{prefix}: seasons with rationing", {"count": 0, "of": 0})
+        rows[f"{prefix}: seasons with rationing"]["of"] += 1
+        rows[f"{prefix}: seasons with rationing"]["count"] += sum(true_P) > max(0.0, stock - BASIN.aquifer.reserve)
+        for label, sig in signatures.items():
+            obs = sig(truth)
+            feasible = np.array([c for c in candidates if sig(results[c]) == obs])
+            s = rows.setdefault(f"{prefix} — {label}", {"out_who": 0, "in_id": 0, "in_who": 0, "out_id": 0, "n": 0})
+            s["n"] += len(SCHEMES)
+            for i in range(len(SCHEMES)):
+                col = feasible[:, i]
+                s["out_id"] += np.ptp(col) <= IDENTIFIED
+                s["out_who"] += len(set(col > 0)) == 1
+                ins_id = ins_who = False
+                for j in range(len(SCHEMES)):
+                    if j != i:
+                        sub = feasible[np.isclose(feasible[:, j], true_P[j])][:, i]
+                        ins_id |= np.ptp(sub) <= IDENTIFIED
+                        ins_who |= len(set(sub > 0)) == 1
+                s["in_id"] += ins_id
+                s["in_who"] += ins_who
+    print("\n### As implemented: the real code path, with rationing\n")
+    print("| Display | Outsider: identified | Outsider: knows whether pumped | Insider: identified | Insider: knows whether pumped |")
     print("|---|---|---|---|---|")
+    notes = []
     for name, s in rows.items():
-        pct = lambda x: f"{100 * x / s['n']:.0f} %"
-        print(f"| {name} | {pct(s['out_id'])} | {pct(s['out_who'])} | {pct(s['in_id'])} | {pct(s['in_who'])} |")
+        if "count" in s:
+            notes.append(f"{name}: {s['count']} of {s['of']}")
+            continue
+
+        def cell(k, n=s["n"]):
+            lo, hi = wilson(k, n)
+            return f"{100 * k / n:.0f} % ({100 * lo:.0f}–{100 * hi:.0f})"
+        print(f"| {name} | {cell(s['out_id'])} | {cell(s['out_who'])} | {cell(s['in_id'])} | {cell(s['in_who'])} |")
+    print("\n" + "; ".join(notes) + f". 95 % Wilson intervals; grid {GRID_STEP} Mm³; identified within {IDENTIFIED} Mm³.")
 
 
 if __name__ == "__main__" and "--implemented" in sys.argv:
-    audit_implemented()
+    audit_implemented(seasons_normal=0, seasons_low=200)

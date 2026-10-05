@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: cd packages/engine && npm install && npx tsc -p tsconfig.json && npx vitest run
+      - name: β fixtures are up to date with the engine
+        run: cd packages/engine && npm run fixtures:beta && git diff --exit-code fixtures/default-basin-beta.json
   tag-reminder:
     name: Release checklist (tags only)
     if: startsWith(github.ref, 'refs/tags/v')

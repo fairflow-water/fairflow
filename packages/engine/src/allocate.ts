@@ -121,6 +121,7 @@ export function allocate(lens: LensId, schemes: Scheme[], allocable: number, par
   else if (lens === 'utilitarian') Q = maxValue(schemes, allocable);
   else if (lens === 'sufficientarian') Q = sufficientarian(schemes, allocable, params);
   else Q = weightedCEA(D, weightsFor(lens, schemes, params), allocable);
-  const surplus = round6(Math.max(0, allocable - Q.reduce((a, b) => a + b, 0)));
+  // §2.6: surplus = max(0, AW − ΣD), from the inputs, so rounding Q_i cannot send phantom water to the aquifer.
+  const surplus = round6(Math.max(0, allocable - D.reduce((a, b) => a + b, 0)));
   return { lens, Q, surplusToAquifer: surplus };
 }

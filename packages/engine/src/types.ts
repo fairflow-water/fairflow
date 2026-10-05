@@ -25,4 +25,5 @@ export interface Basin {
 }
 export type LensId = 'utilitarian' | 'weighted_utilitarian' | 'egalitarian' | 'proportional' | 'capability' | 'sufficientarian' | 'prioritarian' | 'equal_sacrifice' | 'talmud';
 export interface Allocation { lens: LensId; Q: number[]; surplusToAquifer: number }
-export const round6 = (x: number): number => Math.round(x * 1e6) / 1e6;
+/** §7.2 — every stored number rounded to 1e-6 at the event boundary, half up; same formula as the Python engine. */
+export const round6 = (x: number): number => Math.floor(x * 1e6 + 0.5) / 1e6; // §7.2 rounding

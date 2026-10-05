@@ -1,5 +1,5 @@
 {
   "compilerOptions": { "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler", "strict": true,
     "declaration": true, "outDir": "dist", "rootDir": "src", "types": ["node"] },
-  "include": ["src"], "exclude": ["src/**/*.test.ts"]
+  "include": ["src"], "exclude": ["src/**/*.test.ts", "src/**/*.testutil.ts"]
 }

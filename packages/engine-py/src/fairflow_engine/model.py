@@ -109,4 +109,4 @@ class LensParams:
 
 def round6(x: float) -> float:
     """§7.2 — every stored number rounded to 1e-6 at the event boundary, half up (as the TypeScript mirror does)."""
-    return math.floor(x * 1e6 + 0.5) / 1e6
+    return math.floor(x * 1e6 + 0.5) / 1e6  # §7.2 rounding to 1e-6, half up

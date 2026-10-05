@@ -21,10 +21,10 @@ export async function runServe(input: Readable, output: Writable, engineVersion:
 
 const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const [cmd] = process.argv.slice(2);
+  const [cmd] = process.argv.slice(2); // layout: argv[0..1] are node and the script
   if (cmd !== 'serve') {
     process.stderr.write('usage: fairflow-engine serve   (NDJSON commands on stdin, replies on stdout)\n');
-    process.exit(2);
+    process.exit(2); // layout: exit code 2 = usage error
   }
   const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
   await runServe(process.stdin, process.stdout, version);

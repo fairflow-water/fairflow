@@ -27,7 +27,7 @@ def resolve_season(schemes: Sequence[Scheme], basin: Basin, inflow: float, stock
     W = [q + p for q, p in zip(alloc.Q, P)]
     A = [w / s.demandMm3 for s, w in zip(schemes, W)]
     Y = [yield_of(s, w, floor) for s, w in zip(schemes, W)]
-    dL = [s.price * y / 100 - c * p for s, y, c, p in zip(schemes, Y, cost, P)]
+    dL = [s.price * y / 100 - c * p for s, y, c, p in zip(schemes, Y, cost, P)]  # §2.4 ΔL = pY/100 − c_p P
     pumped = sum(P)
     returns = return_flow(schemes, W)
     stock_next = next_stock(basin, stock, alloc.surplusToAquifer, returns, pumped)
@@ -61,7 +61,7 @@ def verdict(schemes: Sequence[Scheme], allocable: float, W: Sequence[float], vot
     for lens, params in lenses:
         ideal = allocate(lens, schemes, allocable, params, survival_floor).Q
         d = sum(abs(a - q / s.demandMm3) for a, q, s in zip(A, ideal, schemes))
-        if best is None or d < best["distance"] - 1e-9:
+        if best is None or d < best["distance"] - 1e-9:  # tolerance for ties (§2.7: ties to the earlier card)
             best = {"voted": voted, "satisfied": lens, "distance": d, "pumpingGap": pumping_gap}
     if best is None:
         raise ValueError("verdict: no lenses to compare")

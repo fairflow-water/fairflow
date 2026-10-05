@@ -16,7 +16,7 @@ import type { Basin, LensId, Scheme } from './types.js';
  *   {"id": 4, "cmd": "view", "game": "g1"}
  *   {"id": 5, "cmd": "close", "game": "g1"}
  *   {"id": 6, "cmd": "resolve", ...SeasonInput}            stateless, one season
- *   {"id": 7, "cmd": "allocate", "lens": ..., "schemes": [...], "allocable": 10, "params": {}}
+ *   {"id": 7, "cmd": "allocate", "lens": ..., "schemes": [...], "allocable": 10, "params": {...}, "survivalFloor": ...}
  * Every reply is {"id", "ok": true, "result"} or {"id", "ok": false, "error": {"code", "message"}}; a bad command never
  * stops the process. `basin.inflow` holds the absolute inflow per card (§2.2). The deck is the caller's: the sealed,
  * committed deck of a real game belongs to the record (week 2), and the balance harness draws its own.
@@ -59,7 +59,7 @@ function run(state: ServeState, msg: Record<string, unknown>): unknown {
       const id = String(msg.game ?? `g${state.games.size + 1}`);
       need(!state.games.has(id), 'game_exists', `game "${id}" already exists`);
       const schemes = msg.schemes as Scheme[]; const basin = msg.basin as Game['basin']; const deck = msg.deck as Card[];
-      need(Array.isArray(schemes) && schemes.length >= 3 && schemes.length <= 5, 'bad_input', 'schemes: 3 to 5 required');
+      need(Array.isArray(schemes) && schemes.length >= 3 && schemes.length <= 5, 'bad_input', 'schemes: 3 to 5 required'); // §1.2 three to five schemes
       need(basin?.aquifer && basin.pump && basin.inflow, 'bad_input', 'basin needs aquifer, pump and inflow');
       need(Array.isArray(deck) && deck.length > 0 && deck.every(c => CARDS.includes(c)), 'bad_input', 'deck: non-empty list of wet | normal | dry');
       need(msg.scoring, 'bad_input', 'scoring required');
@@ -74,7 +74,7 @@ function run(state: ServeState, msg: Record<string, unknown>): unknown {
       const card = g.deck[g.season];
       const result: SeasonResult = resolveSeason({
         schemes: g.schemes, basin: g.basin, inflow: g.basin.inflow[card] - g.inflowLoss, stock: g.stock,
-        lens: msg.lens as LensId, lensParams: msg.lensParams as LensParams | undefined, pumps, scoring: g.scoring,
+        lens: msg.lens as LensId, lensParams: (msg.lensParams ?? {}) as LensParams, pumps, scoring: g.scoring,
       });
       g.season += 1; g.stock = result.stockNext; g.inflowLoss = result.inflowLossNext; g.scores.push(result.triangle.score);
       return { card, result, ...viewOf(g) };
@@ -87,7 +87,8 @@ function run(state: ServeState, msg: Record<string, unknown>): unknown {
     case 'resolve':
       return resolveSeason(msg as unknown as SeasonInput);
     case 'allocate':
-      return allocate(msg.lens as LensId, msg.schemes as Scheme[], msg.allocable as number, msg.params as LensParams | undefined);
+      need(typeof msg.survivalFloor === 'number', 'bad_input', 'allocate needs survivalFloor');
+      return allocate(msg.lens as LensId, msg.schemes as Scheme[], msg.allocable as number, (msg.params ?? {}) as LensParams, msg.survivalFloor as number);
     default:
       throw new Rejection('unknown_command', `unknown cmd "${String(msg.cmd)}"`);
   }

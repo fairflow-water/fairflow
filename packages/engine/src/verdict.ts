@@ -13,14 +13,14 @@ export interface Verdict { voted: LensId; satisfied: LensId; distance: number; p
  */
 export function verdict(
   schemes: Scheme[], allocable: number, W: number[], voted: LensId, pumpingGap: number,
-  lenses: { id: LensId; params?: LensParams }[],
+  lenses: { id: LensId; params: LensParams }[], survivalFloor: number,
 ): Verdict {
   const A = W.map((w, i) => w / schemes[i].demandMm3);
   let best: Verdict | null = null;
   for (const l of lenses) {
-    const ideal = allocate(l.id, schemes, allocable, l.params).Q;
+    const ideal = allocate(l.id, schemes, allocable, l.params, survivalFloor).Q;
     const distance = ideal.reduce((t, q, i) => t + Math.abs(A[i] - q / schemes[i].demandMm3), 0);
-    if (best === null || distance < best.distance - 1e-9) best = { voted, satisfied: l.id, distance, pumpingGap };
+    if (best === null || distance < best.distance - 1e-9) best = { voted, satisfied: l.id, distance, pumpingGap }; // tolerance for ties (§2.7)
   }
   if (best === null) throw new Error('verdict: no lenses to compare');
   return best;

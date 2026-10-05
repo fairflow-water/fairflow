@@ -45,16 +45,16 @@ def cel(claims: Sequence[float], estate: float) -> list[float]:
     D = np.asarray(claims, dtype=float)
     if estate >= D.sum():
         return [round6(d) for d in D]
-    lam = brentq(lambda l: np.maximum(0.0, D - l).sum() - estate, 0.0, float(D.max()), xtol=1e-12)
+    lam = brentq(lambda l: np.maximum(0.0, D - l).sum() - estate, 0.0, float(D.max()), xtol=1e-12)  # tolerance of the root finder
     return [round6(x) for x in np.maximum(0.0, D - lam)]
 
 
 def talmud(claims: Sequence[float], estate: float) -> list[float]:
     """§2.3 Talmud (Aumann & Maschler 1985): AW ≤ ½ΣD: CEA on half-claims; else D_i/2 + CEL on half-claims."""
-    half = [d / 2 for d in claims]
-    if estate <= sum(claims) / 2:
+    half = [d / 2 for d in claims]  # §2.3 Talmud half-claims
+    if estate <= sum(claims) / 2:  # §2.3 'AW ≤ ½ΣD'
         return weighted_cea(half, [1.0] * len(half), estate)
-    rest = cel(half, estate - sum(claims) / 2)
+    rest = cel(half, estate - sum(claims) / 2)  # §2.3 Talmud: D_i/2 + CEL on half-claims
     return [round6(h + r) for h, r in zip(half, rest)]
 
 
@@ -106,9 +106,9 @@ def max_value(schemes: Sequence[Scheme], estate: float, survival_floor: float, l
     ])
     lb = np.concatenate([np.full(n, -np.inf), np.zeros(n), [budget], lo])
     ub = np.concatenate([np.zeros(n), np.full(n, np.inf), [budget], np.full(n, np.inf)])
-    res = milp(c, constraints=LinearConstraint(A, lb, ub), integrality=np.concatenate([np.zeros(2 * n), np.ones(n)]),
-               bounds=Bounds(np.zeros(3 * n), np.concatenate([L, H, np.ones(n)])),
-               options={"mip_rel_gap": 1e-9})  # HiGHS stops at a 1e-4 gap by default; require the optimum
+    res = milp(c, constraints=LinearConstraint(A, lb, ub), integrality=np.concatenate([np.zeros(2 * n), np.ones(n)]),  # layout: x1, x2 continuous; z binary
+               bounds=Bounds(np.zeros(3 * n), np.concatenate([L, H, np.ones(n)])),  # layout: 3 blocks of n
+               options={"mip_rel_gap": 1e-9})  # tolerance: HiGHS stops at a 1e-4 gap by default; require the optimum
     if not res.success:
         raise ValueError(f"max_value: no feasible allocation ({res.message})")
     x = res.x

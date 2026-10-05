@@ -25,7 +25,7 @@ def gini(values: Sequence[float]) -> float:
     """Gini coefficient Σ_i Σ_j |x_i − x_j| / (2 n² μ), no small-sample correction."""
     v = np.asarray(values, dtype=float)
     m = v.mean()
-    return 0.0 if m == 0 else float(np.abs(v[:, None] - v[None, :]).sum() / (2 * len(v) ** 2 * m))
+    return 0.0 if m == 0 else float(np.abs(v[:, None] - v[None, :]).sum() / (2 * len(v) ** 2 * m))  # §2.5 Gini definition
 
 
 def gini_corrected(values: Sequence[float]) -> float:
@@ -69,7 +69,7 @@ def triangle(e_pj: float, F: float, S: float, r3_ramp: float) -> dict[str, float
     area (√3/4)(r₁r₂ + r₂r₃ + r₃r₁); score = geometric mean (r₁r₂r₃)^(1/3)."""
     r1, r2 = float(np.clip(e_pj, 0, 1)), float(np.clip(F, 0, 1))
     r3 = 1 - float(np.clip((S - 1) / r3_ramp, 0, 1))
-    return {"r1": r1, "r2": r2, "r3": r3, "area": float(np.sqrt(3) / 4 * (r1 * r2 + r2 * r3 + r3 * r1)),
+    return {"r1": r1, "r2": r2, "r3": r3, "area": float(np.sqrt(3) / 4 * (r1 * r2 + r2 * r3 + r3 * r1)),  # §2.5 triangle area
             "score": float(np.cbrt(r1 * r2 * r3))}
 
 

@@ -6,11 +6,13 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": { "fairflow-engine": "dist/cli.js" },
   "files": ["dist", "fixtures"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "fixtures:beta": "node scripts/generate-beta-fixtures.mjs"
+    "fixtures:beta": "node scripts/generate-beta-fixtures.mjs",
+    "serve": "node dist/cli.js serve"
   },
   "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "@types/node": "^22.0.0" }
 }

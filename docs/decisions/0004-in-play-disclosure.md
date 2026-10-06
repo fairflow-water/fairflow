@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0004 — What the table sees during play, so that individual pumping stays private
 
-- Status: **accepted** in part, 2026-10-05: the maintainer chose option (ii) below with a 1 Mm³ tank (recommended after the research and measurements here). Items 5–6 (audit threshold, claim wording) remain proposed. Amends R17–R19, S3, S6, S7, S9 and §6.2, §2.2, §2.6.
+- Status: **accepted** in part, 2026-10-05: the maintainer chose option (ii) below with a 1 Mm³ tank (recommended after the research and measurements here). Items 5–6 (audit threshold, claim wording) and the S7 triangle were accepted by the maintainer on 2026-10-06. Amends R17–R19, S3, S6, S7, S9 and §6.2, §2.2, §2.6.
 
 ## Context
 
@@ -54,7 +54,7 @@ SPDX-License-Identifier: CC-BY-4.0
 2. **Total pumping ΣP is public and exact** (R17, as in every commons game).
 3. **Sustainability is shown during play as its band word only** (good / warning / unsustainable, with the registry's fixed band edges), keeping "the pumps move sustainability" (§1). Equity and efficiency get no actual-use band words during play: they cost the most privacy (row J).
 4. **The aquifer tank is shown at a coarse resolution.** The resolution is an admin-settable display parameter; 1 Mm³ was measured. The exact stock moves from the public to the sealed part of `season.resolved`. The public part carries the coarse level.
-5. **A feasibility audit is a release gate:** `analysis/privacy_leakage.py` is run on every shipped scenario, and the in-play display may not exceed thresholds the maintainer sets (proposal: "identified" within the floor's 95 % interval, and "knows whether pumped" no more than 12 points above the floor).
+5. **A feasibility audit is a release gate:** `analysis/privacy_leakage.py` is run on every shipped scenario, and the in-play display may not exceed thresholds the maintainer sets (accepted 2026-10-06: "identified" within the floor's 95 % interval, and "knows whether pumped" no more than 12 points above the floor).
 6. **Claims are worded to match.** R17 changes to "individual pumping is not displayed and cannot be computed from what is displayed beyond what the total implies". The JOSS draft's "provably hidden" is replaced by this measured statement.
 
 ## Open — science reviewer (model equations, not display)
@@ -98,7 +98,7 @@ The true stock, return flows by irrigation method and the mass balance are uncha
   - the per-season verdict, welfare scores, Gini and triangle;
   - the crop-failure flag.
 
-  The collective score and crop-failure flag appear at game end (S8), after play. **Open for the maintainer:** S7 beat 3 (the triangle during play) needs a design that uses only the as-allocated dials and the sustainability band.
+  The collective score and crop-failure flag appear at game end (S8), after play. **Decided 2026-10-06:** S7 beat 3 shows no triangle during play; the triangle appears per season in the debrief replay (S9), on the exact values. During play the table sees the as-allocated dials, the sustainability band word and the tank. A coarse in-play triangle would either leak pumping or require inventing a binned formula.
 - Screens:
   - S7 beat 2 shows the allocation-based equity needles, labelled "as allocated".
   - S7 beat 1 shows the sustainability band word and the coarse tank.

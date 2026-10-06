@@ -35,6 +35,7 @@ from .record import (
     replay,
     verify_reveal,
 )
+from .scenario import basin_from_scenario, hard_checks, worst_case_allocable
 from .season import resolve_season, verdict
 from .welfare import welfare
 
@@ -59,6 +60,7 @@ __all__ = [
     "allocate",
     "apply_event",
     "audit",
+    "basin_from_scenario",
     "cel",
     "collective_score",
     "commitment",
@@ -68,6 +70,7 @@ __all__ = [
     "equity_se",
     "gini",
     "gini_corrected",
+    "hard_checks",
     "inflow_loss_next",
     "max_value",
     "next_stock",
@@ -91,5 +94,6 @@ __all__ = [
     "weighted_cea",
     "weights_for",
     "welfare",
+    "worst_case_allocable",
     "yield_of",
 ]

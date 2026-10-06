@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0003 — Value judgements the blueprint leaves open go to the players
 
-- Status: **proposed**, 2026-10-05 (direction agreed by the maintainer; wording to be accepted). Amends blueprint §2.3, §2.7, R8, S4 and S9.
+- Status: **accepted** by the maintainer, 2026-10-06. Amends blueprint §2.3, §2.7, R8, S4 and S9. Plain-language names and card backs for the floor options remain content work (§5.3).
 - Context: two parameters of the model are moral choices that the blueprint leaves open:
   - **How the sufficientarian floors are cut when water is short of them.** §2.3 says "proportional scaling or CEA on floors if short" and names no default.
   - **The inequality aversion γ of the a posteriori prioritarian welfare score.** §2.7 gives PWF_γ; §3.1 tabulates it at γ = 3 ("PWF₃"); no default is stated.

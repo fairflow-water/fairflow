@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+#
+# Dependabot policy (maintainer decision, 2026-10-06):
+# - auto-merge, once every required check passes: GitHub Actions updates and development tooling, patch or minor;
+# - always left for a human: anything that can change the engine's numbers (numpy, scipy, the Python engine's runtime
+#   dependencies) and every major version — the golden vectors and NumPy-reproducible records depend on them.
+name: dependabot-automerge
+on: pull_request
+permissions:
+  contents: read
+
+jobs:
+  automerge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+      - name: Enable auto-merge for safe updates only
+        if: >-
+          steps.meta.outputs.update-type != 'version-update:semver-major' &&
+          !contains(steps.meta.outputs.dependency-names, 'numpy') &&
+          !contains(steps.meta.outputs.dependency-names, 'scipy') &&
+          (steps.meta.outputs.package-ecosystem == 'github_actions' ||
+           steps.meta.outputs.dependency-type == 'direct:development')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"

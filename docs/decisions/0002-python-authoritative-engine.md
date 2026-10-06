@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0002 — Python is the authoritative engine; the phone runs a verified mirror
 
-- Status: **proposed**, 2026-10-05 (awaiting maintainer acceptance; amends blueprint §7.1–7.2, §1.4 and §8.2)
+- Status: **accepted** by the maintainer, 2026-10-06. Amends blueprint §7.1–7.2, §1.4 and §8.2. The v1.0 sprint plan (§8.2) must be re-planned for room mode in v1.0; that re-plan is a separate decision.
 - Context:
   - The maintainer requires that no number or equation is produced by an LLM or typed without a source, and that all model calculations are grounded in Python (numpy/scipy) for scientific credibility.
   - Participants should join on a phone or laptop by scanning a QR code on the facilitator's screen. Lecturers should be able to run either short exercises or the full game.

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Blueprint §2.3 — the allocation lenses as a generic claims-problem solver (claims D_i, estate AW)."""
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 //
 // Mirror of packages/engine-py/src/fairflow_engine/allocate.py (ADR 0002). The Python engine is authoritative; this

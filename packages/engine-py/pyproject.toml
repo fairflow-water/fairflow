@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 [build-system]
 requires = ["hatchling"]
@@ -11,7 +11,7 @@ description = "Fairflow reference engine: the authoritative implementation of bl
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Seleshi Yalew", email = "seleshiget@gmail.com" }]
+authors = [{ name = "Seleshi Yalew", email = "s.yalew@un-ihe.org" }]
 # Supported versions follow SPEC 0 (https://scientific-python.org/specs/spec-0000/).
 requires-python = ">=3.12"
 dependencies = ["numpy>=2.2", "scipy>=1.15"]

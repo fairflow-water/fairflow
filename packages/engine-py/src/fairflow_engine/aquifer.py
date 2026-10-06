@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Blueprint §2.2 and §2.6 — pumping, rationing, return flows, recharge and GW–SW coupling."""
 

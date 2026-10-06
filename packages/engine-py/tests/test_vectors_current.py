@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """The committed golden vectors and β set must be what the engine produces now (regenerate with
 scripts/generate_vectors.py). Compared numerically, so platform last-bit differences in scipy cannot flake CI."""

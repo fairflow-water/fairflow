@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Read the §3 reference vectors directly from docs/blueprint.md, so expected values come from the blueprint text,
 never from a hand-typed copy."""

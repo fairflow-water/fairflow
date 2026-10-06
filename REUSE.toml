@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 version = 1
 SPDX-PackageName = "fairflow"
-SPDX-PackageSupplier = "fairflow-water <seleshiget@gmail.com>"
+SPDX-PackageSupplier = "fairflow-water <s.yalew@un-ihe.org>"
 SPDX-PackageDownloadLocation = "https://github.com/fairflow-water/fairflow"
 
 # Code: MIT
 [[annotations]]
 path = ["packages/**", "apps/**", "scripts/**", "*.json", "*.toml", "*.yml", "*.yaml", ".github/**"]
 precedence = "closest"
-SPDX-FileCopyrightText = "2026 Seleshi Yalew and Fairflow contributors (code copyright holder to be confirmed with IHE Delft before the first public tag)"
+SPDX-FileCopyrightText = "2026 Seleshi Yalew and Fairflow contributors"
 SPDX-License-Identifier = "MIT"
 
 # Documentation, teaching content, scenarios and fixtures: CC BY 4.0

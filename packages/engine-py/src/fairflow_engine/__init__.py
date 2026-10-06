@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """fairflow_engine — the authoritative implementation of blueprint §2 and the Season Record (§6.2). Every function cites
 its section; no parameter has a default in code (values come from a scenario or the sourced parameter registry)."""

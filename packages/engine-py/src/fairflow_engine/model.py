@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Inputs of the model (blueprint §2.1–2.2, §6.1). No field has a default: every value comes from a scenario
 or the parameter registry, each with a source. Missing values are errors, never silently filled."""

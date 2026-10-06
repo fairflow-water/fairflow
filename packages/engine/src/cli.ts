@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 //
 // `fairflow-engine serve` — the NDJSON worker of blueprint §7.2. The only engine file that touches Node I/O.

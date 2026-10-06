@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Blueprint §6.2 — the Season Record: an append-only event log with a visibility class per event (or per field),
 driven by intents that the engine validates (R1–R20, without modules M2–M6 yet).

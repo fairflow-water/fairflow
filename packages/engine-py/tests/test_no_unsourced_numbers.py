@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """No number may appear in engine code without saying where it comes from. Model parameters never appear at all (they
 come from the scenario or the registry); the only literals allowed are 0, 1 and constants on a line whose comment cites

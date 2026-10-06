@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 //
 // `engine serve` must give exactly what the engine gives when called directly; no expected model number is written here.

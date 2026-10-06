@@ -15,7 +15,7 @@ Three to five water users and a basin authority share a river and an aquifer ove
 | Code (engine, UI, store, builder, relay, schema, CI) | `packages/`, `apps/`, `scripts/`, `.github/` | [MIT](LICENSE) |
 | Documentation, teaching content, scenarios, fixtures | `docs/`, `content/`, `packages/scenarios/*.json`, `packages/engine/fixtures/` | [CC BY 4.0](LICENSE-docs) |
 
-Every file carries an `SPDX-License-Identifier`; CI enforces [REUSE](https://reuse.software) compliance. **Copyright holder for code is provisional** — confirm with IHE Delft whether code written under contract is institutional before the first public tag, and update `LICENSE`, `LICENSES/MIT.txt` and `REUSE.toml` together. Participant data are never in this repository (see `fairflow-water/fairflow-data`).
+Every file carries an `SPDX-License-Identifier`; CI enforces [REUSE](https://reuse.software) compliance. Participant data are never in this repository (see `fairflow-water/fairflow-data`).
 
 ## Cite
 

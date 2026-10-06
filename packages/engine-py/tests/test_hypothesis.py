@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Property-based tests (Hypothesis): §9.1 properties and the integrity of the Season Record under arbitrary sequences of
 intents. Hypothesis searches for counterexamples and shrinks them; the generated values are test inputs, not model

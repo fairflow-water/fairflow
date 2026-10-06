@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
+# SPDX-License-Identifier: MIT
+# gitleaks configuration: the default rules, plus one narrow allowance.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Parameter-registry keys are dotted parameter names (e.g. indicators.r3Ramp), not credentials"
+paths = ['''packages/scenarios/parameters\.json''']
+regexTarget = "secret"
+regexes = ['''^[A-Za-z][A-Za-z0-9]*(\.[A-Za-z][A-Za-z0-9]*)+$''']

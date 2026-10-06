@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 
 /** Blueprint §2.1 — per-season state. Units: Mm³, t, points. All numbers rounded to 1e-6 at the event boundary (§7.2). */

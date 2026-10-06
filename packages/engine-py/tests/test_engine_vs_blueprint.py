@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors (copyright holder to be confirmed with IHE Delft before the first public tag)
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """The engine against blueprint §3: every expected value, and its tolerance (half a unit of the last printed digit),
 is read from docs/blueprint.md. Nothing here is typed by hand."""

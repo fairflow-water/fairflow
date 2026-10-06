@@ -11,6 +11,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 from test_engine_vs_blueprint import BASIN, LENSES, SCORING, lens_params
+from test_properties import max_slope
 from test_record import ROLES, new_game
 
 from fairflow_engine import (
@@ -73,9 +74,10 @@ def test_utilitarian_is_never_beaten_by_another_lens(s, fraction):
         return sum(value_of(x, q, FLOOR) for x, q in zip(s, Q, strict=True))
 
     best = value(allocate("utilitarian", s, AW, lens_params("utilitarian"), FLOOR).Q)
+    rounding = len(s) * 0.5e-6 * max_slope(s)  # Q is rounded to 1e-6 at the event boundary (§7.2)
     for lens in LENSES:
         other = allocate(lens, s, AW, replace(lens_params(lens), floorScaling="proportional"), FLOOR).Q
-        assert value(other) <= best + 1e-3
+        assert value(other) <= best + rounding
 
 
 @settings(max_examples=150, deadline=None, suppress_health_check=[HealthCheck.too_slow])

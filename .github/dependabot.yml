@@ -15,6 +15,9 @@ updates:
       # typescript-eslint 8.x supports TypeScript < 6.1; lift when it supports newer TypeScript.
       - dependency-name: typescript
         versions: [">=6.1"]
+      # @types/node follows the oldest supported Node (engines: >=22.12), not the newest.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       npm: { patterns: ["*"] }
   - package-ecosystem: github-actions

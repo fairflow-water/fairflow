@@ -13,15 +13,18 @@ import copy
 import hashlib
 import secrets as _secrets
 from collections import Counter
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from importlib.metadata import PackageNotFoundError, version
+from itertools import pairwise
 from typing import Any, Literal, cast
 
 import numpy as np
 import scipy
 
 from .allocate import allocate
+from .aquifer import pump_cost_per_mm3
+from .indicators import adequacy_band, efficiency_band, equity_band
 from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
 from .season import SeasonResult, resolve_season, verdict
 
@@ -30,6 +33,8 @@ Event = dict[str, Any]  # one Season Record entry (§6.2)
 AUTHORITY = "authority"
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
 CROP_FAILURE_RUN = 2  # §2.4 "A ≤ 0.5 in two consecutive seasons is crop failure"
+ONCE_PER_GAME = ("orchard", "drip")  # §4.3 Orchard "once", Drip "once"; Expand "repeatable"
+SCHEME_STATE = ("demandMm3", "capacityT", "price", "beta", "areaHa")  # what actions change (§2.2, §4.3)
 
 # §6.2 as amended by ADR 0004: during play only these are public; every figure computed on actual use is sealed
 # until the debrief (each one, with the public allocation, lets the table solve for individual pumping).
@@ -61,6 +66,13 @@ SEALED_RESULT_FIELDS = (
 )
 
 
+def with_state(x: Scheme, v: Mapping[str, float]) -> Scheme:
+    """A scheme with the parameters in force this season (the SCHEME_STATE fields)."""
+    return replace(
+        x, demandMm3=v["demandMm3"], capacityT=v["capacityT"], price=v["price"], beta=v["beta"], areaHa=v["areaHa"]
+    )
+
+
 class Rejection(Exception):
     """An intent that the rules do not allow; the record is left unchanged (§7.1: applyEvent is total)."""
 
@@ -82,6 +94,10 @@ class GameSetup:
     lenses: tuple[tuple[LensId, LensParams], ...]  # enabled lenses in card order
     defaultLens: LensId
     floorRules: tuple[str, ...]  # ADR 0003 options offered (keys of FLOOR_RULES)
+    actions: Mapping[str, Mapping[str, float]]  # Module 1 token costs and factors (registry, §2.2 and §4.3)
+    goals: Mapping[str, tuple[str, float]]  # scheme id → (private goal kind, threshold) (R15, scenario privateGoal)
+    authorityMaxMeanPumping: float  # R15 "average pumping ≤ 2 Mm³/season" (registry)
+    bands: Mapping[str, tuple[float, float]]  # equity, efficiency and adequacy band edges (§2.2, registry)
 
 
 @dataclass
@@ -152,6 +168,9 @@ class State:
     scores: list[float] = field(default_factory=list)
     timeboxed: bool = False
     debrief: dict[str, Any] | None = None
+    schemes: dict[str, dict[str, float]] = field(default_factory=dict)  # parameters in force this season (public)
+    pendingActions: dict[str, str] = field(default_factory=dict)  # played this season, in force from the next
+    used: dict[str, list[str]] = field(default_factory=dict)  # every action each scheme has played
 
 
 def apply_event(state: State, event: Event) -> State:
@@ -163,10 +182,14 @@ def apply_event(state: State, event: Event) -> State:
         s.livelihood = {r: 0.0 for r in p["schemeRoles"]}
         s.lowRun = {r: 0 for r in p["schemeRoles"]}
         s.cropFailure = {r: False for r in p["schemeRoles"]}
+        s.schemes = {v["id"]: {k: v[k] for k in SCHEME_STATE} for v in p["schemes"]}
+        s.used = {r: [] for r in p["schemeRoles"]}
     elif kind == "player.joined":
         s.players[p["role"]] = p
     elif kind == "season.climate":
         s.season, s.climate, s.phase = event["season"], p, "vote"
+        s.schemes = {v["id"]: {k: v[k] for k in SCHEME_STATE} for v in p["schemes"]}
+        s.pendingActions = {}
         s.proposals, s.votes, s.floorVotes, s.committed = [], {}, {}, set()
         s.lens, s.floorRule, s.allocation = None, None, None
     elif kind == "lens.proposed":
@@ -186,6 +209,9 @@ def apply_event(state: State, event: Event) -> State:
         s.allocation = p
     elif kind == "action.played":
         s.committed.add(p["role"])
+        if p.get("action"):
+            s.pendingActions[p["role"]] = p["action"]
+            s.used.setdefault(p["role"], []).append(p["action"])
     elif kind == "season.resolved":
         pub, sealed = p["public"], p["sealed"]
         s.stock, s.inflowLoss, s.phase = sealed["stockNext"], pub["inflowLossNext"], "reveal"
@@ -238,6 +264,7 @@ class Game:
                 "mode": mode,
                 **versions,
                 "schemeRoles": [s.id for s in setup.schemes],
+                "schemes": [{"id": s.id, **{k: getattr(s, k) for k in SCHEME_STATE}} for s in setup.schemes],
                 "aquiferInitial": setup.basin.aquifer.initial,
                 "commitments": {
                     "gameLength": commitment(nonce, str(sec.T)),
@@ -292,6 +319,27 @@ class Game:
             raise Rejection("wrong_phase", "no season is open")
         return s.climate
 
+    def _schemes(self, s: State) -> tuple[Scheme, ...]:
+        """The schemes with the parameters in force this season (actions take effect from t+1, §2.2)."""
+        return tuple(with_state(x, s.schemes[x.id]) if x.id in s.schemes else x for x in self.setup.schemes)
+
+    def _after_actions(self, s: State) -> dict[str, dict[str, float]]:
+        """Scheme parameters for the next season: last season's actions applied (§2.2, §4.3), rounded to 1e-6 (§7.2)."""
+        out = {r: dict(v) for r, v in s.schemes.items()}
+        for role, action in s.pendingActions.items():
+            a, v = self.setup.actions[action], out[role]
+            if action == "orchard":  # D × 1.3, p × 2
+                v["demandMm3"] *= a["demandFactor"]
+                v["price"] *= a["priceFactor"]
+            elif action == "drip":  # D × 0.8 at constant K; β → 0.90
+                v["demandMm3"] *= a["demandFactor"]
+                v["beta"] = a["betaAfter"]
+            elif action == "expand":  # area, D and K × 1.2
+                for k in ("areaHa", "demandMm3", "capacityT"):
+                    v[k] *= a["factor"]
+            out[role] = {k: round6(x) for k, x in v.items()}
+        return out
+
     def _chosen_lens(self, s: State) -> LensId:
         if s.lens is None:
             raise Rejection("wrong_phase", "no lens has been chosen this season")
@@ -320,6 +368,8 @@ class Game:
         card = self.secrets.deckOrder[season - 1]
         inflow = self.setup.inflow[card] - s.inflowLoss
         allocable = max(0.0, inflow - self.setup.basin.reserve)
+        in_force = self._after_actions(s)
+        schemes = tuple(with_state(x, in_force[x.id]) for x in self.setup.schemes)
         self._emit(
             "season.climate",
             "engine",
@@ -329,26 +379,27 @@ class Game:
                 "inflow": inflow,
                 "reserve": self.setup.basin.reserve,
                 "allocable": allocable,
-                "previews": self._previews(allocable),
+                "schemes": [{"id": x.id, **in_force[x.id]} for x in self.setup.schemes],
+                "previews": self._previews(allocable, schemes),
             },
             season=season,
         )
 
-    def _previews(self, allocable: float) -> list[dict[str, Any]]:
+    def _previews(self, allocable: float, schemes: tuple[Scheme, ...]) -> list[dict[str, Any]]:
         """S4: every enabled lens's allocation for this season, computed by the engine so the vote screen only draws it.
         Public: allocations are public (R17). Where the sufficientarian floors exceed the water, the preview uses the
         "whatever works" cut and says that the table would choose (ADR 0003)."""
         floor = self.setup.scoring.survivalFloor
         out = []
         for lens, params in self.setup.lenses:
-            Q = list(allocate(lens, self.setup.schemes, allocable, params, floor).Q)
+            Q = list(allocate(lens, schemes, allocable, params, floor).Q)
             out.append(
                 {
                     "lens": lens,
                     "Q": Q,
-                    "shareOfNeed": [round6(q / s.demandMm3) for q, s in zip(Q, self.setup.schemes, strict=True)],
+                    "shareOfNeed": [round6(q / s.demandMm3) for q, s in zip(Q, schemes, strict=True)],
                     "floorVoteNeeded": lens == "sufficientarian"
-                    and sum(params.need("floor", lens) * x.demandMm3 for x in self.setup.schemes) >= allocable,
+                    and sum(params.need("floor", lens) * x.demandMm3 for x in schemes) >= allocable,
                 }
             )
         return out
@@ -409,7 +460,7 @@ class Game:
     def _floors_exceed(self, s: State) -> bool:
         params = dict(self.setup.lenses)["sufficientarian"]
         floor = params.need("floor", "sufficientarian")
-        return bool(sum(floor * x.demandMm3 for x in self.setup.schemes) >= self._climate(s)["allocable"])
+        return bool(sum(floor * x.demandMm3 for x in self._schemes(s)) >= self._climate(s)["allocable"])
 
     def _on_floor_vote(self, s: State, actor: str, rule: str) -> None:
         """ADR 0003: when the sufficientarian floors exceed the water, the table votes how to cut them."""
@@ -463,25 +514,68 @@ class Game:
                 "floorRule": floor_rule,
                 "Q": r["allocation"]["Q"],
                 "surplusToAquifer": r["allocation"]["surplusToAquifer"],
+                "adequacyBands": [
+                    adequacy_band(q / x.demandMm3, self.setup.bands["adequacy"])
+                    for q, x in zip(r["allocation"]["Q"], self._schemes(s), strict=True)
+                ],
             },
             season=s.season,
         )
+        self._open_private_turns(s, lens, floor_rule)
 
-    def _on_commit(self, s: State, actor: str, pumps: float) -> None:
+    def _open_private_turns(self, s: State, lens: LensId, floor_rule: str | None) -> None:
+        """S6 (R10): each scheme sees, privately, its pump cost and the engine's preview of every choice — harvest and
+        points for 0..cap pump tokens, with and without each action still open to it. The preview assumes the others
+        do not pump (pumping is rationed only when the stock runs short, §2.6)."""
+        schemes = self._schemes(s)
+        cap = self.setup.basin.pump.cap
+        for i, x in enumerate(schemes):
+            open_actions = [a for a in self.setup.actions if not (a in ONCE_PER_GAME and a in s.used.get(x.id, []))]
+            options = []
+            for k in range(int(cap) + 1):  # layout: whole pump tokens, 0..cap (R10)
+                pumps = [0.0] * len(schemes)
+                pumps[i] = float(k)
+                r = self._resolve(s, lens, floor_rule, pumps)
+                points = {"none": r["dL"][i]}
+                points.update({a: round6(r["dL"][i] - self.setup.actions[a]["cost"]) for a in open_actions})
+                options.append({"pumps": k, "yieldT": r["Y"][i], "points": points})
+            self._emit(
+                "private.opened",
+                x.id,
+                "self",
+                {
+                    "role": x.id,
+                    "cap": cap,
+                    "pumpCostPerMm3": round6(pump_cost_per_mm3(self.setup.basin, s.stock, x.seat)),
+                    "actions": {a: self.setup.actions[a]["cost"] for a in open_actions},
+                    "options": options,
+                    "assumes": "the other farms do not pump",
+                },
+                season=s.season,
+            )
+
+    def _on_commit(self, s: State, actor: str, pumps: float, action: str | None = None) -> None:
         """R10: each scheme commits its private turn (0..cap pumps). Sealed until the debrief."""
         self._need(s.phase == "private", "wrong_phase", s.phase)
         self._need(actor in self._scheme_roles(), "not_a_scheme", actor)
         self._need(actor not in s.committed, "already_committed", actor)
         self._need(0 <= pumps <= self.setup.basin.pump.cap, "pump_out_of_range", f"0..{self.setup.basin.pump.cap}")
+        if action is not None:  # R10: at most one Action token
+            self._need(action in self.setup.actions, "unknown_action", action)
+            self._need(not (action in ONCE_PER_GAME and action in s.used.get(actor, [])), "action_used", action)
         self._emit(
-            "action.played", actor, "sealed", {"role": actor, "pumps": pumps, "committedAt": self.clock()}, season=s.season
+            "action.played",
+            actor,
+            "sealed",
+            {"role": actor, "pumps": pumps, "action": action, "committedAt": self.clock()},
+            season=s.season,
         )
         if s.committed | {actor} == set(self._scheme_roles()):
             self._resolve_season(replay(self.events))
 
     def _resolve(self, s: State, lens: LensId, floor_rule: str | None, pumps: list[float]) -> SeasonResult:
         return resolve_season(
-            self.setup.schemes,
+            self._schemes(s),
             self.setup.basin,
             self._climate(s)["inflow"],
             s.stock,
@@ -494,21 +588,25 @@ class Game:
     def _resolve_season(self, s: State) -> None:
         """R11: pumps drawn, rationed; W, Y, ΔL, dials; aquifer stepped. Mixed visibility (§6.2)."""
         roles = self._scheme_roles()
-        played = {
-            e["payload"]["role"]: e["payload"]["pumps"]
-            for e in self.events
-            if e["type"] == "action.played" and e["season"] == s.season
-        }
+        plays = [e["payload"] for e in self.events if e["type"] == "action.played" and e["season"] == s.season]
+        played = {pl["role"]: pl["pumps"] for pl in plays}
+        action_cost = {pl["role"]: self.setup.actions[pl["action"]]["cost"] if pl.get("action") else 0.0 for pl in plays}
         pumps = [played[r] for r in roles]
         lens = self._chosen_lens(s)
         r = self._resolve(s, lens, s.floorRule, pumps)
         floor = self.setup.scoring.survivalFloor
         low_run = [s.lowRun[role] + 1 if a <= floor else 0 for role, a in zip(roles, r["A"], strict=True)]
         failed = [s.cropFailure[role] or run >= CROP_FAILURE_RUN for role, run in zip(roles, low_run, strict=True)]
-        L = [s.livelihood[role] + d for role, d in zip(roles, r["dL"], strict=True)]
-        v = verdict(self.setup.schemes, r["allocable"], r["W"], lens, r["pumpsTotal"], self.setup.lenses, floor)
+        # §2.4 ΔL = pY/100 − c_p P − c_action: the engine's dL holds the first two terms; the action cost is charged here
+        L = [round6(s.livelihood[role] + d - action_cost[role]) for role, d in zip(roles, r["dL"], strict=True)]
+        v = verdict(self._schemes(s), r["allocable"], r["W"], lens, r["pumpsTotal"], self.setup.lenses, floor)
         result: dict[str, Any] = dict(r)
         public = {k: result[k] for k in PUBLIC_RESULT_FIELDS}
+        public["bands"] = {  # band words of the as-allocated dials (ADR 0004: computed on the public allocation)
+            "ePJ": equity_band(r["asAllocated"]["ePJ"], self.setup.bands["equity"]),
+            "eSE": equity_band(r["asAllocated"]["eSE"]["claimant"], self.setup.bands["equity"]),
+            "F": efficiency_band(r["asAllocated"]["F"]["consumed"], self.setup.bands["efficiency"]),
+        }
         sealed = {k: result[k] for k in SEALED_RESULT_FIELDS}
         sealed.update(
             {
@@ -518,6 +616,7 @@ class Game:
                 "lowRun": low_run,
                 "cropFailure": failed,
                 "cropFailureFlag": any(failed),
+                "actionCost": [action_cost[role] for role in roles],
                 "verdict": {"voted": v["voted"], "satisfied": v["satisfied"], "pumpingGap": v["pumpingGap"]},
             }
         )
@@ -536,8 +635,57 @@ class Game:
         if s.phase in ("lobby", "reveal"):
             self._end(replay(self.events))
 
+    def _brief(self) -> dict[str, Any]:
+        """The facilitator's debrief brief (§5.0), from public events only: the heaviest pumping season, the lens of each
+        season and how often it changed, whether a floor vote was held."""
+        resolved = [e for e in self.events if e["type"] == "season.resolved"]
+        lenses = [e["payload"]["lens"] for e in self.events if e["type"] == "lens.chosen"]
+        heaviest = max(resolved, key=lambda e: e["payload"]["public"]["pumpsTotal"], default=None)
+        return {
+            "heaviestPumping": None
+            if heaviest is None
+            else {"season": heaviest["season"], "pumpsTotal": heaviest["payload"]["public"]["pumpsTotal"]},
+            "lensBySeason": lenses,
+            "lensChanges": sum(a != b for a, b in pairwise(lenses)),
+            "floorVotes": sum(e["type"] == "lens.floorRule" for e in self.events),
+        }
+
+    def _goals(self) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        """R15 private goals, judged within each scheme: the Authority's from public totals; each farm's from its own
+        sealed results (it sees only its own, as a self event)."""
+        resolved = [e for e in self.events if e["type"] == "season.resolved"]
+        climates = {e["season"]: e["payload"] for e in self.events if e["type"] == "season.climate"}
+        totals = [e["payload"]["public"]["pumpsTotal"] for e in resolved]
+        mean = sum(totals) / len(totals) if totals else 0.0
+        authority = {
+            "maxMeanPumping": self.setup.authorityMaxMeanPumping,
+            "meanPumping": round6(mean),
+            "met": mean <= self.setup.authorityMaxMeanPumping,
+        }
+        farms = []
+        for x in self.setup.schemes:
+            kind, threshold = self.setup.goals[x.id]
+            idx = [e["payload"]["sealed"]["roles"].index(x.id) for e in resolved]
+            adequacy = [e["payload"]["sealed"]["A"][i] for e, i in zip(resolved, idx, strict=True)]
+            if kind == "livelihood_share":  # cumulative livelihood ≥ threshold × the full-demand potential, Σ pK/100 (§2.4)
+                in_force = [next(v for v in climates[e["season"]]["schemes"] if v["id"] == x.id) for e in resolved]
+                potential = sum(v["price"] * v["capacityT"] / 100 for v in in_force)  # §2.4 ΔL = pY/100, full demand
+                final = resolved[-1]["payload"]["sealed"]["L"][idx[-1]] if resolved else 0.0
+                value = final / potential if potential else 0.0
+                met = value >= threshold
+            elif kind == "adequacy_floor":  # adequacy never below the threshold
+                value, met = min(adequacy, default=0.0), all(a >= threshold for a in adequacy)
+            elif kind == "adequacy_in_half_seasons":  # adequacy ≥ threshold in at least half the seasons
+                value = float(sum(a >= threshold for a in adequacy))
+                met = 2 * value >= len(adequacy)  # layout: "at least half"
+            else:
+                raise ValueError(f"unknown private goal kind {kind!r}")
+            farms.append({"role": x.id, "kind": kind, "threshold": threshold, "value": round6(value), "met": met})
+        return authority, farms
+
     def _end(self, s: State) -> None:
         sec = self.secrets
+        authority, farms = self._goals()
         self._emit(
             "game.ended",
             "engine",
@@ -550,9 +698,13 @@ class Game:
                 "seasonsPlayed": s.season,
                 "collectiveScore": float(np.mean(s.scores)) if s.scores else 0.0,
                 "cropFailureFlag": any(s.cropFailure.values()),
+                "brief": self._brief(),
+                "authorityGoal": authority,
             },
             season=s.season,
         )
+        for goal in farms:
+            self._emit("goal.result", goal["role"], "self", goal, season=s.season)
 
     def _on_open_debrief(self, s: State, actor: str, perPlayer: bool) -> None:
         """R19: sealed fields become readable; perPlayer = false keeps pumpsBy sealed in every projection."""
@@ -588,7 +740,7 @@ def project(events: Sequence[Event], viewer: str) -> list[Event]:
         vis = e["visibility"]
         if vis == "public":
             out.append(e)
-        elif vis in ("self", "sealed") and e["type"] == "action.played":
+        elif vis == "self" or (vis == "sealed" and e["type"] == "action.played"):
             if e["actor"] == viewer or (opened and opened["perPlayer"]):
                 out.append(e)
         elif vis == "mixed":
@@ -627,9 +779,10 @@ def audit(setup: GameSetup, events: Sequence[Event]) -> list[str]:
             lens_params = dict(setup.lenses)[state.lens]
             if state.floorRule:
                 lens_params = LensParams(**{**lens_params.__dict__, "floorScaling": state.floorRule})
+            schemes = tuple(with_state(x, state.schemes[x.id]) if x.id in state.schemes else x for x in setup.schemes)
             r: dict[str, Any] = dict(
                 resolve_season(
-                    setup.schemes,
+                    schemes,
                     setup.basin,
                     state.climate["inflow"],
                     state.stock,

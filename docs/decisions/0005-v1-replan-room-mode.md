@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0005 — v1.0 re-plan after ADR 0002 (room mode in v1.0)
 
-- Status: **proposed**, 2026-10-07. Amends blueprint §8.1–8.3 and §1.4. Needs the maintainer's approval.
+- Status: **accepted** by the maintainer, 2026-10-07 ("continue full fledged"). Amends blueprint §8.1–8.3 and §1.4. The two cohort-cut candidates are decided at app pilot 1, as §8.3 provides.
 - Context: ADR 0002 made room mode (QR join, Python engine on a server) the primary v1.0 mode, with one-phone table mode as the offline fallback. The §8.2 day-by-day plan assumed table mode only and a TypeScript engine. Several epics are now done ahead of that plan; others changed shape.
 
 ## Where each v1.0 epic stands (evidence: the repository and CI on `main`)

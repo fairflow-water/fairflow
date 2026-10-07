@@ -55,8 +55,11 @@ class CloseFloorVote(_Intent):
 
 
 class Commit(_Intent):
+    """R10: pump tokens and at most one Module 1 action token."""
+
     intent: Literal["commit"]
     pumps: Finite
+    action: Literal["orchard", "drip", "expand"] | None = None
 
 
 class Timebox(_Intent):

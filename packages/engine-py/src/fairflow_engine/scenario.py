@@ -199,5 +199,16 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
         floorRules=tuple(
             scenario.get("floorRules", sorted(FLOOR_RULES))
         ),  # ADR 0003: all five unless the admin offers fewer
+        actions={
+            name: {k.split(".")[-1]: v for k, v in registry.items() if k.startswith(f"actions.{name}.")}
+            for name in ("orchard", "drip", "expand")
+        },
+        goals={s["id"]: (s["privateGoal"]["kind"], s["privateGoal"]["threshold"]) for s in schemes},
+        authorityMaxMeanPumping=registry["goals.authority.maxMeanPumping"],
+        bands={
+            "equity": tuple(registry["indicators.equityBands"]),
+            "efficiency": tuple(registry["indicators.efficiencyBands"]),
+            "adequacy": tuple(registry["indicators.adequacyBands"]),
+        },
     )
     return ScenarioLoad(setup, errors, warnings)

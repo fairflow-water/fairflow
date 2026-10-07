@@ -6,8 +6,11 @@ its section; no parameter has a default in code (values come from a scenario or 
 from .allocate import FLOOR_RULES, Allocation, allocate, cel, max_value, sufficientarian, talmud, weighted_cea, weights_for
 from .aquifer import inflow_loss_next, next_stock, observed_stock, pump_cost_per_mm3, ration_pumps, return_flow
 from .indicators import (
+    adequacy_band,
     collective_score,
     efficiency,
+    efficiency_band,
+    equity_band,
     equity_pj,
     equity_se,
     gini,
@@ -57,6 +60,7 @@ __all__ = [
     "Scoring",
     "Secrets",
     "State",
+    "adequacy_band",
     "allocate",
     "apply_event",
     "audit",
@@ -66,6 +70,8 @@ __all__ = [
     "commitment",
     "draw_secrets",
     "efficiency",
+    "efficiency_band",
+    "equity_band",
     "equity_pj",
     "equity_se",
     "gini",

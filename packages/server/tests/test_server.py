@@ -82,7 +82,7 @@ def test_a_full_game_over_websockets_keeps_pumping_private(client: TestClient) -
                 act(r, {"intent": "vote", "lens": "proportional"})
             act("authority", {"intent": "close_vote"})
             for i, r in enumerate(roles):
-                act(r, {"intent": "commit", "pumps": 2.0 if i == 0 else 0.0})
+                act(r, {"intent": "commit", "pumps": 2.0 if i == 0 else 0.0, **({"action": "expand"} if i == 1 else {})})
             ended = any(e["type"] == "game.ended" for m in received["display"] for e in m["events"])
         before_debrief = {k: list(v) for k, v in received.items()}
         act("authority", {"intent": "open_debrief", "perPlayer": True})
@@ -91,8 +91,8 @@ def test_a_full_game_over_websockets_keeps_pumping_private(client: TestClient) -
         own = who if who in roles else None
         for m in messages:
             for e in m["events"]:
-                if e["type"] == "action.played":
-                    assert e["actor"] == own, f"{who} received another role's sealed action"
+                if e["type"] in ("action.played", "private.opened", "goal.result"):
+                    assert e["actor"] == own, f"{who} received another role's private {e['type']}"
                 if e["type"] == "season.resolved":
                     assert "sealed" not in e["payload"], f"{who} received sealed season data before the debrief"
                     if own is None:

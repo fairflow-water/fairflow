@@ -27,9 +27,9 @@ from fairflow_engine import (
 SECTION = bp.section("### 2.2 Parameters and grounding")
 DECK = dict(zip(["wet", "normal", "dry"], bp.grab(r"deck NUM W / NUM N / NUM D", SECTION), strict=True))
 T_MIN, T_MAX = bp.grab(r"Uniform\{NUM, NUM\}", SECTION)
-DEFAULT_LENS = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))[
-    "defaultLens"
-]
+SCENARIO = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
+DEFAULT_LENS = SCENARIO["defaultLens"]
+REGISTRY = bp.registry()
 ROLES = [s.id for s in SCHEMES]
 SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L"}
 
@@ -45,6 +45,13 @@ def setup(**over) -> GameSetup:
         lenses=tuple((lens, lens_params(lens)) for lens in LENSES),
         defaultLens=DEFAULT_LENS,
         floorRules=("proportional", "cea", "cel", "talmud", "capability"),
+        actions={
+            name: {k.split(".")[-1]: v for k, v in REGISTRY.items() if k.startswith(f"actions.{name}.")}
+            for name in ("orchard", "drip", "expand")
+        },
+        goals={x["id"]: (x["privateGoal"]["kind"], x["privateGoal"]["threshold"]) for x in SCENARIO["schemes"]},
+        authorityMaxMeanPumping=REGISTRY["goals.authority.maxMeanPumping"],
+        bands={k: tuple(REGISTRY[f"indicators.{k}Bands"]) for k in ("equity", "efficiency", "adequacy")},
     )
     return GameSetup(**{**base, **over})
 
@@ -92,7 +99,7 @@ def keys_in(obj) -> set:
 
 def test_full_game_ends_after_T_seasons_reveals_and_audits():
     g = play_game(new_game(), pumps={"A": BASIN.pump.cap})
-    ended = g.events[-1]
+    ended = next(e for e in g.events if e["type"] == "game.ended")
     assert ended["type"] == "game.ended" and ended["payload"]["seasonsPlayed"] == g.secrets.T
     assert verify_reveal(g.events[0], ended)
     assert audit(g.setup, g.events) == []
@@ -127,7 +134,8 @@ def test_privacy_projection_before_debrief():
     assert not keys_in(public) & SEALED_KEYS
     for e in public:
         if e["type"] == "season.resolved":
-            assert set(e["payload"]["public"]) == set(PUBLIC_RESULT_FIELDS) and "sealed" not in e["payload"]
+            # the pinned public fields: the engine's, plus the band words of the as-allocated dials (computed from public Q)
+            assert set(e["payload"]["public"]) == {*PUBLIC_RESULT_FIELDS, "bands"} and "sealed" not in e["payload"]
     assert not any(e["type"] == "action.played" for e in public)
     assert all("pumpsTotal" in e["payload"]["public"] for e in public if e["type"] == "season.resolved")
     mine = project(g.events, "A")
@@ -243,7 +251,7 @@ def test_timebox_ends_after_the_current_season_and_still_reveals():
     g.submit(AUTHORITY, "close_vote")
     for r in ROLES:
         g.submit(r, "commit", pumps=0.0)
-    ended = g.events[-1]
+    ended = next(e for e in g.events if e["type"] == "game.ended")
     assert ended["type"] == "game.ended" and ended["payload"]["truncated"] and ended["payload"]["seasonsPlayed"] == 2
     assert verify_reveal(g.events[0], ended) and audit(g.setup, g.events) == []
     with pytest.raises(Rejection):
@@ -257,8 +265,9 @@ def test_tampering_is_detected():
     resolved["payload"]["public"]["pumpsTotal"] += 1
     assert audit(g.setup, forged)
     forged = copy.deepcopy(g.events)
-    forged[-1]["payload"]["T"] = 3 if forged[-1]["payload"]["T"] != 3 else 4
-    assert not verify_reveal(forged[0], forged[-1])
+    end = next(e for e in forged if e["type"] == "game.ended")
+    end["payload"]["T"] = 3 if end["payload"]["T"] != 3 else 4
+    assert not verify_reveal(forged[0], end)
 
 
 def test_replay_reproduces_the_record():

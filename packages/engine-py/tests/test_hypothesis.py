@@ -142,9 +142,9 @@ class SeasonRecordMachine(RuleBasedStateMachine):
     def close_floor_vote(self):
         self._try(AUTHORITY, "close_floor_vote")
 
-    @rule(actor=actors, pumps=st.floats(-1, 4))
-    def commit(self, actor, pumps):
-        self._try(actor, "commit", pumps=pumps)
+    @rule(actor=actors, pumps=st.floats(-1, 4), action=st.sampled_from([None, "orchard", "drip", "expand", "steal"]))
+    def commit(self, actor, pumps, action):
+        self._try(actor, "commit", pumps=pumps, action=action)
 
     @rule(minute=st.floats(0, 120))
     def timebox(self, minute):
@@ -157,6 +157,7 @@ class SeasonRecordMachine(RuleBasedStateMachine):
         public = project(self.game.events, "public")
         assert not any(e["type"] == "action.played" for e in public)
         assert all("sealed" not in e["payload"] for e in public if e["type"] == "season.resolved")
+        assert not any(e["type"] in ("private.opened", "goal.result") for e in public)
 
     @invariant()
     def finished_games_audit_clean(self):

@@ -95,6 +95,21 @@ def sustainability_band(S: float, edges: Sequence[float]) -> Literal["good", "wa
     return "good" if S <= edges[0] else "warning" if S <= edges[1] else "unsustainable"
 
 
+def equity_band(e: float, edges: Sequence[float]) -> Literal["good", "fair", "poor"]:
+    """§2.2 "Equity good > 0.90 / fair 0.75–0.90 / poor < 0.75", edges from the registry."""
+    return "good" if e > edges[1] else "fair" if e >= edges[0] else "poor"
+
+
+def efficiency_band(F: float, edges: Sequence[float]) -> Literal["good", "fair", "poor"]:
+    """§2.2 "efficiency good ≥ 0.95 / fair 0.85–0.95 / poor < 0.85", edges from the registry."""
+    return "good" if F >= edges[1] else "fair" if F >= edges[0] else "poor"
+
+
+def adequacy_band(a: float, edges: Sequence[float]) -> Literal["good", "ok", "poor"]:
+    """§2.2 "adequacy good > 0.80 / ok 0.68–0.80 / poor ≤ 0.68 (map colour only)", edges from the registry."""
+    return "good" if a > edges[1] else "ok" if a > edges[0] else "poor"
+
+
 def collective_score(season_scores: Sequence[float]) -> float:
     """R14: mean over seasons of the per-season geometric mean."""
     return float(np.mean(season_scores)) if len(season_scores) else 0.0

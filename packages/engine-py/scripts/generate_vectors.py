@@ -260,7 +260,8 @@ def jsonable(x):
 
 
 def write(path: Path, data) -> None:
-    path.write_text(json.dumps(data, ensure_ascii=False, default=jsonable, separators=(",", ":")) + "\n", encoding="utf-8")
+    text = json.dumps(data, ensure_ascii=False, default=jsonable, separators=(",", ":")) + "\n"
+    path.write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
 
 
 def build() -> tuple[dict, dict]:

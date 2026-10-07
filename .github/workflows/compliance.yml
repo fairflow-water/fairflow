@@ -113,8 +113,7 @@ jobs:
         run: npm run build -w packages/ui
       - name: First-load budget (blueprint §7.4, < 2 MB)
         run: |
-          total=$(find packages/ui/dist -type f -printf '%s
-' | awk '{s+=$1} END {print s}')
+          total=$(du -sb packages/ui/dist | cut -f1)
           echo "client build: $total bytes"; test "$total" -lt 2000000
       - name: Tests on engine-generated fixtures, coverage gate
         run: npm run coverage -w packages/ui

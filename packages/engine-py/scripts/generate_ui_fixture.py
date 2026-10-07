@@ -54,7 +54,8 @@ def main() -> None:
             "scenario": public_scenario,
             "events": project(g.events, viewer),
         }
-        (OUT / f"opening-{name}.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        text = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
+        (OUT / f"opening-{name}.json").write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
     print(f"wrote {OUT}/opening-public.json and opening-A.json ({len(g.events)} events)")
 
 

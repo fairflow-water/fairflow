@@ -122,6 +122,10 @@ jobs:
     name: Real-browser game (Playwright, Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Playwright's image carries Chromium and its system libraries: installing them with apt took up to 15 minutes.
+    # Keep its version equal to @playwright/test in package-lock.json; the install step below is then a no-op.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
@@ -132,8 +136,8 @@ jobs:
       - run: npm ci
       - run: uv sync --locked
         working-directory: packages/server
-      - name: Install Chromium
-        run: npx -w packages/ui playwright install --with-deps chromium
+      - name: Chromium matches @playwright/test (no-op when the image and the lockfile agree)
+        run: npx -w packages/ui playwright install chromium
       - name: A whole game across facilitator, projector and three phones
         run: npm run e2e -w packages/ui
       - if: failure()

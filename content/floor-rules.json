@@ -1,0 +1,12 @@
+{
+  "$comment": "SPDX-License-Identifier: CC-BY-4.0 · ADR 0003 floor-shortfall options as players see them. Working labels (maintainer decision 2026-10-07), to be tested in the paper pilot (§9.3). The rule column is the engine's floorScaling key; whatever_works applies the proportional cut.",
+  "status": "working labels",
+  "options": [
+    { "rule": "proportional", "label": "Same share of the minimum", "explain": "Every farm gets the same fraction of its minimum." },
+    { "rule": "cea", "label": "Protect the smallest minimums", "explain": "Small farms keep their minimum; the largest absorbs the cut." },
+    { "rule": "cel", "label": "Everyone gives up the same", "explain": "Each farm loses the same amount of water." },
+    { "rule": "talmud", "label": "Half-claims first (Talmud)", "explain": "An old rule that splits the shortfall in a balanced way between large and small." },
+    { "rule": "capability", "label": "Per person", "explain": "The cut follows how many people each farm supports." },
+    { "rule": "whatever_works", "label": "Whatever works", "explain": "No preference: a proportional cut is applied." }
+  ]
+}

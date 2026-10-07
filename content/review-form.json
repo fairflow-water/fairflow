@@ -1,0 +1,45 @@
+{
+  "$comment": "CC BY 4.0 (see REUSE.toml). S10 review form (blueprint §5.2 S10, §5.4 'Review form', §5.3 the six written prompts). Working wording, for the maintainer to revise. Not yet included: the optional journey map (a drawing) and 'the four scientific questions', which the blueprint names but does not state; add them as items in part 2 when written. Item ids are stable keys for review.answer events; change the text freely, never reuse an id for a different question.",
+  "status": "working wording",
+  "parts": [
+    {
+      "part": 1,
+      "title": "Looking back",
+      "intro": "Three times each: what worked for you, what you wish had been different, and what might happen if a rule changed.",
+      "items": [
+        { "id": "like.1", "prompt": "I like…" },
+        { "id": "wish.1", "prompt": "I wish…" },
+        { "id": "whatif.1", "prompt": "What if…" },
+        { "id": "like.2", "prompt": "I like…" },
+        { "id": "wish.2", "prompt": "I wish…" },
+        { "id": "whatif.2", "prompt": "What if…" },
+        { "id": "like.3", "prompt": "I like…" },
+        { "id": "wish.3", "prompt": "I wish…" },
+        { "id": "whatif.3", "prompt": "What if…" }
+      ]
+    },
+    {
+      "part": 2,
+      "title": "Checking the game against the world",
+      "intro": "Pick two numbers the game used, check them against a source, and answer the six questions from the debrief with the record in hand.",
+      "items": [
+        { "id": "number.1", "prompt": "First number: which one, your source, and does it agree?" },
+        { "id": "number.2", "prompt": "Second number: which one, your source, and does it agree?" },
+        { "id": "prompt.equity", "prompt": "When equity rose, was it because shares narrowed or because there was more water?" },
+        { "id": "prompt.metric", "prompt": "Which measure of fairness did you believe, and why?" },
+        { "id": "prompt.drip", "prompt": "What happened when Drip was followed by Expand?" },
+        { "id": "prompt.dry", "prompt": "Which arguments did the table use in the dry season?" },
+        { "id": "prompt.aquifer", "prompt": "What did the aquifer do over the game, and why?" },
+        { "id": "prompt.verdict", "prompt": "The lens you voted for and the lens the water as used came closest to: what explains the gap?" }
+      ]
+    },
+    {
+      "part": 3,
+      "title": "One recommendation",
+      "intro": "One rule you would recommend for a real basin.",
+      "items": [
+        { "id": "recommendation", "prompt": "Your recommendation, and who loses under it." }
+      ]
+    }
+  ]
+}

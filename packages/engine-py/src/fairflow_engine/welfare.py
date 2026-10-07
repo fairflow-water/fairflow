@@ -4,12 +4,25 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 import numpy as np
 
 from .indicators import gini
 from .model import Scheme
+
+
+def pwf_ede(A: Sequence[float], gamma: float, supply_floor: float) -> float:
+    """The equally-distributed equivalent of PWF_γ (Atkinson 1970) on s_i = min(A_i, 1) floored at `supply_floor`: the
+    share of need which, given to every farm, is worth as much. γ = 0 is the mean (every share counts the same); γ = ∞
+    is its limit, the smallest share (only the worst-off counts); γ = 1 is the geometric mean."""
+    s = np.maximum(supply_floor, np.minimum(np.asarray(A, dtype=float), 1.0))
+    if math.isinf(gamma):
+        return float(s.min())
+    if gamma == 1:
+        return float(np.exp(np.log(s).mean()))
+    return float(np.mean(s ** (1 - gamma)) ** (1 / (1 - gamma)))
 
 
 def welfare(schemes: Sequence[Scheme], A: Sequence[float], gamma: float, m: float, supply_floor: float) -> dict[str, float]:

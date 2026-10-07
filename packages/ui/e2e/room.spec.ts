@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 //
 // A whole game in real browsers (ADR 0005): a facilitator opens a room, a projector and three phones join (each in its
-// own browser context, so each holds only its own token), and the table plays to the end and opens the debrief.
+// own browser context, so each holds only its own token); the table plays to the end, opens the debrief and one farm
+// answers the review form.
 // It checks the wiring and what each device may see (ADR 0004), not model numbers, which the engine tests own.
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
@@ -76,6 +77,22 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   await expect(display.getByText(/Your goal/)).toHaveCount(0);
   await expect(display.getByText('Debrief brief')).toHaveCount(0);
   await expect(facilitator.getByText(/we debrief the rules, not the person/)).toBeVisible();
-  await facilitator.getByRole('button', { name: /totals only/ }).click();
-  await expect(facilitator.getByRole('button', { name: /totals only/ })).toHaveCount(0);
+  await facilitator.getByRole('button', { name: /reveal who pumped/ }).click();
+
+  // S9 on every device after a per-player debrief: the farm sheet, the welfare slider, the verdict
+  for (const page of [display, facilitator, ...phones]) {
+    await expect(page.getByRole('heading', { name: 'Debrief' })).toBeVisible();
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByRole('slider')).toBeVisible();
+  }
+  await expect(display.getByTestId('verdict')).toContainText('You voted for');
+
+  // S10: a farm saves an answer; nobody else receives it
+  const reviewer = phones[0]!;
+  await reviewer.getByRole('tab', { name: 'Review form' }).click();
+  await reviewer.getByRole('textbox').first().fill('We argued about the tail-end farm.');
+  await reviewer.getByRole('button', { name: 'Save' }).first().click();
+  await expect(reviewer.getByRole('button', { name: 'Saved' })).toHaveCount(1);
+  await phones[1]!.getByRole('tab', { name: 'Review form' }).click();
+  await expect(phones[1]!.getByRole('button', { name: 'Saved' })).toHaveCount(0);
 });

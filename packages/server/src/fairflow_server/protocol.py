@@ -72,8 +72,27 @@ class OpenDebrief(_Intent):
     perPlayer: bool
 
 
+class ReviewAnswer(_Intent):
+    """S10: one answer of the review form; the engine checks the part, the item id and the length."""
+
+    intent: Literal["review_answer"]
+    part: int
+    item: Annotated[str, Field(max_length=40)]
+    value: Annotated[str, Field(max_length=4000)]  # operational limit on one answer, well inside the 64 KB message cap
+
+
 Intent = Annotated[
-    StartSeason | Propose | Vote | CloseVote | BreakTie | FloorVote | CloseFloorVote | Commit | Timebox | OpenDebrief,
+    StartSeason
+    | Propose
+    | Vote
+    | CloseVote
+    | BreakTie
+    | FloorVote
+    | CloseFloorVote
+    | Commit
+    | Timebox
+    | OpenDebrief
+    | ReviewAnswer,
     Field(discriminator="intent"),
 ]
 INTENT: TypeAdapter[Intent] = TypeAdapter(Intent)

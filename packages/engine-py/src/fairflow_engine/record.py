@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import re
 import secrets as _secrets
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
@@ -27,12 +28,15 @@ from .aquifer import pump_cost_per_mm3
 from .indicators import adequacy_band, efficiency_band, equity_band
 from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
 from .season import SeasonResult, resolve_season, verdict
+from .welfare import pwf_ede
 
 Visibility = Literal["public", "self", "sealed", "mixed"]
 Event = dict[str, Any]  # one Season Record entry (§6.2)
 AUTHORITY = "authority"
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
 CROP_FAILURE_RUN = 2  # §2.4 "A ≤ 0.5 in two consecutive seasons is crop failure"
+REVIEW_PARTS = (1, 2, 3)  # §5.2 S10 "Parts 1–3 of the review form"
+REVIEW_ITEM = re.compile(r"[a-z0-9_.-]{1,40}")  # item ids come from content/review-form.json
 ONCE_PER_GAME = ("orchard", "drip")  # §4.3 Orchard "once", Drip "once"; Expand "repeatable"
 SCHEME_STATE = ("demandMm3", "capacityT", "price", "beta", "areaHa")  # what actions change (§2.2, §4.3)
 
@@ -713,6 +717,17 @@ class Game:
         self._need(actor == AUTHORITY, "not_authority", "only the facilitator opens the debrief")
         self._need(s.phase == "ended" and s.debrief is None, "wrong_phase", s.phase)
         self._emit("debrief.opened", actor, "public", {"perPlayer": perPlayer}, season=s.season)
+        self._emit("debrief.welfare", "engine", "public", debrief_welfare(self.setup, self.events), season=s.season)
+
+    def _on_review_answer(self, s: State, actor: str, part: int, item: str, value: str) -> None:
+        """S10: one answer of the review form (§5.4), private to its author in every projection, even after a per-player
+        debrief. Answers may be revised; the latest per item counts."""
+        self._need(actor in self._scheme_roles(), "not_a_player", "the review form is for the farms' players")
+        self._need(s.phase == "ended", "wrong_phase", "the review follows the game")
+        self._need(part in REVIEW_PARTS, "bad_input", f"part {part}")
+        self._need(REVIEW_ITEM.fullmatch(item) is not None, "bad_input", "item id")
+        self._need(isinstance(value, str), "bad_input", "an answer is text")  # its length is the server's limit
+        self._emit("review.answer", actor, "self", {"part": part, "item": item, "value": value}, season=s.season)
 
     # ---- record --------------------------------------------------------------------------------------------------
     def _emit(
@@ -731,6 +746,47 @@ class Game:
         )
 
 
+# ---- debrief (S9, ADR 0003) --------------------------------------------------------------------------------------
+SLIDER_STEPS = 20  # display resolution of the S9 γ slider, which shows no number (ADR 0003); not a model value
+
+
+def slider_gammas(start: float) -> tuple[list[float | None], int]:
+    """The γ at each slider position t ∈ [0, 1]: γ = t/(1 − t), so the ends are ADR 0003's limiting cases, γ = 0 (every
+    share counts the same) and γ → ∞ (only the worst-off counts; None in the record). The scenario's starting γ is
+    always a position; returns the positions and the index of the start."""
+    ts = sorted({k / SLIDER_STEPS for k in range(SLIDER_STEPS + 1)} | {start / (1 + start)})
+    gammas: list[float | None] = [None if t == 1 else round6(t / (1 - t)) for t in ts]
+    return gammas, ts.index(start / (1 + start))
+
+
+def debrief_welfare(setup: GameSetup, events: Sequence[Event]) -> dict[str, Any]:
+    """S9's welfare slider (ADR 0003): for each season and slider position, the equally-distributed equivalent of PWF_γ
+    for every enabled lens's allocation (public, from season.climate) and, only when the table opened per-player
+    results, for the water as used (computed on actual use, so it would reveal pumping otherwise; ADR 0004)."""
+    opened = next(e["payload"] for e in events if e["type"] == "debrief.opened")
+    gammas, start = slider_gammas(setup.scoring.welfareGamma)
+    floor = setup.scoring.welfareSupplyFloor
+
+    def row(A: Sequence[float]) -> list[float]:
+        return [round6(pwf_ede(A, float("inf") if g is None else g, floor)) for g in gammas]
+
+    climates = {e["season"]: e["payload"] for e in events if e["type"] == "season.climate"}
+    seasons = []
+    for e in events:
+        if e["type"] != "season.resolved":
+            continue
+        c = climates[e["season"]]
+        demand = [x["demandMm3"] for x in c["schemes"]]
+        entry: dict[str, Any] = {
+            "season": e["season"],
+            "lenses": {p["lens"]: row([q / d for q, d in zip(p["Q"], demand, strict=True)]) for p in c["previews"]},
+        }
+        if opened["perPlayer"]:
+            entry["used"] = row(e["payload"]["sealed"]["A"])
+        seasons.append(entry)
+    return {"gammas": gammas, "start": start, "seasons": seasons}
+
+
 # ---- projections (§6.2: derived, never stored) -------------------------------------------------------------------
 def project(events: Sequence[Event], viewer: str) -> list[Event]:
     """The events a viewer may see: 'public' (shared screen, exports before the debrief, relay broadcasts) or a role.
@@ -742,6 +798,9 @@ def project(events: Sequence[Event], viewer: str) -> list[Event]:
         vis = e["visibility"]
         if vis == "public":
             out.append(e)
+        elif e["type"] == "review.answer":  # S10: written answers stay with their author, whatever the debrief
+            if e["actor"] == viewer:
+                out.append(e)
         elif vis == "self" or (vis == "sealed" and e["type"] == "action.played"):
             if e["actor"] == viewer or (opened and opened["perPlayer"]):
                 out.append(e)
@@ -803,6 +862,11 @@ def audit(setup: GameSetup, events: Sequence[Event]) -> list[str]:
                 if r[k] != e["payload"]["sealed"][k]:
                     problems.append(f"season {e['season']}: sealed {k} differs")
         state = apply_event(state, e)
+    recorded_welfare = next((e["payload"] for e in events if e["type"] == "debrief.welfare"), None)
+    if recorded_welfare is not None:
+        cut = next(i for i, e in enumerate(events) if e["type"] == "debrief.welfare")
+        if debrief_welfare(setup, events[:cut]) != recorded_welfare:
+            problems.append("debrief.welfare does not recompute from the record")
     created = next((e for e in events if e["type"] == "game.created"), None)
     ended = next((e for e in events if e["type"] == "game.ended"), None)
     if created and ended and not verify_reveal(created, ended):

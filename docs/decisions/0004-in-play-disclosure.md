@@ -103,4 +103,5 @@ The true stock, return flows by irrigation method and the mass balance are uncha
   - S7 beat 2 shows the allocation-based equity needles, labelled "as allocated".
   - S7 beat 1 shows the sustainability band word and the coarse tank.
   - S9 shows both "as allocated" and "as used". That contrast is a new debrief moment: how pumping changed the fairness the table voted for.
+  - **Totals-only debrief (implemented 2026-10-07; for the maintainer to confirm).** R19 lets a table keep per-player pumping sealed (`debrief.opened {perPlayer: false}`). By the measurements above, the exact as-used values (dials, triangle, welfare, verdict) let the table solve for each farm's pumping, so in that case they stay sealed as well. S9 then shows the as-allocated values, total pumping and the welfare slider over the lenses' allocations, and says why the rest is hidden. With `perPlayer: true` everything is opened.
 - Research: hypotheses 3–4 (§10.3) are unaffected. Pumping stays a hidden action, as the design intended.

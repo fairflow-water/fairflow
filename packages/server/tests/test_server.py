@@ -86,6 +86,13 @@ def test_a_full_game_over_websockets_keeps_pumping_private(client: TestClient) -
             ended = any(e["type"] == "game.ended" for m in received["display"] for e in m["events"])
         before_debrief = {k: list(v) for k, v in received.items()}
         act("authority", {"intent": "open_debrief", "perPlayer": True})
+        after_debrief = {k: len(v) for k, v in received.items()}
+        act(roles[0], {"intent": "review_answer", "part": 1, "item": "like.1", "value": "we argued about the tail"})
+
+    # S10: a written answer reaches its author only, even after a per-player debrief
+    for who, messages in received.items():
+        answers = [e for m in messages[after_debrief[who] :] for e in m["events"] if e["type"] == "review.answer"]
+        assert len(answers) == (1 if who == roles[0] else 0), who
 
     for who, messages in before_debrief.items():
         own = who if who in roles else None
@@ -97,7 +104,7 @@ def test_a_full_game_over_websockets_keeps_pumping_private(client: TestClient) -
                     assert "sealed" not in e["payload"], f"{who} received sealed season data before the debrief"
                     if own is None:
                         assert not keys_in(e["payload"]) & SEALED_KEYS, who
-    debrief = received["display"][-1]
+    debrief = received["display"][after_debrief["display"] - 1]
     assert debrief["type"] == "sync" and "pumpsBy" in keys_in(debrief["events"])
 
 
@@ -131,6 +138,8 @@ def test_a_message_cannot_choose_its_actor_or_carry_unknown_fields(client: TestC
         assert ws.receive_json()["code"] == "not_authority"
         ws.send_text(json.dumps({"intent": "commit", "pumps": "lots"}))
         assert ws.receive_json()["type"] == "invalid"
+        ws.send_text(json.dumps({"intent": "review_answer", "part": 1, "item": "like.1", "value": "x" * 4001}))
+        assert ws.receive_json() == {"type": "invalid", "fields": ["review_answer.value"]}
 
 
 def test_the_display_is_read_only(client: TestClient) -> None:

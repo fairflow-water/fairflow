@@ -1,0 +1,3702 @@
+{
+ "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
+ "scenario": {
+  "name": "Fairflow default basin",
+  "schemes": [
+   {
+    "id": "A",
+    "name": "Orchard Estate",
+    "seat": 1,
+    "shape": "circle",
+    "glyph": "pomegranate",
+    "crop": "pomegranate"
+   },
+   {
+    "id": "B",
+    "name": "Paddy Cooperative",
+    "seat": 2,
+    "shape": "square",
+    "glyph": "rice",
+    "crop": "rice"
+   },
+   {
+    "id": "C",
+    "name": "Tail-end Smallholders",
+    "seat": 3,
+    "shape": "triangle",
+    "glyph": "wheat",
+    "crop": "cereals"
+   }
+  ],
+  "lenses": [
+   {
+    "id": "utilitarian",
+    "plainName": "Biggest harvest"
+   },
+   {
+    "id": "egalitarian",
+    "plainName": "Same for each"
+   },
+   {
+    "id": "proportional",
+    "plainName": "Same share of need"
+   },
+   {
+    "id": "capability",
+    "plainName": "Per person"
+   },
+   {
+    "id": "sufficientarian",
+    "plainName": "Enough first"
+   }
+  ],
+  "session": {
+   "negotiationS": {
+    "seasons0to2": 180,
+    "from3": 240
+   },
+   "decisionS": 45,
+   "handoverStartsTimer": true,
+   "season0Minutes": 10,
+   "timeboxMinute": 80,
+   "deliberation": "table",
+   "plannedMinutes": 120
+  }
+ },
+ "events": [
+  {
+   "seq": 1,
+   "t": "2026-10-07T09:00:00Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "game.created",
+   "payload": {
+    "gameId": "FIXTR",
+    "mode": "room",
+    "appVersion": "fixture",
+    "schemeRoles": [
+     "A",
+     "B",
+     "C"
+    ],
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 9.0,
+      "capacityT": 4500,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 900
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "aquiferInitial": 20,
+    "commitments": {
+     "gameLength": "fe5398412e9a214da5112ca88ebeeaf7cce9262b4b49b1a9973381217108ac10",
+     "deckOrder": "26cab06743fb28dc6389da3f2a608e17000190e31fb082e4bc31c2280768b1f3"
+    },
+    "lenses": [
+     "utilitarian",
+     "egalitarian",
+     "proportional",
+     "capability",
+     "sufficientarian"
+    ],
+    "defaultLens": "proportional",
+    "floorRules": [
+     "capability",
+     "cea",
+     "cel",
+     "proportional",
+     "talmud"
+    ],
+    "runtime": {
+     "fairflowEngine": "1.0.0.dev0",
+     "numpy": "2.5.3",
+     "scipy": "1.18.1"
+    }
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 2,
+   "t": "2026-10-07T09:00:01Z",
+   "season": 0,
+   "actor": "A",
+   "type": "player.joined",
+   "payload": {
+    "role": "A",
+    "deviceId": "fixture-A",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 3,
+   "t": "2026-10-07T09:00:02Z",
+   "season": 0,
+   "actor": "B",
+   "type": "player.joined",
+   "payload": {
+    "role": "B",
+    "deviceId": "fixture-B",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 4,
+   "t": "2026-10-07T09:00:03Z",
+   "season": 0,
+   "actor": "C",
+   "type": "player.joined",
+   "payload": {
+    "role": "C",
+    "deviceId": "fixture-C",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 5,
+   "t": "2026-10-07T09:00:04Z",
+   "season": 0,
+   "actor": "authority",
+   "type": "player.joined",
+   "payload": {
+    "role": "authority",
+    "deviceId": "fixture-authority",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 6,
+   "t": "2026-10-07T09:00:05Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "dry",
+    "inflow": 12.0,
+    "reserve": 2,
+    "allocable": 10.0,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 9.0,
+      "capacityT": 4500,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 900
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       0.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.038889,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "egalitarian",
+      "Q": [
+       3.333333,
+       3.333333,
+       3.333333
+      ],
+      "shareOfNeed": [
+       0.533333,
+       0.37037,
+       0.980392
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       3.351206,
+       4.825737,
+       1.823056
+      ],
+      "shareOfNeed": [
+       0.536193,
+       0.536193,
+       0.536193
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "capability",
+      "Q": [
+       0.658537,
+       9.0,
+       0.341463
+      ],
+      "shareOfNeed": [
+       0.105366,
+       1.0,
+       0.10043
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "sufficientarian",
+      "Q": [
+       3.8,
+       4.5,
+       1.7
+      ],
+      "shareOfNeed": [
+       0.608,
+       0.5,
+       0.5
+      ],
+      "floorVoteNeeded": false
+     }
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 7,
+   "t": "2026-10-07T09:00:06Z",
+   "season": 1,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "proportional",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 8,
+   "t": "2026-10-07T09:00:07Z",
+   "season": 1,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "utilitarian",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 9,
+   "t": "2026-10-07T09:00:08Z",
+   "season": 1,
+   "actor": "A",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "utilitarian",
+    "voter": "A"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 10,
+   "t": "2026-10-07T09:00:09Z",
+   "season": 1,
+   "actor": "B",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "B"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 11,
+   "t": "2026-10-07T09:00:10Z",
+   "season": 1,
+   "actor": "C",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "C"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 12,
+   "t": "2026-10-07T09:00:11Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "proportional",
+    "tally": {
+     "utilitarian": 1,
+     "proportional": 2
+    },
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 13,
+   "t": "2026-10-07T09:00:12Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "proportional",
+    "floorRule": null,
+    "Q": [
+     3.351206,
+     4.825737,
+     1.823056
+    ],
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "poor",
+     "poor",
+     "poor"
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 14,
+   "t": "2026-10-07T09:00:13Z",
+   "season": 1,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3144.77184,
+      "points": {
+       "none": 31.447718,
+       "orchard": 21.447718,
+       "drip": 23.447718,
+       "expand": 26.447718
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 3784.77184,
+      "points": {
+       "none": 35.847718,
+       "orchard": 25.847718,
+       "drip": 27.847718,
+       "expand": 30.847718
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 4424.77184,
+      "points": {
+       "none": 40.247718,
+       "orchard": 30.247718,
+       "drip": 32.247718,
+       "expand": 35.247718
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 15,
+   "t": "2026-10-07T09:00:14Z",
+   "season": 1,
+   "actor": "B",
+   "type": "private.opened",
+   "payload": {
+    "role": "B",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 2204.15535,
+      "points": {
+       "none": 22.041554,
+       "orchard": 12.041554,
+       "drip": 14.041554,
+       "expand": 17.041554
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 2754.15535,
+      "points": {
+       "none": 25.541553,
+       "orchard": 15.541553,
+       "drip": 17.541553,
+       "expand": 20.541553
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 3304.15535,
+      "points": {
+       "none": 29.041554,
+       "orchard": 19.041554,
+       "drip": 21.041554,
+       "expand": 24.041554
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 16,
+   "t": "2026-10-07T09:00:15Z",
+   "season": 1,
+   "actor": "C",
+   "type": "private.opened",
+   "payload": {
+    "role": "C",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 1072.385882,
+      "points": {
+       "none": 10.723859,
+       "orchard": 0.723859,
+       "drip": 2.723859,
+       "expand": 5.723859
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 1660.621176,
+      "points": {
+       "none": 14.606212,
+       "orchard": 4.606212,
+       "drip": 6.606212,
+       "expand": 9.606212
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 16.0,
+       "orchard": 6.0,
+       "drip": 8.0,
+       "expand": 11.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 17,
+   "t": "2026-10-07T09:00:17Z",
+   "season": 1,
+   "actor": "A",
+   "type": "action.played",
+   "payload": {
+    "role": "A",
+    "pumps": 1.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:16Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 18,
+   "t": "2026-10-07T09:00:19Z",
+   "season": 1,
+   "actor": "B",
+   "type": "action.played",
+   "payload": {
+    "role": "B",
+    "pumps": 0.0,
+    "action": "expand",
+    "committedAt": "2026-10-07T09:00:18Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 19,
+   "t": "2026-10-07T09:00:21Z",
+   "season": 1,
+   "actor": "C",
+   "type": "action.played",
+   "payload": {
+    "role": "C",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:20Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 20,
+   "t": "2026-10-07T09:00:22Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "season.resolved",
+   "payload": {
+    "public": {
+     "allocable": 10.0,
+     "pumpsTotal": 1.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
+     "inflowLossNext": 0.0,
+     "asAllocated": {
+      "ePJ": 1.0,
+      "eSE": {
+       "claimant": 0.632229,
+       "hectare": 1.0,
+       "person": 0.350968
+      },
+      "F": {
+       "consumed": 1.04137,
+       "diverted": 1.04137
+      }
+     },
+     "sustainabilityBand": "good",
+     "bands": {
+      "ePJ": "good",
+      "eSE": "poor",
+      "F": "good"
+     }
+    },
+    "sealed": {
+     "pumpCost": [
+      2.0,
+      2.0,
+      2.0
+     ],
+     "P": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "W": [
+      4.351206,
+      4.825737,
+      1.823056
+     ],
+     "A": [
+      0.696193,
+      0.536193,
+      0.536193
+     ],
+     "Y": [
+      3784.77184,
+      2204.15535,
+      1072.385882
+     ],
+     "dL": [
+      35.847718,
+      22.041554,
+      10.723859
+     ],
+     "stockNext": 20.0,
+     "spill": 2.821179,
+     "returnFlow": 2.821179,
+     "ePJ": 0.872059,
+     "eSE": {
+      "claimant": 0.64056,
+      "hectare": 0.872059,
+      "person": 0.332151
+     },
+     "gini": 0.060312,
+     "giniCorrected": 0.090468,
+     "F": {
+      "consumed": 1.019147,
+      "diverted": 1.041055
+     },
+     "S": 0.987921,
+     "triangle": {
+      "r1": 0.872059,
+      "r2": 1.0,
+      "r3": 1.0,
+      "area": 1.188238,
+      "score": 0.955393
+     },
+     "welfare": {
+      "UWF": 0.589526,
+      "PWF": -4.509824,
+      "PWFede": 0.576721,
+      "SWF": 0.589526,
+      "EWF": 0.939688,
+      "CWF": 0.542298
+     },
+     "roles": [
+      "A",
+      "B",
+      "C"
+     ],
+     "pumpsBy": {
+      "A": 1.0,
+      "B": 0.0,
+      "C": 0.0
+     },
+     "L": [
+      35.847718,
+      17.041554,
+      10.723859
+     ],
+     "lowRun": [
+      0,
+      0,
+      0
+     ],
+     "cropFailure": [
+      false,
+      false,
+      false
+     ],
+     "cropFailureFlag": false,
+     "actionCost": [
+      0.0,
+      5,
+      0.0
+     ],
+     "verdict": {
+      "voted": "proportional",
+      "satisfied": "proportional",
+      "pumpingGap": 1.0
+     }
+    }
+   },
+   "visibility": "mixed"
+  },
+  {
+   "seq": 21,
+   "t": "2026-10-07T09:00:23Z",
+   "season": 2,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "normal",
+    "inflow": 17.0,
+    "reserve": 2,
+    "allocable": 15.0,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 10.8,
+      "capacityT": 5400.0,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 1080.0
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       5.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.49537,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "egalitarian",
+      "Q": [
+       5.8,
+       5.8,
+       3.4
+      ],
+      "shareOfNeed": [
+       0.928,
+       0.537037,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       4.584352,
+       7.92176,
+       2.493888
+      ],
+      "shareOfNeed": [
+       0.733496,
+       0.733496,
+       0.733496
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "capability",
+      "Q": [
+       2.765854,
+       10.8,
+       1.434146
+      ],
+      "shareOfNeed": [
+       0.442537,
+       1.0,
+       0.421808
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "sufficientarian",
+      "Q": [
+       6.25,
+       5.4,
+       3.35
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.5,
+       0.985294
+      ],
+      "floorVoteNeeded": false
+     }
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 22,
+   "t": "2026-10-07T09:00:24Z",
+   "season": 2,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "proportional",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 23,
+   "t": "2026-10-07T09:00:25Z",
+   "season": 2,
+   "actor": "A",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "A"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 24,
+   "t": "2026-10-07T09:00:26Z",
+   "season": 2,
+   "actor": "B",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "B"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 25,
+   "t": "2026-10-07T09:00:27Z",
+   "season": 2,
+   "actor": "C",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "C"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 26,
+   "t": "2026-10-07T09:00:28Z",
+   "season": 2,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "proportional",
+    "tally": {
+     "proportional": 3
+    },
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 27,
+   "t": "2026-10-07T09:00:29Z",
+   "season": 2,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "proportional",
+    "floorRule": null,
+    "Q": [
+     4.584352,
+     7.92176,
+     2.493888
+    ],
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "ok",
+     "ok",
+     "ok"
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 28,
+   "t": "2026-10-07T09:00:30Z",
+   "season": 2,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3933.98528,
+      "points": {
+       "none": 39.339853,
+       "orchard": 29.339853,
+       "drip": 31.339853,
+       "expand": 34.339853
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 4573.98528,
+      "points": {
+       "none": 43.739853,
+       "orchard": 33.739853,
+       "drip": 35.739853,
+       "expand": 38.739853
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 5000.0,
+      "points": {
+       "none": 46.0,
+       "orchard": 36.0,
+       "drip": 38.0,
+       "expand": 41.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 29,
+   "t": "2026-10-07T09:00:31Z",
+   "season": 2,
+   "actor": "B",
+   "type": "private.opened",
+   "payload": {
+    "role": "B",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3816.968,
+      "points": {
+       "none": 38.16968,
+       "orchard": 28.16968,
+       "drip": 30.16968,
+       "expand": 33.16968
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 4366.968,
+      "points": {
+       "none": 41.66968,
+       "orchard": 31.66968,
+       "drip": 33.66968,
+       "expand": 36.66968
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 4916.968,
+      "points": {
+       "none": 45.16968,
+       "orchard": 35.16968,
+       "drip": 37.16968,
+       "expand": 40.16968
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 30,
+   "t": "2026-10-07T09:00:32Z",
+   "season": 2,
+   "actor": "C",
+   "type": "private.opened",
+   "payload": {
+    "role": "C",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 1466.992941,
+      "points": {
+       "none": 14.669929,
+       "orchard": 4.669929,
+       "drip": 6.669929,
+       "expand": 9.669929
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 18.0,
+       "orchard": 8.0,
+       "drip": 10.0,
+       "expand": 13.0
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 16.0,
+       "orchard": 6.0,
+       "drip": 8.0,
+       "expand": 11.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 31,
+   "t": "2026-10-07T09:00:34Z",
+   "season": 2,
+   "actor": "A",
+   "type": "action.played",
+   "payload": {
+    "role": "A",
+    "pumps": 1.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:33Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 32,
+   "t": "2026-10-07T09:00:36Z",
+   "season": 2,
+   "actor": "B",
+   "type": "action.played",
+   "payload": {
+    "role": "B",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:35Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 33,
+   "t": "2026-10-07T09:00:38Z",
+   "season": 2,
+   "actor": "C",
+   "type": "action.played",
+   "payload": {
+    "role": "C",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:37Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 34,
+   "t": "2026-10-07T09:00:39Z",
+   "season": 2,
+   "actor": "engine",
+   "type": "season.resolved",
+   "payload": {
+    "public": {
+     "allocable": 15.0,
+     "pumpsTotal": 1.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
+     "inflowLossNext": 0.0,
+     "asAllocated": {
+      "ePJ": 1.0,
+      "eSE": {
+       "claimant": 0.552935,
+       "hectare": 1.0,
+       "person": 0.362317
+      },
+      "F": {
+       "consumed": 1.013478,
+       "diverted": 1.013478
+      }
+     },
+     "sustainabilityBand": "good",
+     "bands": {
+      "ePJ": "good",
+      "eSE": "poor",
+      "F": "good"
+     }
+    },
+    "sealed": {
+     "pumpCost": [
+      2.0,
+      2.0,
+      2.0
+     ],
+     "P": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "W": [
+      5.584352,
+      7.92176,
+      2.493888
+     ],
+     "A": [
+      0.893496,
+      0.733496,
+      0.733496
+     ],
+     "Y": [
+      4573.98528,
+      3816.968,
+      1466.992941
+     ],
+     "dL": [
+      43.739853,
+      38.16968,
+      14.669929
+     ],
+     "stockNext": 20.0,
+     "spill": 4.350611,
+     "returnFlow": 4.350611,
+     "ePJ": 0.904141,
+     "eSE": {
+      "claimant": 0.583184,
+      "hectare": 0.904141,
+      "person": 0.350348
+     },
+     "gini": 0.045188,
+     "giniCorrected": 0.067783,
+     "F": {
+      "consumed": 1.000109,
+      "diverted": 1.016104
+     },
+     "S": 0.991489,
+     "triangle": {
+      "r1": 0.904141,
+      "r2": 1.0,
+      "r3": 1.0,
+      "area": 1.216022,
+      "score": 0.966968
+     },
+     "welfare": {
+      "UWF": 0.78683,
+      "PWF": -2.48498,
+      "PWFede": 0.776934,
+      "SWF": 0.78683,
+      "EWF": 0.954812,
+      "CWF": 0.739601
+     },
+     "roles": [
+      "A",
+      "B",
+      "C"
+     ],
+     "pumpsBy": {
+      "A": 1.0,
+      "B": 0.0,
+      "C": 0.0
+     },
+     "L": [
+      79.587571,
+      55.211234,
+      25.393788
+     ],
+     "lowRun": [
+      0,
+      0,
+      0
+     ],
+     "cropFailure": [
+      false,
+      false,
+      false
+     ],
+     "cropFailureFlag": false,
+     "actionCost": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "verdict": {
+      "voted": "proportional",
+      "satisfied": "proportional",
+      "pumpingGap": 1.0
+     }
+    }
+   },
+   "visibility": "mixed"
+  },
+  {
+   "seq": 35,
+   "t": "2026-10-07T09:00:40Z",
+   "season": 3,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "normal",
+    "inflow": 17.0,
+    "reserve": 2,
+    "allocable": 15.0,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 10.8,
+      "capacityT": 5400.0,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 1080.0
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       5.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.49537,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "egalitarian",
+      "Q": [
+       5.8,
+       5.8,
+       3.4
+      ],
+      "shareOfNeed": [
+       0.928,
+       0.537037,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       4.584352,
+       7.92176,
+       2.493888
+      ],
+      "shareOfNeed": [
+       0.733496,
+       0.733496,
+       0.733496
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "capability",
+      "Q": [
+       2.765854,
+       10.8,
+       1.434146
+      ],
+      "shareOfNeed": [
+       0.442537,
+       1.0,
+       0.421808
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "sufficientarian",
+      "Q": [
+       6.25,
+       5.4,
+       3.35
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.5,
+       0.985294
+      ],
+      "floorVoteNeeded": false
+     }
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 36,
+   "t": "2026-10-07T09:00:41Z",
+   "season": 3,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "proportional",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 37,
+   "t": "2026-10-07T09:00:42Z",
+   "season": 3,
+   "actor": "A",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "A"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 38,
+   "t": "2026-10-07T09:00:43Z",
+   "season": 3,
+   "actor": "B",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "B"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 39,
+   "t": "2026-10-07T09:00:44Z",
+   "season": 3,
+   "actor": "C",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "C"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 40,
+   "t": "2026-10-07T09:00:45Z",
+   "season": 3,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "proportional",
+    "tally": {
+     "proportional": 3
+    },
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 41,
+   "t": "2026-10-07T09:00:46Z",
+   "season": 3,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "proportional",
+    "floorRule": null,
+    "Q": [
+     4.584352,
+     7.92176,
+     2.493888
+    ],
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "ok",
+     "ok",
+     "ok"
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 42,
+   "t": "2026-10-07T09:00:47Z",
+   "season": 3,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3933.98528,
+      "points": {
+       "none": 39.339853,
+       "orchard": 29.339853,
+       "drip": 31.339853,
+       "expand": 34.339853
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 4573.98528,
+      "points": {
+       "none": 43.739853,
+       "orchard": 33.739853,
+       "drip": 35.739853,
+       "expand": 38.739853
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 5000.0,
+      "points": {
+       "none": 46.0,
+       "orchard": 36.0,
+       "drip": 38.0,
+       "expand": 41.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 43,
+   "t": "2026-10-07T09:00:48Z",
+   "season": 3,
+   "actor": "B",
+   "type": "private.opened",
+   "payload": {
+    "role": "B",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3816.968,
+      "points": {
+       "none": 38.16968,
+       "orchard": 28.16968,
+       "drip": 30.16968,
+       "expand": 33.16968
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 4366.968,
+      "points": {
+       "none": 41.66968,
+       "orchard": 31.66968,
+       "drip": 33.66968,
+       "expand": 36.66968
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 4916.968,
+      "points": {
+       "none": 45.16968,
+       "orchard": 35.16968,
+       "drip": 37.16968,
+       "expand": 40.16968
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 44,
+   "t": "2026-10-07T09:00:49Z",
+   "season": 3,
+   "actor": "C",
+   "type": "private.opened",
+   "payload": {
+    "role": "C",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 1466.992941,
+      "points": {
+       "none": 14.669929,
+       "orchard": 4.669929,
+       "drip": 6.669929,
+       "expand": 9.669929
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 18.0,
+       "orchard": 8.0,
+       "drip": 10.0,
+       "expand": 13.0
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 16.0,
+       "orchard": 6.0,
+       "drip": 8.0,
+       "expand": 11.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 45,
+   "t": "2026-10-07T09:00:51Z",
+   "season": 3,
+   "actor": "A",
+   "type": "action.played",
+   "payload": {
+    "role": "A",
+    "pumps": 1.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:50Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 46,
+   "t": "2026-10-07T09:00:53Z",
+   "season": 3,
+   "actor": "B",
+   "type": "action.played",
+   "payload": {
+    "role": "B",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:52Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 47,
+   "t": "2026-10-07T09:00:55Z",
+   "season": 3,
+   "actor": "C",
+   "type": "action.played",
+   "payload": {
+    "role": "C",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:54Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 48,
+   "t": "2026-10-07T09:00:56Z",
+   "season": 3,
+   "actor": "engine",
+   "type": "season.resolved",
+   "payload": {
+    "public": {
+     "allocable": 15.0,
+     "pumpsTotal": 1.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
+     "inflowLossNext": 0.0,
+     "asAllocated": {
+      "ePJ": 1.0,
+      "eSE": {
+       "claimant": 0.552935,
+       "hectare": 1.0,
+       "person": 0.362317
+      },
+      "F": {
+       "consumed": 1.013478,
+       "diverted": 1.013478
+      }
+     },
+     "sustainabilityBand": "good",
+     "bands": {
+      "ePJ": "good",
+      "eSE": "poor",
+      "F": "good"
+     }
+    },
+    "sealed": {
+     "pumpCost": [
+      2.0,
+      2.0,
+      2.0
+     ],
+     "P": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "W": [
+      5.584352,
+      7.92176,
+      2.493888
+     ],
+     "A": [
+      0.893496,
+      0.733496,
+      0.733496
+     ],
+     "Y": [
+      4573.98528,
+      3816.968,
+      1466.992941
+     ],
+     "dL": [
+      43.739853,
+      38.16968,
+      14.669929
+     ],
+     "stockNext": 20.0,
+     "spill": 4.350611,
+     "returnFlow": 4.350611,
+     "ePJ": 0.904141,
+     "eSE": {
+      "claimant": 0.583184,
+      "hectare": 0.904141,
+      "person": 0.350348
+     },
+     "gini": 0.045188,
+     "giniCorrected": 0.067783,
+     "F": {
+      "consumed": 1.000109,
+      "diverted": 1.016104
+     },
+     "S": 0.991489,
+     "triangle": {
+      "r1": 0.904141,
+      "r2": 1.0,
+      "r3": 1.0,
+      "area": 1.216022,
+      "score": 0.966968
+     },
+     "welfare": {
+      "UWF": 0.78683,
+      "PWF": -2.48498,
+      "PWFede": 0.776934,
+      "SWF": 0.78683,
+      "EWF": 0.954812,
+      "CWF": 0.739601
+     },
+     "roles": [
+      "A",
+      "B",
+      "C"
+     ],
+     "pumpsBy": {
+      "A": 1.0,
+      "B": 0.0,
+      "C": 0.0
+     },
+     "L": [
+      123.327424,
+      93.380914,
+      40.063717
+     ],
+     "lowRun": [
+      0,
+      0,
+      0
+     ],
+     "cropFailure": [
+      false,
+      false,
+      false
+     ],
+     "cropFailureFlag": false,
+     "actionCost": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "verdict": {
+      "voted": "proportional",
+      "satisfied": "proportional",
+      "pumpingGap": 1.0
+     }
+    }
+   },
+   "visibility": "mixed"
+  },
+  {
+   "seq": 49,
+   "t": "2026-10-07T09:00:57Z",
+   "season": 4,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "dry",
+    "inflow": 12.0,
+    "reserve": 2,
+    "allocable": 10.0,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 10.8,
+      "capacityT": 5400.0,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 1080.0
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       0.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.032407,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "egalitarian",
+      "Q": [
+       3.333333,
+       3.333333,
+       3.333333
+      ],
+      "shareOfNeed": [
+       0.533333,
+       0.308642,
+       0.980392
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       3.056235,
+       5.281174,
+       1.662592
+      ],
+      "shareOfNeed": [
+       0.488998,
+       0.488998,
+       0.488998
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "capability",
+      "Q": [
+       0.381536,
+       9.420631,
+       0.197833
+      ],
+      "shareOfNeed": [
+       0.061046,
+       0.872281,
+       0.058186
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "sufficientarian",
+      "Q": [
+       3.056235,
+       5.281174,
+       1.662592
+      ],
+      "shareOfNeed": [
+       0.488998,
+       0.488998,
+       0.488998
+      ],
+      "floorVoteNeeded": true
+     }
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 50,
+   "t": "2026-10-07T09:00:58Z",
+   "season": 4,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "proportional",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 51,
+   "t": "2026-10-07T09:00:59Z",
+   "season": 4,
+   "actor": "A",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "A"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 52,
+   "t": "2026-10-07T09:00:60Z",
+   "season": 4,
+   "actor": "B",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "B"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 53,
+   "t": "2026-10-07T09:00:61Z",
+   "season": 4,
+   "actor": "C",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "C"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 54,
+   "t": "2026-10-07T09:00:62Z",
+   "season": 4,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "proportional",
+    "tally": {
+     "proportional": 3
+    },
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 55,
+   "t": "2026-10-07T09:00:63Z",
+   "season": 4,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "proportional",
+    "floorRule": null,
+    "Q": [
+     3.056235,
+     5.281174,
+     1.662592
+    ],
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "poor",
+     "poor",
+     "poor"
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 56,
+   "t": "2026-10-07T09:00:64Z",
+   "season": 4,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 2933.9856,
+      "points": {
+       "none": 29.339856,
+       "orchard": 19.339856,
+       "drip": 21.339856,
+       "expand": 24.339856
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 3595.9904,
+      "points": {
+       "none": 33.959904,
+       "orchard": 23.959904,
+       "drip": 25.959904,
+       "expand": 28.959904
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 4235.9904,
+      "points": {
+       "none": 38.359904,
+       "orchard": 28.359904,
+       "drip": 30.359904,
+       "expand": 33.359904
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 57,
+   "t": "2026-10-07T09:00:65Z",
+   "season": 4,
+   "actor": "B",
+   "type": "private.opened",
+   "payload": {
+    "role": "B",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 2376.5283,
+      "points": {
+       "none": 23.765283,
+       "orchard": 13.765283,
+       "drip": 15.765283,
+       "expand": 18.765283
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 2914.6457,
+      "points": {
+       "none": 27.146457,
+       "orchard": 17.146457,
+       "drip": 19.146457,
+       "expand": 22.146457
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 3464.6457,
+      "points": {
+       "none": 30.646457,
+       "orchard": 20.646457,
+       "drip": 22.646457,
+       "expand": 25.646457
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 58,
+   "t": "2026-10-07T09:00:66Z",
+   "season": 4,
+   "actor": "C",
+   "type": "private.opened",
+   "payload": {
+    "role": "C",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 977.995294,
+      "points": {
+       "none": 9.779953,
+       "orchard": -0.220047,
+       "drip": 1.779953,
+       "expand": 4.779953
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 1566.230588,
+      "points": {
+       "none": 13.662306,
+       "orchard": 3.662306,
+       "drip": 5.662306,
+       "expand": 8.662306
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 16.0,
+       "orchard": 6.0,
+       "drip": 8.0,
+       "expand": 11.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 59,
+   "t": "2026-10-07T09:00:68Z",
+   "season": 4,
+   "actor": "A",
+   "type": "action.played",
+   "payload": {
+    "role": "A",
+    "pumps": 1.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:67Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 60,
+   "t": "2026-10-07T09:00:70Z",
+   "season": 4,
+   "actor": "B",
+   "type": "action.played",
+   "payload": {
+    "role": "B",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:69Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 61,
+   "t": "2026-10-07T09:00:72Z",
+   "season": 4,
+   "actor": "C",
+   "type": "action.played",
+   "payload": {
+    "role": "C",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:71Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 62,
+   "t": "2026-10-07T09:00:73Z",
+   "season": 4,
+   "actor": "engine",
+   "type": "season.resolved",
+   "payload": {
+    "public": {
+     "allocable": 10.0,
+     "pumpsTotal": 1.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
+     "inflowLossNext": 0.0,
+     "asAllocated": {
+      "ePJ": 1.0,
+      "eSE": {
+       "claimant": 0.552935,
+       "hectare": 1.0,
+       "person": 0.362317
+      },
+      "F": {
+       "consumed": 1.037097,
+       "diverted": 1.037097
+      }
+     },
+     "sustainabilityBand": "good",
+     "bands": {
+      "ePJ": "good",
+      "eSE": "poor",
+      "F": "good"
+     }
+    },
+    "sealed": {
+     "pumpCost": [
+      2.0,
+      2.0,
+      2.0
+     ],
+     "P": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "W": [
+      4.056235,
+      5.281174,
+      1.662592
+     ],
+     "A": [
+      0.648998,
+      0.488998,
+      0.488998
+     ],
+     "Y": [
+      3595.9904,
+      2376.5283,
+      977.995294
+     ],
+     "dL": [
+      33.959904,
+      23.765283,
+      9.779953
+     ],
+     "stockNext": 20.0,
+     "spill": 2.933741,
+     "returnFlow": 2.933741,
+     "ePJ": 0.860925,
+     "eSE": {
+      "claimant": 0.590161,
+      "hectare": 0.860925,
+      "person": 0.33876
+     },
+     "gini": 0.065561,
+     "giniCorrected": 0.098341,
+     "F": {
+      "consumed": 1.018378,
+      "diverted": 1.042067
+     },
+     "S": 0.987755,
+     "triangle": {
+      "r1": 0.860925,
+      "r2": 1.0,
+      "r3": 1.0,
+      "area": 1.178596,
+      "score": 0.951309
+     },
+     "welfare": {
+      "UWF": 0.542331,
+      "PWF": -5.369114,
+      "PWFede": 0.52856,
+      "SWF": 0.0,
+      "EWF": 0.934439,
+      "CWF": 0.495102
+     },
+     "roles": [
+      "A",
+      "B",
+      "C"
+     ],
+     "pumpsBy": {
+      "A": 1.0,
+      "B": 0.0,
+      "C": 0.0
+     },
+     "L": [
+      157.287328,
+      117.146197,
+      49.84367
+     ],
+     "lowRun": [
+      0,
+      1,
+      1
+     ],
+     "cropFailure": [
+      false,
+      false,
+      false
+     ],
+     "cropFailureFlag": false,
+     "actionCost": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "verdict": {
+      "voted": "proportional",
+      "satisfied": "proportional",
+      "pumpingGap": 1.0
+     }
+    }
+   },
+   "visibility": "mixed"
+  },
+  {
+   "seq": 63,
+   "t": "2026-10-07T09:00:74Z",
+   "season": 5,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "normal",
+    "inflow": 17.0,
+    "reserve": 2,
+    "allocable": 15.0,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 10.8,
+      "capacityT": 5400.0,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 1080.0
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       5.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.49537,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "egalitarian",
+      "Q": [
+       5.8,
+       5.8,
+       3.4
+      ],
+      "shareOfNeed": [
+       0.928,
+       0.537037,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       4.584352,
+       7.92176,
+       2.493888
+      ],
+      "shareOfNeed": [
+       0.733496,
+       0.733496,
+       0.733496
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "capability",
+      "Q": [
+       2.765854,
+       10.8,
+       1.434146
+      ],
+      "shareOfNeed": [
+       0.442537,
+       1.0,
+       0.421808
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "sufficientarian",
+      "Q": [
+       6.25,
+       5.4,
+       3.35
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.5,
+       0.985294
+      ],
+      "floorVoteNeeded": false
+     }
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 64,
+   "t": "2026-10-07T09:00:75Z",
+   "season": 5,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "proportional",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 65,
+   "t": "2026-10-07T09:00:76Z",
+   "season": 5,
+   "actor": "A",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "A"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 66,
+   "t": "2026-10-07T09:00:77Z",
+   "season": 5,
+   "actor": "B",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "B"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 67,
+   "t": "2026-10-07T09:00:78Z",
+   "season": 5,
+   "actor": "C",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "C"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 68,
+   "t": "2026-10-07T09:00:79Z",
+   "season": 5,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "proportional",
+    "tally": {
+     "proportional": 3
+    },
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 69,
+   "t": "2026-10-07T09:00:80Z",
+   "season": 5,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "proportional",
+    "floorRule": null,
+    "Q": [
+     4.584352,
+     7.92176,
+     2.493888
+    ],
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "ok",
+     "ok",
+     "ok"
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 70,
+   "t": "2026-10-07T09:00:81Z",
+   "season": 5,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3933.98528,
+      "points": {
+       "none": 39.339853,
+       "orchard": 29.339853,
+       "drip": 31.339853,
+       "expand": 34.339853
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 4573.98528,
+      "points": {
+       "none": 43.739853,
+       "orchard": 33.739853,
+       "drip": 35.739853,
+       "expand": 38.739853
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 5000.0,
+      "points": {
+       "none": 46.0,
+       "orchard": 36.0,
+       "drip": 38.0,
+       "expand": 41.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 71,
+   "t": "2026-10-07T09:00:82Z",
+   "season": 5,
+   "actor": "B",
+   "type": "private.opened",
+   "payload": {
+    "role": "B",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3816.968,
+      "points": {
+       "none": 38.16968,
+       "orchard": 28.16968,
+       "drip": 30.16968,
+       "expand": 33.16968
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 4366.968,
+      "points": {
+       "none": 41.66968,
+       "orchard": 31.66968,
+       "drip": 33.66968,
+       "expand": 36.66968
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 4916.968,
+      "points": {
+       "none": 45.16968,
+       "orchard": 35.16968,
+       "drip": 37.16968,
+       "expand": 40.16968
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 72,
+   "t": "2026-10-07T09:00:83Z",
+   "season": 5,
+   "actor": "C",
+   "type": "private.opened",
+   "payload": {
+    "role": "C",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 1466.992941,
+      "points": {
+       "none": 14.669929,
+       "orchard": 4.669929,
+       "drip": 6.669929,
+       "expand": 9.669929
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 18.0,
+       "orchard": 8.0,
+       "drip": 10.0,
+       "expand": 13.0
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 2000.0,
+      "points": {
+       "none": 16.0,
+       "orchard": 6.0,
+       "drip": 8.0,
+       "expand": 11.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 73,
+   "t": "2026-10-07T09:00:85Z",
+   "season": 5,
+   "actor": "A",
+   "type": "action.played",
+   "payload": {
+    "role": "A",
+    "pumps": 1.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:84Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 74,
+   "t": "2026-10-07T09:00:87Z",
+   "season": 5,
+   "actor": "B",
+   "type": "action.played",
+   "payload": {
+    "role": "B",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:86Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 75,
+   "t": "2026-10-07T09:00:89Z",
+   "season": 5,
+   "actor": "C",
+   "type": "action.played",
+   "payload": {
+    "role": "C",
+    "pumps": 0.0,
+    "action": null,
+    "committedAt": "2026-10-07T09:00:88Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 76,
+   "t": "2026-10-07T09:00:90Z",
+   "season": 5,
+   "actor": "engine",
+   "type": "season.resolved",
+   "payload": {
+    "public": {
+     "allocable": 15.0,
+     "pumpsTotal": 1.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
+     "inflowLossNext": 0.0,
+     "asAllocated": {
+      "ePJ": 1.0,
+      "eSE": {
+       "claimant": 0.552935,
+       "hectare": 1.0,
+       "person": 0.362317
+      },
+      "F": {
+       "consumed": 1.013478,
+       "diverted": 1.013478
+      }
+     },
+     "sustainabilityBand": "good",
+     "bands": {
+      "ePJ": "good",
+      "eSE": "poor",
+      "F": "good"
+     }
+    },
+    "sealed": {
+     "pumpCost": [
+      2.0,
+      2.0,
+      2.0
+     ],
+     "P": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "W": [
+      5.584352,
+      7.92176,
+      2.493888
+     ],
+     "A": [
+      0.893496,
+      0.733496,
+      0.733496
+     ],
+     "Y": [
+      4573.98528,
+      3816.968,
+      1466.992941
+     ],
+     "dL": [
+      43.739853,
+      38.16968,
+      14.669929
+     ],
+     "stockNext": 20.0,
+     "spill": 4.350611,
+     "returnFlow": 4.350611,
+     "ePJ": 0.904141,
+     "eSE": {
+      "claimant": 0.583184,
+      "hectare": 0.904141,
+      "person": 0.350348
+     },
+     "gini": 0.045188,
+     "giniCorrected": 0.067783,
+     "F": {
+      "consumed": 1.000109,
+      "diverted": 1.016104
+     },
+     "S": 0.991489,
+     "triangle": {
+      "r1": 0.904141,
+      "r2": 1.0,
+      "r3": 1.0,
+      "area": 1.216022,
+      "score": 0.966968
+     },
+     "welfare": {
+      "UWF": 0.78683,
+      "PWF": -2.48498,
+      "PWFede": 0.776934,
+      "SWF": 0.78683,
+      "EWF": 0.954812,
+      "CWF": 0.739601
+     },
+     "roles": [
+      "A",
+      "B",
+      "C"
+     ],
+     "pumpsBy": {
+      "A": 1.0,
+      "B": 0.0,
+      "C": 0.0
+     },
+     "L": [
+      201.027181,
+      155.315877,
+      64.513599
+     ],
+     "lowRun": [
+      0,
+      0,
+      0
+     ],
+     "cropFailure": [
+      false,
+      false,
+      false
+     ],
+     "cropFailureFlag": false,
+     "actionCost": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "verdict": {
+      "voted": "proportional",
+      "satisfied": "proportional",
+      "pumpingGap": 1.0
+     }
+    }
+   },
+   "visibility": "mixed"
+  },
+  {
+   "seq": 77,
+   "t": "2026-10-07T09:00:91Z",
+   "season": 5,
+   "actor": "engine",
+   "type": "game.ended",
+   "payload": {
+    "T": 5,
+    "nonce": "ffffffffffffffffffffffffffffffff",
+    "deckOrder": [
+     "dry",
+     "normal",
+     "normal",
+     "dry",
+     "normal",
+     "wet"
+    ],
+    "truncated": false,
+    "seasonsPlayed": 5,
+    "collectiveScore": 0.9615212,
+    "cropFailureFlag": false,
+    "brief": {
+     "heaviestPumping": {
+      "season": 1,
+      "pumpsTotal": 1.0
+     },
+     "lensBySeason": [
+      "proportional",
+      "proportional",
+      "proportional",
+      "proportional",
+      "proportional"
+     ],
+     "lensChanges": 0,
+     "floorVotes": 0
+    },
+    "authorityGoal": {
+     "maxMeanPumping": 2,
+     "meanPumping": 1.0,
+     "met": true
+    }
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 78,
+   "t": "2026-10-07T09:00:92Z",
+   "season": 5,
+   "actor": "A",
+   "type": "goal.result",
+   "payload": {
+    "role": "A",
+    "kind": "livelihood_share",
+    "threshold": 0.75,
+    "value": 0.804109,
+    "met": true
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 79,
+   "t": "2026-10-07T09:00:93Z",
+   "season": 5,
+   "actor": "B",
+   "type": "goal.result",
+   "payload": {
+    "role": "B",
+    "kind": "adequacy_floor",
+    "threshold": 0.5,
+    "value": 0.488998,
+    "met": false
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 80,
+   "t": "2026-10-07T09:00:94Z",
+   "season": 5,
+   "actor": "C",
+   "type": "goal.result",
+   "payload": {
+    "role": "C",
+    "kind": "adequacy_in_half_seasons",
+    "threshold": 0.8,
+    "value": 0.0,
+    "met": false
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 81,
+   "t": "2026-10-07T09:00:97Z",
+   "season": 5,
+   "actor": "authority",
+   "type": "debrief.opened",
+   "payload": {
+    "perPlayer": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 82,
+   "t": "2026-10-07T09:00:98Z",
+   "season": 5,
+   "actor": "engine",
+   "type": "debrief.welfare",
+   "payload": {
+    "gammas": [
+     0.0,
+     0.052632,
+     0.111111,
+     0.176471,
+     0.25,
+     0.333333,
+     0.428571,
+     0.538462,
+     0.666667,
+     0.818182,
+     1.0,
+     1.222222,
+     1.5,
+     1.857143,
+     2.333333,
+     3.0,
+     4.0,
+     5.666667,
+     9.0,
+     19.0,
+     null
+    ],
+    "start": 15,
+    "seasons": [
+     {
+      "season": 1,
+      "lenses": {
+       "utilitarian": [
+        0.67963,
+        0.667699,
+        0.65364,
+        0.636876,
+        0.616634,
+        0.591858,
+        0.561123,
+        0.522544,
+        0.473821,
+        0.412725,
+        0.338799,
+        0.256926,
+        0.180007,
+        0.122288,
+        0.086935,
+        0.067256,
+        0.056085,
+        0.049211,
+        0.044613,
+        0.041336,
+        0.038889
+       ],
+       "egalitarian": [
+        0.628032,
+        0.625335,
+        0.622343,
+        0.619009,
+        0.615272,
+        0.611056,
+        0.60627,
+        0.600797,
+        0.594488,
+        0.587155,
+        0.578555,
+        0.568382,
+        0.556246,
+        0.541679,
+        0.524162,
+        0.503239,
+        0.478772,
+        0.451286,
+        0.422081,
+        0.393649,
+        0.37037
+       ],
+       "proportional": [
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193,
+        0.536193
+       ],
+       "capability": [
+        0.401932,
+        0.390842,
+        0.378503,
+        0.364746,
+        0.34939,
+        0.332257,
+        0.313203,
+        0.292161,
+        0.269228,
+        0.244769,
+        0.219544,
+        0.194749,
+        0.171878,
+        0.152329,
+        0.136909,
+        0.125584,
+        0.117632,
+        0.112056,
+        0.107969,
+        0.104685,
+        0.10043
+       ],
+       "sufficientarian": [
+        0.536,
+        0.535875,
+        0.535737,
+        0.535583,
+        0.535411,
+        0.535216,
+        0.534994,
+        0.534738,
+        0.534442,
+        0.534094,
+        0.53368,
+        0.533179,
+        0.53256,
+        0.531777,
+        0.530757,
+        0.529376,
+        0.527409,
+        0.524421,
+        0.519495,
+        0.510974,
+        0.5
+       ]
+      },
+      "used": [
+       0.589526,
+       0.589279,
+       0.589006,
+       0.588701,
+       0.58836,
+       0.587974,
+       0.587536,
+       0.587033,
+       0.58645,
+       0.585768,
+       0.584957,
+       0.583979,
+       0.582778,
+       0.581269,
+       0.579321,
+       0.576721,
+       0.573106,
+       0.567839,
+       0.55985,
+       0.54827,
+       0.536193
+      ]
+     },
+     {
+      "season": 2,
+      "lenses": {
+       "utilitarian": [
+        0.83179,
+        0.829822,
+        0.827611,
+        0.82511,
+        0.822261,
+        0.818986,
+        0.815186,
+        0.810728,
+        0.805433,
+        0.799054,
+        0.791243,
+        0.781503,
+        0.769105,
+        0.752973,
+        0.731543,
+        0.702722,
+        0.664456,
+        0.617171,
+        0.567777,
+        0.526546,
+        0.49537
+       ],
+       "egalitarian": [
+        0.821679,
+        0.820253,
+        0.818656,
+        0.816855,
+        0.814808,
+        0.812463,
+        0.809751,
+        0.806581,
+        0.80283,
+        0.798328,
+        0.792837,
+        0.786011,
+        0.777337,
+        0.766033,
+        0.750892,
+        0.73007,
+        0.701036,
+        0.661663,
+        0.614605,
+        0.570833,
+        0.537037
+       ],
+       "proportional": [
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496
+       ],
+       "capability": [
+        0.621448,
+        0.618614,
+        0.615484,
+        0.612013,
+        0.608144,
+        0.603809,
+        0.598926,
+        0.593392,
+        0.587084,
+        0.57985,
+        0.571507,
+        0.56184,
+        0.550611,
+        0.537588,
+        0.522619,
+        0.505793,
+        0.487692,
+        0.469643,
+        0.453438,
+        0.439676,
+        0.421808
+       ],
+       "sufficientarian": [
+        0.828431,
+        0.826551,
+        0.82444,
+        0.822054,
+        0.819335,
+        0.816212,
+        0.812589,
+        0.808341,
+        0.803297,
+        0.797224,
+        0.789791,
+        0.780523,
+        0.768726,
+        0.753368,
+        0.732933,
+        0.705341,
+        0.668422,
+        0.622176,
+        0.573009,
+        0.531467,
+        0.5
+       ]
+      },
+      "used": [
+       0.786829,
+       0.786643,
+       0.786437,
+       0.786207,
+       0.785948,
+       0.785657,
+       0.785325,
+       0.784944,
+       0.784501,
+       0.783981,
+       0.783362,
+       0.782613,
+       0.781689,
+       0.78052,
+       0.778996,
+       0.776934,
+       0.774,
+       0.769546,
+       0.76222,
+       0.749613,
+       0.733496
+      ]
+     },
+     {
+      "season": 3,
+      "lenses": {
+       "utilitarian": [
+        0.83179,
+        0.829822,
+        0.827611,
+        0.82511,
+        0.822261,
+        0.818986,
+        0.815186,
+        0.810728,
+        0.805433,
+        0.799054,
+        0.791243,
+        0.781503,
+        0.769105,
+        0.752973,
+        0.731543,
+        0.702722,
+        0.664456,
+        0.617171,
+        0.567777,
+        0.526546,
+        0.49537
+       ],
+       "egalitarian": [
+        0.821679,
+        0.820253,
+        0.818656,
+        0.816855,
+        0.814808,
+        0.812463,
+        0.809751,
+        0.806581,
+        0.80283,
+        0.798328,
+        0.792837,
+        0.786011,
+        0.777337,
+        0.766033,
+        0.750892,
+        0.73007,
+        0.701036,
+        0.661663,
+        0.614605,
+        0.570833,
+        0.537037
+       ],
+       "proportional": [
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496
+       ],
+       "capability": [
+        0.621448,
+        0.618614,
+        0.615484,
+        0.612013,
+        0.608144,
+        0.603809,
+        0.598926,
+        0.593392,
+        0.587084,
+        0.57985,
+        0.571507,
+        0.56184,
+        0.550611,
+        0.537588,
+        0.522619,
+        0.505793,
+        0.487692,
+        0.469643,
+        0.453438,
+        0.439676,
+        0.421808
+       ],
+       "sufficientarian": [
+        0.828431,
+        0.826551,
+        0.82444,
+        0.822054,
+        0.819335,
+        0.816212,
+        0.812589,
+        0.808341,
+        0.803297,
+        0.797224,
+        0.789791,
+        0.780523,
+        0.768726,
+        0.753368,
+        0.732933,
+        0.705341,
+        0.668422,
+        0.622176,
+        0.573009,
+        0.531467,
+        0.5
+       ]
+      },
+      "used": [
+       0.786829,
+       0.786643,
+       0.786437,
+       0.786207,
+       0.785948,
+       0.785657,
+       0.785325,
+       0.784944,
+       0.784501,
+       0.783981,
+       0.783362,
+       0.782613,
+       0.781689,
+       0.78052,
+       0.778996,
+       0.776934,
+       0.774,
+       0.769546,
+       0.76222,
+       0.749613,
+       0.733496
+      ]
+     },
+     {
+      "season": 4,
+      "lenses": {
+       "utilitarian": [
+        0.677469,
+        0.665178,
+        0.650655,
+        0.633284,
+        0.61223,
+        0.586351,
+        0.554096,
+        0.513406,
+        0.461783,
+        0.396921,
+        0.318822,
+        0.234021,
+        0.157682,
+        0.103833,
+        0.072748,
+        0.056072,
+        0.046739,
+        0.04101,
+        0.037178,
+        0.034447,
+        0.032407
+       ],
+       "egalitarian": [
+        0.607456,
+        0.604104,
+        0.600374,
+        0.596201,
+        0.591504,
+        0.586184,
+        0.580114,
+        0.573137,
+        0.565049,
+        0.555594,
+        0.544441,
+        0.531174,
+        0.515281,
+        0.496179,
+        0.473311,
+        0.446416,
+        0.416022,
+        0.383993,
+        0.353518,
+        0.328065,
+        0.308642
+       ],
+       "proportional": [
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998
+       ],
+       "capability": [
+        0.330504,
+        0.319188,
+        0.306537,
+        0.292366,
+        0.276489,
+        0.258735,
+        0.239002,
+        0.217327,
+        0.194012,
+        0.169764,
+        0.145784,
+        0.12365,
+        0.104875,
+        0.090322,
+        0.079914,
+        0.072866,
+        0.068161,
+        0.064922,
+        0.062554,
+        0.060651,
+        0.058186
+       ],
+       "sufficientarian": [
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998,
+        0.488998
+       ]
+      },
+      "used": [
+       0.542331,
+       0.542063,
+       0.541767,
+       0.541436,
+       0.541066,
+       0.540648,
+       0.540174,
+       0.539629,
+       0.538999,
+       0.538261,
+       0.537385,
+       0.536331,
+       0.535037,
+       0.533416,
+       0.53133,
+       0.52856,
+       0.524742,
+       0.51926,
+       0.511175,
+       0.500053,
+       0.488998
+      ]
+     },
+     {
+      "season": 5,
+      "lenses": {
+       "utilitarian": [
+        0.83179,
+        0.829822,
+        0.827611,
+        0.82511,
+        0.822261,
+        0.818986,
+        0.815186,
+        0.810728,
+        0.805433,
+        0.799054,
+        0.791243,
+        0.781503,
+        0.769105,
+        0.752973,
+        0.731543,
+        0.702722,
+        0.664456,
+        0.617171,
+        0.567777,
+        0.526546,
+        0.49537
+       ],
+       "egalitarian": [
+        0.821679,
+        0.820253,
+        0.818656,
+        0.816855,
+        0.814808,
+        0.812463,
+        0.809751,
+        0.806581,
+        0.80283,
+        0.798328,
+        0.792837,
+        0.786011,
+        0.777337,
+        0.766033,
+        0.750892,
+        0.73007,
+        0.701036,
+        0.661663,
+        0.614605,
+        0.570833,
+        0.537037
+       ],
+       "proportional": [
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496,
+        0.733496
+       ],
+       "capability": [
+        0.621448,
+        0.618614,
+        0.615484,
+        0.612013,
+        0.608144,
+        0.603809,
+        0.598926,
+        0.593392,
+        0.587084,
+        0.57985,
+        0.571507,
+        0.56184,
+        0.550611,
+        0.537588,
+        0.522619,
+        0.505793,
+        0.487692,
+        0.469643,
+        0.453438,
+        0.439676,
+        0.421808
+       ],
+       "sufficientarian": [
+        0.828431,
+        0.826551,
+        0.82444,
+        0.822054,
+        0.819335,
+        0.816212,
+        0.812589,
+        0.808341,
+        0.803297,
+        0.797224,
+        0.789791,
+        0.780523,
+        0.768726,
+        0.753368,
+        0.732933,
+        0.705341,
+        0.668422,
+        0.622176,
+        0.573009,
+        0.531467,
+        0.5
+       ]
+      },
+      "used": [
+       0.786829,
+       0.786643,
+       0.786437,
+       0.786207,
+       0.785948,
+       0.785657,
+       0.785325,
+       0.784944,
+       0.784501,
+       0.783981,
+       0.783362,
+       0.782613,
+       0.781689,
+       0.78052,
+       0.778996,
+       0.776934,
+       0.774,
+       0.769546,
+       0.76222,
+       0.749613,
+       0.733496
+      ]
+     }
+    ]
+   },
+   "visibility": "public"
+  }
+ ]
+}

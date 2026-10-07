@@ -35,7 +35,20 @@ export interface PublicResult {
 }
 /** This farm's own results for a season (the `self` part of season.resolved). */
 export interface MyResult { pumpCost: number; P: number; W: number; A: number; Y: number; dL: number; L: number; cropFailure: boolean }
-export interface SeasonResult { season: number; public: PublicResult; mine: MyResult | null }
+/** Everything computed on actual use (ADR 0004): readable only after a per-player debrief (R19). */
+export interface Sealed {
+  roles: string[]; pumpsBy: Record<string, number>; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[]; L: number[];
+  ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number }; S: number;
+  triangle: { r1: number; r2: number; r3: number; area: number; score: number };
+  verdict: { voted: string; satisfied: string; pumpingGap: number };
+  stockNext: number; spill?: number; cropFailure: boolean[];
+}
+export interface SeasonResult { season: number; public: PublicResult; mine: MyResult | null; sealed: Sealed | null }
+/** S9 γ slider (ADR 0003): the engine's equally-distributed equivalent per slider position, per lens and season. */
+export interface DebriefWelfare {
+  gammas: (number | null)[]; start: number;
+  seasons: { season: number; lenses: Record<string, number[]>; used?: number[] }[];
+}
 export interface GameEnd {
   T: number; truncated: boolean; seasonsPlayed: number; collectiveScore: number; cropFailureFlag: boolean;
   brief?: { heaviestPumping: { season: number; pumpsTotal: number } | null; lensBySeason: string[]; lensChanges: number; floorVotes: number };
@@ -63,12 +76,16 @@ export interface RoomView {
   ended: GameEnd | null;
   myGoal: GoalResult | null;
   debriefOpened: boolean;
+  perPlayer: boolean;
+  debriefWelfare: DebriefWelfare | null;
+  review: Record<string, string>; // this player's latest answer per review item (S10)
+  climates: Record<number, Climate>; // every season's climate, for the debrief replay
 }
 
 export const emptyView = (): RoomView => ({
   phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
-  myGoal: null, debriefOpened: false,
+  myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
 });
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -86,6 +103,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         v = {
           ...emptyView(), phase: 'vote', season: e.season, climate: p as unknown as Climate,
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
+          climates: { ...v.climates, [e.season]: p as unknown as Climate },
         };
         break;
       case 'allocation.issued':
@@ -101,7 +119,13 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         v = { ...v, myGoal: p as unknown as GoalResult };
         break;
       case 'debrief.opened':
-        v = { ...v, debriefOpened: true };
+        v = { ...v, debriefOpened: true, perPlayer: p['perPlayer'] === true };
+        break;
+      case 'debrief.welfare':
+        v = { ...v, debriefWelfare: p as unknown as DebriefWelfare };
+        break;
+      case 'review.answer':
+        v = { ...v, review: { ...v.review, [str(p['item'])]: str(p['value']) } };
         break;
       case 'lens.proposed':
         v = { ...v, proposals: [...v.proposals, str(p['lens'])] };
@@ -124,7 +148,8 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
       case 'season.resolved': {
         const pub = p['public'] as PublicResult;
         const mine = (p['self'] as Partial<MyResult> | undefined) ?? {};
-        const result: SeasonResult = { season: e.season, public: pub, mine: 'Y' in mine ? (mine as MyResult) : null };
+        const sealed = (p['sealed'] as Sealed | undefined) ?? null;
+        const result: SeasonResult = { season: e.season, public: pub, mine: 'Y' in mine ? (mine as MyResult) : null, sealed };
         v = { ...v, phase: 'reveal', results: [...v.results, result], aquifer: pub.observedStockNext };
         break;
       }

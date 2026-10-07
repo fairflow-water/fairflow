@@ -2,23 +2,43 @@
 // SPDX-License-Identifier: MIT
 //
 // What a device shows for the table's current phase: climate and map (S3), the lens vote (S4) and floor vote, the
-// private turn on a farm's own device (S6), the reveal (S7) and the game end (S8).
-import type { PublicScenario, RoomView } from '../room';
+// private turn on a farm's own device (S6), the reveal (S7), the game end (S8), the debrief (S9) and the review (S10).
+import { useState } from 'react';
+import type { PublicScenario, RecordEvent, RoomView } from '../room';
+import { Debrief } from './Debrief';
 import { Climate } from './Climate';
 import { FloorVote } from './FloorVote';
 import { GameEnd } from './GameEnd';
 import { LensVote } from './LensVote';
 import { PrivateTurn } from './PrivateTurn';
 import { Reveal } from './Reveal';
+import { Review } from './Review';
 
-export function Season({ view, scenario, role, onIntent }: {
+export function Season({ view, scenario, role, onIntent, events = [], code = '' }: {
   view: RoomView; scenario: PublicScenario; role: string; onIntent: (intent: Record<string, unknown>) => void;
+  events?: readonly RecordEvent[]; code?: string;
 }) {
   const isPlayer = scenario.schemes.some(s => s.id === role);
+  const [tab, setTab] = useState<'debrief' | 'review'>('debrief');
   if (view.phase === 'lobby') {
     return role === 'authority'
       ? <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_season' })}>Open season 1</button>
       : <p className="waiting">Waiting for the facilitator to open season 1.</p>;
+  }
+  if (view.phase === 'ended' && view.debriefOpened) {
+    return (
+      <>
+        {isPlayer && (
+          <div role="tablist" aria-label="After the game" className="tabs">
+            <button type="button" role="tab" aria-selected={tab === 'debrief'} onClick={() => setTab('debrief')}>Debrief</button>
+            <button type="button" role="tab" aria-selected={tab === 'review'} onClick={() => setTab('review')}>Review form</button>
+          </div>
+        )}
+        {isPlayer && tab === 'review'
+          ? <Review storageKey={`fairflow.review.${code}.${role}`} saved={view.review} onIntent={onIntent} />
+          : <Debrief view={view} scenario={scenario} events={events} />}
+      </>
+    );
   }
   if (view.phase === 'ended' && view.ended) {
     return <GameEnd end={view.ended} goal={view.myGoal} role={role} lenses={scenario.lenses}

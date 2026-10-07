@@ -8,6 +8,7 @@ Run: python scripts/generate_ui_fixture.py   (from packages/engine-py)
 
 from __future__ import annotations
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -62,8 +63,15 @@ def main() -> None:
         ],
         "session": scenario["session"],
     }
+    # S9/S10: the same game after each debrief choice; player A saves one review answer after the per-player debrief
+    totals = copy.deepcopy(g)
+    totals.submit(AUTHORITY, "open_debrief", perPlayer=False)
+    g.submit(AUTHORITY, "open_debrief", perPlayer=True)
+    g.submit("A", "review_answer", part=1, item="like.1", value="fixture answer")
     OUT.mkdir(parents=True, exist_ok=True)
-    for stage, events in (("opening", opening), ("game", g.events)):
+    played = g.events[: len(totals.events) - 2]  # the game as it ended, before debrief.opened and debrief.welfare
+    stages = (("opening", opening), ("game", played), ("debrief", g.events), ("totals", totals.events))
+    for stage, events in stages:
         for name, viewer in (("public", "public"), ("A", "A")):
             data = {
                 "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
@@ -72,7 +80,7 @@ def main() -> None:
             }
             text = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
             (OUT / f"{stage}-{name}.json").write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
-    print(f"wrote opening-* and game-* fixtures to {OUT} ({len(opening)} and {len(g.events)} events)")
+    print(f"wrote {', '.join(f'{n}-*' for n, _ in stages)} fixtures to {OUT}")
 
 
 if __name__ == "__main__":

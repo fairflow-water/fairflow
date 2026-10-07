@@ -42,6 +42,7 @@ The first real-browser game (2026-10-07) exposed two linked gaps in blueprint v3
    - The spill is computed on actual use (return flows depend on each farm's pumping), so it is **sealed** until the debrief, like `stockNext`.
    - The table sees `aquiferFull`: whether the observed level has reached the observed capacity. That follows from the observed level the table already sees, so it discloses nothing new.
    - ADR 0004's leakage measurements sampled stock between B_low and B₀, which this decision does not change. At the capacity, the observed level stops moving, which can only reveal less.
+   - Measured (`analysis/privacy_leakage_capacity.md`, same seed and seasons as ADR 0004): for the implemented display at normal stock, outsider identified 9 % (8–11) against 10 % (9–12) before, outsider knows whether pumped 17 % (15–19) against 18 % (16–21), insider identified 41 % (38–43) against 41 % (39–44), insider knows whether pumped 66 % (63–68) against 68 % (65–70). Low stock is unchanged, as expected. No figure rises.
 6. **Debrief value.** "Holding back filled the aquifer; beyond full, the water left the basin" is the water-budget myth enacted, and the spill gives the debrief its number.
 
 ## Consequences

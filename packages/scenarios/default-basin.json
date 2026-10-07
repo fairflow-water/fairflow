@@ -1,6 +1,11 @@
 {
   "$comment": "SPDX-License-Identifier: CC-BY-4.0 · Blueprint §6.1 default basin. Every number's source is in docs/blueprint.md §2.2.",
   "schemaVersion": "3.0",
+  "sources": {
+    "lenses": "Blueprint v3.1 §6.1 example (enabled flags, plain names) and §1.4 (five classical lenses in v1.0)",
+    "modules": "Blueprint v3.1 §1.4 (Modules 2–5 in v1.1, Module 6 in v1.2)",
+    "parameters": "Model parameters not given here come from packages/scenarios/parameters.json (sourced registry)"
+  },
   "id": "default-basin", "name": "Fairflow default basin",
   "provenance": { "kind": "example", "createdBy": "maintainer", "createdAt": "2026-10-05", "basedOn": null },
   "basin": {
@@ -19,11 +24,25 @@
     { "id": "B", "name": "Paddy Cooperative", "seat": 2, "shape": "square", "glyph": "rice", "areaHa": 900, "crop": "rice", "method": "flood", "depthMm": 1000, "beta": 0.60, "yieldTHa": 5.0, "ky": 1.1, "people": 2000, "peopleUnit": "households", "kappa": 1.0, "price": 1.0,
       "derived": { "demandMm3": 9.0, "capacityT": 4500, "wpKgM3": 0.50 }, "privateGoal": { "kind": "adequacy_floor", "threshold": 0.5 },
       "fields": { "ky": { "source": "Bouman & Tuong 2001", "entered": "assumed", "outOfRange": false } } },
-    { "id": "C", "name": "Tail-end Smallholders", "seat": 3, "shape": "triangle", "glyph": "wheat", "areaHa": 340, "crop": "cereals", "method": "sprinkler", "depthMm": 1000, "beta": 0.75, "yieldTHa": 5.88, "ky": 1.0, "people": 42, "peopleUnit": "households", "kappa": 1.0, "price": 1.0,
+    { "id": "C", "name": "Tail-end Smallholders", "seat": 3, "shape": "triangle", "glyph": "wheat", "areaHa": 340, "crop": "cereals", "method": "sprinkler", "depthMm": 1000, "beta": 0.75, "yieldTHa": 5.882352941176471, "ky": 1.0, "people": 42, "peopleUnit": "households", "kappa": 1.0, "price": 1.0,
       "derived": { "demandMm3": 3.4, "capacityT": 2000, "wpKgM3": 0.59 }, "privateGoal": { "kind": "adequacy_in_half_seasons", "threshold": 0.8 },
-      "fields": { "ky": { "source": "FAO-66 wheat 1.0–1.15", "entered": "example", "outOfRange": false } } }
+      "fields": { "ky": { "source": "FAO-66 wheat 1.0–1.15", "entered": "example", "outOfRange": false },
+                  "yieldTHa": { "source": "Blueprint v3.1 §2.1 K = 2,000 t and §2.2 340 ha (yield = K / area)", "entered": "derived", "outOfRange": false } } }
+  ],
+  "lenses": [
+    { "id": "utilitarian", "enabled": true, "plainName": "Biggest harvest" },
+    { "id": "weighted_utilitarian", "enabled": false },
+    { "id": "egalitarian", "enabled": true, "plainName": "Same for each" },
+    { "id": "proportional", "enabled": true, "plainName": "Same share of need" },
+    { "id": "capability", "enabled": true, "plainName": "Per person" },
+    { "id": "sufficientarian", "enabled": true, "plainName": "Enough first" },
+    { "id": "prioritarian", "enabled": false },
+    { "id": "equal_sacrifice", "enabled": false },
+    { "id": "talmud", "enabled": false }
   ],
   "defaultLens": "proportional",
+  "modules": { "M2": false, "M3": false, "M4": false, "M5": false, "M6": false },
+  "spatial": { "kind": "schematic", "geojson": null, "unitAttributes": null },
   "session": { "negotiationS": { "seasons0to2": 180, "from3": 240 }, "decisionS": 45, "handoverStartsTimer": true, "season0Minutes": 10, "timeboxMinute": 80, "deliberation": "table", "plannedMinutes": 120 },
   "treatments": { "silentMode": false, "universalisationNudge": false, "secretBallot": false, "authorityHandoverSeason": 2 }
 }

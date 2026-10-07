@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fairflow-water/fairflow/scenario.schema.json",
+  "title": "Fairflow scenario (blueprint §6.1, schemaVersion 3.0)",
+  "description": "Structure only. Numeric model parameters not given here come from packages/scenarios/parameters.json; hard checks (§5.2) and derived-value agreement are applied by the loader.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "provenance", "basin", "schemes", "lenses", "defaultLens", "modules"],
+  "properties": {
+    "$comment": { "type": "string" },
+    "schemaVersion": { "const": "3.0" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "sources": { "type": "object", "additionalProperties": { "$ref": "#/$defs/source" } },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "createdBy", "createdAt"],
+      "properties": {
+        "kind": { "enum": ["example", "builder", "pipeline", "pilot"] },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}" },
+        "basedOn": { "type": ["string", "null"] }
+      }
+    },
+    "basin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inflow", "deck", "reserve", "aquifer", "gameLength"],
+      "properties": {
+        "inflow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["wet", "normal", "dry", "unit", "source"],
+          "properties": {
+            "wet": { "$ref": "#/$defs/positive" },
+            "normal": { "$ref": "#/$defs/positive" },
+            "dry": { "$ref": "#/$defs/positive" },
+            "unit": { "const": "Mm3/season" },
+            "dryDrift": { "$ref": "#/$defs/nonNegative" },
+            "source": { "$ref": "#/$defs/source" }
+          }
+        },
+        "deck": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["wet", "normal", "dry"],
+          "properties": {
+            "wet": { "type": "integer", "minimum": 0 },
+            "normal": { "type": "integer", "minimum": 0 },
+            "dry": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "reserve": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "mode", "source"],
+          "properties": {
+            "value": { "$ref": "#/$defs/nonNegative" },
+            "mode": { "enum": ["absolute", "fraction"] },
+            "source": { "$ref": "#/$defs/source" }
+          }
+        },
+        "aquifer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["initial", "reserve", "lowThreshold", "naturalRecharge", "gwSwCoupling", "source"],
+          "properties": {
+            "initial": { "$ref": "#/$defs/positive" },
+            "reserve": { "$ref": "#/$defs/nonNegative" },
+            "lowThreshold": { "$ref": "#/$defs/positive" },
+            "naturalRecharge": { "$ref": "#/$defs/nonNegative" },
+            "surplusRecharge": { "type": "boolean" },
+            "returnFlows": { "type": "boolean" },
+            "gwSwCoupling": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled", "maxInflowLossMm3"],
+              "properties": { "enabled": { "type": "boolean" }, "maxInflowLossMm3": { "$ref": "#/$defs/nonNegative" } }
+            },
+            "seatCostMultipliers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/positive" } },
+            "tankResolution": { "$ref": "#/$defs/positive" },
+            "source": { "$ref": "#/$defs/source" }
+          }
+        },
+        "gameLength": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": { "min": { "type": "integer", "minimum": 1 }, "max": { "type": "integer", "minimum": 1 } }
+        }
+      }
+    },
+    "schemes": { "type": "array", "minItems": 3, "maxItems": 5, "items": { "$ref": "#/$defs/scheme" } },
+    "lenses": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/lens" } },
+    "defaultLens": { "$ref": "#/$defs/lensId" },
+    "floorRules": { "type": "array", "items": { "enum": ["proportional", "cea", "cel", "talmud", "capability"] }, "uniqueItems": true },
+    "actions": { "type": "object" },
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["M2", "M3", "M4", "M5", "M6"],
+      "properties": {
+        "M2": { "type": "boolean" }, "M3": { "type": "boolean" }, "M4": { "type": "boolean" },
+        "M5": { "type": "boolean" }, "M6": { "type": "boolean" }
+      }
+    },
+    "moduleParams": { "type": "object" },
+    "indicators": { "type": "object" },
+    "session": { "type": "object" },
+    "spatial": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "enum": ["schematic", "geojson"] }, "geojson": {}, "unitAttributes": {} }
+    },
+    "treatments": { "type": "object" }
+  },
+  "$defs": {
+    "source": { "type": "string", "minLength": 1 },
+    "positive": { "type": "number", "exclusiveMinimum": 0 },
+    "nonNegative": { "type": "number", "minimum": 0 },
+    "fraction": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+    "lensId": {
+      "enum": ["utilitarian", "weighted_utilitarian", "egalitarian", "proportional", "capability", "sufficientarian",
+               "prioritarian", "equal_sacrifice", "talmud"]
+    },
+    "lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "enabled"],
+      "properties": {
+        "id": { "$ref": "#/$defs/lensId" },
+        "enabled": { "type": "boolean" },
+        "plainName": { "type": "string" },
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "gamma": { "type": "number", "minimum": 1 },
+            "weight": { "enum": ["1", "people"] },
+            "floor": { "$ref": "#/$defs/fraction" },
+            "secondary": { "enum": ["max_value", "prioritarian", "proportional"] }
+          }
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "entered", "outOfRange"],
+      "properties": {
+        "source": { "$ref": "#/$defs/source" },
+        "entered": { "enum": ["example", "user", "assumed", "derived"] },
+        "outOfRange": { "type": "boolean" }
+      }
+    },
+    "scheme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "seat", "areaHa", "depthMm", "beta", "yieldTHa", "ky", "people", "peopleUnit", "kappa", "price", "derived"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "seat": { "type": "integer", "minimum": 1 },
+        "shape": { "type": "string" },
+        "glyph": { "type": "string" },
+        "crop": { "type": "string" },
+        "method": { "type": "string" },
+        "areaHa": { "$ref": "#/$defs/positive" },
+        "depthMm": { "$ref": "#/$defs/positive" },
+        "beta": { "$ref": "#/$defs/fraction" },
+        "yieldTHa": { "$ref": "#/$defs/positive" },
+        "ky": { "$ref": "#/$defs/nonNegative" },
+        "people": { "$ref": "#/$defs/positive" },
+        "peopleUnit": { "enum": ["employees", "households", "dependants", "people"] },
+        "kappa": { "$ref": "#/$defs/nonNegative" },
+        "price": { "$ref": "#/$defs/nonNegative" },
+        "derived": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["demandMm3", "capacityT", "wpKgM3"],
+          "properties": {
+            "demandMm3": { "$ref": "#/$defs/positive" },
+            "capacityT": { "$ref": "#/$defs/positive" },
+            "wpKgM3": { "$ref": "#/$defs/positive" }
+          }
+        },
+        "privateGoal": { "type": "object" },
+        "card": { "type": "object" },
+        "fields": { "type": "object", "additionalProperties": { "$ref": "#/$defs/field" } }
+      }
+    }
+  }
+}

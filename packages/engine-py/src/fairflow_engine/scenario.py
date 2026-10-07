@@ -6,11 +6,18 @@ with the engine's own function, so the check cannot drift from the model."""
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
-from typing import Any
+from dataclasses import dataclass
+from importlib import resources
+from typing import Any, cast
 
+from jsonschema import Draft202012Validator
+
+from .allocate import FLOOR_RULES
 from .aquifer import inflow_loss_next
-from .model import Basin
+from .model import Basin, LensId, LensParams, Scheme, Scoring
+from .record import GameSetup
 
 
 def basin_from_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> Basin:
@@ -74,3 +81,123 @@ def hard_checks(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> lis
             "largest dry drift and coupling loss, must exceed the reserve"
         )
     return problems
+
+
+# ---- loading (E2) ------------------------------------------------------------------------------------------------
+HA_MM_TO_MM3 = 1e-5  # §2.2 "Area × gross seasonal depth": 1 ha × 1 mm = 10 m³ = 1e-5 Mm³ (unit conversion)
+T_PER_MM3_TO_KG_PER_M3 = 1e-3  # §6.1 wpKgM3: 1 t per Mm³ = 1000 kg per 1e6 m³ (unit conversion)
+RELATIVE_AGREEMENT = 1e-9  # tolerance: recomputed derived values must agree with the stored ones
+EDITABLE_SCHEME_FIELDS = ("areaHa", "depthMm", "beta", "yieldTHa", "ky", "people", "kappa", "price")
+SCORING_KEYS = ("r3Ramp", "welfareGamma", "survivalFloor", "welfareSupplyFloor", "sustainabilityBands")
+
+
+@dataclass(frozen=True)
+class ScenarioLoad:
+    """The result of loading a scenario: a playable setup, or the reasons it cannot be played."""
+
+    setup: GameSetup | None
+    errors: list[str]
+    warnings: list[str]
+
+
+def _schema() -> dict[str, Any]:
+    text = resources.files("fairflow_engine").joinpath("scenario.schema.json").read_text(encoding="utf-8")
+    loaded: dict[str, Any] = json.loads(text)
+    return loaded
+
+
+def _printed_tolerance(value: float) -> float:
+    """Half a unit of the last digit the scenario prints (a stored derived value is rounded for display)."""
+    text = repr(float(value))
+    decimals = len(text.split(".")[1]) if "." in text and "e" not in text else 0
+    return 0.5 * 10.0**-decimals  # tolerance: half a unit in the last printed decimal place
+
+
+def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> ScenarioLoad:
+    """§6.1: validate against the JSON Schema, recompute derived values (they must agree), apply the §5.2 hard checks,
+    and build the engine's GameSetup. Parameters the scenario omits come from the registry; nothing is invented."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    validator = Draft202012Validator(_schema())
+    for err in sorted(validator.iter_errors(scenario), key=lambda e: list(e.absolute_path)):
+        where = "/".join(str(p) for p in err.absolute_path) or "(root)"
+        errors.append(f"schema: {where}: {err.message}")
+    if errors:
+        return ScenarioLoad(None, errors, warnings)
+
+    schemes = scenario["schemes"]
+    for s in schemes:
+        demand = s["areaHa"] * s["depthMm"] * HA_MM_TO_MM3
+        capacity = s["areaHa"] * s["yieldTHa"]
+        wp = capacity / demand * T_PER_MM3_TO_KG_PER_M3
+        d = s["derived"]
+        for name, recomputed, stored in (("demandMm3", demand, d["demandMm3"]), ("capacityT", capacity, d["capacityT"])):
+            if abs(recomputed - stored) > RELATIVE_AGREEMENT * max(1.0, abs(stored)):
+                errors.append(f"scheme {s['id']}: derived.{name} is {stored} but recomputes to {recomputed}")
+        if abs(wp - d["wpKgM3"]) > _printed_tolerance(d["wpKgM3"]) + RELATIVE_AGREEMENT:
+            errors.append(f"scheme {s['id']}: derived.wpKgM3 is {d['wpKgM3']} but recomputes to {wp}")
+        for field in EDITABLE_SCHEME_FIELDS:
+            if field not in s.get("fields", {}):
+                warnings.append(f"scheme {s['id']}: {field} has no source")
+    if len({s["peopleUnit"] for s in schemes}) > 1:
+        warnings.append("schemes mix people units (" + ", ".join(sorted({s["peopleUnit"] for s in schemes})) + ") (§6.1)")
+    seats = sorted(s["seat"] for s in schemes)
+    if seats != list(range(1, len(schemes) + 1)):
+        errors.append(f"seats must be 1..{len(schemes)} once each, got {seats}")
+    if len({s["id"] for s in schemes}) != len(schemes):
+        errors.append("scheme ids must be unique")
+    enabled = [lens for lens in scenario["lenses"] if lens["enabled"]]
+    if scenario["defaultLens"] not in [lens["id"] for lens in enabled]:
+        errors.append(f"defaultLens {scenario['defaultLens']!r} is not an enabled lens")
+    length = scenario["basin"]["gameLength"]
+    if length["min"] > length["max"]:
+        errors.append("gameLength.min exceeds gameLength.max")
+    if sum(scenario["basin"]["deck"].values()) < length["max"]:
+        errors.append("the deck has fewer cards than the longest game")
+    errors.extend(hard_checks(scenario, registry))
+    if errors:
+        return ScenarioLoad(None, errors, warnings)
+
+    def lens_params(lens: Mapping[str, Any]) -> LensParams:
+        prefix = f"lenses.{lens['id']}."
+        values = {k[len(prefix) :]: v for k, v in registry.items() if k.startswith(prefix)}
+        if lens["id"] == "sufficientarian":  # its prioritarian secondary rule needs the prioritarian parameters
+            values = {
+                **{k[len("lenses.prioritarian.") :]: v for k, v in registry.items() if k.startswith("lenses.prioritarian.")},
+                **values,
+            }
+        values.update(lens.get("params", {}))
+        return LensParams.from_dict(values)
+
+    indicators = scenario.get("indicators", {})
+    scoring = Scoring.from_dict({k: indicators.get(k, registry[f"indicators.{k}"]) for k in SCORING_KEYS})
+    inflow = scenario["basin"]["inflow"]
+    setup = GameSetup(
+        schemes=tuple(
+            Scheme(
+                id=s["id"],
+                name=s["name"],
+                seat=s["seat"],
+                demandMm3=s["derived"]["demandMm3"],
+                capacityT=s["derived"]["capacityT"],
+                ky=s["ky"],
+                beta=s["beta"],
+                people=s["people"],
+                kappa=s["kappa"],
+                price=s["price"],
+                areaHa=s["areaHa"],
+            )
+            for s in schemes
+        ),
+        basin=basin_from_scenario(scenario, registry),
+        inflow={card: inflow[card] for card in ("wet", "normal", "dry")},
+        deck=dict(scenario["basin"]["deck"]),
+        gameLength=(length["min"], length["max"]),
+        scoring=scoring,
+        lenses=tuple((cast(LensId, lens["id"]), lens_params(lens)) for lens in enabled),
+        defaultLens=cast(LensId, scenario["defaultLens"]),
+        floorRules=tuple(
+            scenario.get("floorRules", sorted(FLOOR_RULES))
+        ),  # ADR 0003: all five unless the admin offers fewer
+    )
+    return ScenarioLoad(setup, errors, warnings)

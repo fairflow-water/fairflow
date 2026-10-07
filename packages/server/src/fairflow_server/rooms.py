@@ -46,6 +46,7 @@ class Room:
         return {
             "name": self.scenario.get("name"),
             "schemes": [{k: s[k] for k in PUBLIC_SCHEME_FIELDS if k in s} for s in self.scenario.get("schemes", [])],
+            "session": self.scenario.get("session", {}),
             "lenses": [
                 {"id": lens["id"], "plainName": lens.get("plainName", lens["id"])}
                 for lens in self.scenario.get("lenses", [])

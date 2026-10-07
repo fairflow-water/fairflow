@@ -38,6 +38,20 @@ def main() -> None:
     g.submit("B", "vote", lens="proportional")
     g.submit("C", "vote", lens="proportional")
     g.submit(AUTHORITY, "close_vote")
+    opening = list(g.events)
+    # then play to the end: A pumps, B expands once, so S6-S8 have real private turns, results and goals
+    first = True
+    while True:
+        for i, s in enumerate(setup.schemes):
+            g.submit(s.id, "commit", pumps=1.0 if i == 0 else 0.0, action="expand" if (i == 1 and first) else None)
+        first = False
+        if g.events[-1]["type"] == "goal.result" or any(e["type"] == "game.ended" for e in g.events):
+            break
+        g.submit(AUTHORITY, "start_season")
+        g.submit(AUTHORITY, "propose", lens="proportional")
+        for s in setup.schemes:
+            g.submit(s.id, "vote", lens="proportional")
+        g.submit(AUTHORITY, "close_vote")
     public_scenario = {
         "name": scenario["name"],
         "schemes": [{k: s[k] for k in ("id", "name", "seat", "shape", "glyph", "crop")} for s in scenario["schemes"]],
@@ -46,17 +60,19 @@ def main() -> None:
             for lens in scenario["lenses"]
             if lens["enabled"]
         ],
+        "session": scenario["session"],
     }
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, viewer in (("public", "public"), ("A", "A")):
-        data = {
-            "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
-            "scenario": public_scenario,
-            "events": project(g.events, viewer),
-        }
-        text = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
-        (OUT / f"opening-{name}.json").write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
-    print(f"wrote {OUT}/opening-public.json and opening-A.json ({len(g.events)} events)")
+    for stage, events in (("opening", opening), ("game", g.events)):
+        for name, viewer in (("public", "public"), ("A", "A")):
+            data = {
+                "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
+                "scenario": public_scenario,
+                "events": project(events, viewer),
+            }
+            text = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
+            (OUT / f"{stage}-{name}.json").write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
+    print(f"wrote opening-* and game-* fixtures to {OUT} ({len(opening)} and {len(g.events)} events)")
 
 
 if __name__ == "__main__":

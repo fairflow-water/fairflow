@@ -119,16 +119,13 @@ describe('Season by phase', () => {
     render(<Season view={lobby} scenario={scenario} role="A" onIntent={onIntent} />);
     expect(screen.getByText(/Waiting for the facilitator/)).toBeTruthy();
   });
-  it('after the choice: private turns, then the next season, then the end', async () => {
-    const onIntent = vi.fn();
+  it('after the choice: the facilitator and projector wait while farms decide (S6-S8 are tested in play.test)', () => {
     const chosen = viewOf(events);
-    const { rerender } = render(<Season view={chosen} scenario={scenario} role="A" onIntent={onIntent} />);
+    const { unmount } = render(<Season view={chosen} scenario={scenario} role="display" onIntent={() => undefined} />);
     expect(screen.getByText(/Private turns/)).toBeTruthy();
-    rerender(<Season view={{ ...chosen, phase: 'reveal' }} scenario={scenario} role="authority" onIntent={onIntent} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Open the next season' }));
-    expect(onIntent).toHaveBeenCalledWith({ intent: 'start_season' });
-    rerender(<Season view={{ ...chosen, phase: 'ended' }} scenario={scenario} role="A" onIntent={onIntent} />);
-    expect(screen.getByText('The game has ended.')).toBeTruthy();
+    unmount();
+    render(<Season view={chosen} scenario={scenario} role="A" onIntent={() => undefined} />);
+    expect(screen.getByText(/Opening your private turn/)).toBeTruthy();
   });
   it('floor vote (ADR 0003): players choose, the facilitator closes', async () => {
     const onIntent = vi.fn();

@@ -49,7 +49,19 @@
     "id": "sufficientarian",
     "plainName": "Enough first"
    }
-  ]
+  ],
+  "session": {
+   "negotiationS": {
+    "seasons0to2": 180,
+    "from3": 240
+   },
+   "decisionS": 45,
+   "handoverStartsTimer": true,
+   "season0Minutes": 10,
+   "timeboxMinute": 80,
+   "deliberation": "table",
+   "plannedMinutes": 120
+  }
  },
  "events": [
   {
@@ -66,6 +78,32 @@
      "A",
      "B",
      "C"
+    ],
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 9.0,
+      "capacityT": 4500,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 900
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
     ],
     "aquiferInitial": 20,
     "commitments": {
@@ -162,6 +200,32 @@
     "inflow": 12.0,
     "reserve": 2,
     "allocable": 10.0,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 9.0,
+      "capacityT": 4500,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 900
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
     "previews": [
      {
       "lens": "utilitarian",
@@ -329,9 +393,65 @@
      4.825737,
      1.823056
     ],
-    "surplusToAquifer": 0.0
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "poor",
+     "poor",
+     "poor"
+    ]
    },
    "visibility": "public"
+  },
+  {
+   "seq": 14,
+   "t": "2026-10-07T09:00:13Z",
+   "season": 1,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 2.0,
+    "actions": {
+     "orchard": 10,
+     "drip": 8,
+     "expand": 5
+    },
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 3144.77184,
+      "points": {
+       "none": 31.447718,
+       "orchard": 21.447718,
+       "drip": 23.447718,
+       "expand": 26.447718
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 3784.77184,
+      "points": {
+       "none": 35.847718,
+       "orchard": 25.847718,
+       "drip": 27.847718,
+       "expand": 30.847718
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 4424.77184,
+      "points": {
+       "none": 40.247718,
+       "orchard": 30.247718,
+       "drip": 32.247718,
+       "expand": 35.247718
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
   }
  ]
 }

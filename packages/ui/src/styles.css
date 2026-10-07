@@ -36,3 +36,16 @@ svg { width: 100%; max-height: 320px; }
 .notice { background: #fff4e5; border-radius: var(--radius); padding: 8px 12px; }
 .display { max-width: 960px; } .display header, .room-head { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* S3 map fills (last season's adequacy band) and S6–S8 */
+.band-good { fill: #cfe8d5; } .band-ok { fill: #fbe7b5; } .band-poor { fill: #f3c4b8; }
+.aquifer { margin: 0 0 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.turn, .reveal, .end { margin-top: 16px; }
+.banner, .pump-card, .mine, .debrief { background: #fff; border-radius: var(--radius); padding: 12px 16px; }
+.timer { font-size: 1.5rem; font-weight: 700; text-align: right; margin: 0; font-variant-numeric: tabular-nums; }
+.stepper { display: flex; align-items: center; gap: 16px; }
+.stepper output { font-size: 2rem; font-weight: 700; min-width: 2ch; text-align: center; }
+.actions fieldset { border: 0; padding: 0; margin: 8px 0; }
+.toast { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+.arc { fill: none; stroke: #e3e7ea; stroke-width: 12; }
+.needle { stroke-width: 4; stroke-linecap: round; }
+.needle.pj { stroke: var(--accent); } .needle.se { stroke: var(--dry); stroke-dasharray: 6 4; }

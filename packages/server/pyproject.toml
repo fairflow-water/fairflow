@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
+# SPDX-License-Identifier: MIT
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fairflow-server"
+version = "1.0.0.dev0"
+description = "Fairflow room server: QR join, room mode, the Python engine live (ADR 0002), sealed data held server-side."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Seleshi Yalew", email = "s.yalew@un-ihe.org" }]
+requires-python = ">=3.12"
+dependencies = ["fairflow-engine", "fastapi>=0.142", "uvicorn[standard]>=0.54", "pydantic>=2.13"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=7",
+    "ruff>=0.16",
+    "mypy>=2",
+    "httpx2>=2.13",
+]
+
+[tool.uv.sources]
+fairflow-engine = { path = "../engine-py", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fairflow_server"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["fairflow_server"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
+[tool.ruff]
+line-length = 125
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "RUF", "S"]
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]

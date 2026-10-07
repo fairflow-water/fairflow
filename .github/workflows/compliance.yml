@@ -56,6 +56,23 @@ jobs:
       - name: Tests, blueprint reproduction and coverage gate
         run: uv run pytest -q --cov
 
+  room-server:
+    name: Room server (FastAPI, WebSockets) · Python 3.12
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/server
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with: { python-version: "3.12" }
+      - run: uv sync --locked
+      - name: Lint (Ruff, incl. security rules) and types (mypy --strict)
+        run: uv run ruff check . && uv run ruff format --check . && uv run mypy
+      - name: End-to-end tests over WebSockets, privacy of every message, coverage gate
+        run: uv run pytest -q --cov
+
   engine-mirror:
     name: TypeScript mirror reproduces the Python vectors · Node ${{ matrix.node }}
     runs-on: ubuntu-latest

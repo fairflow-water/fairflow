@@ -8,6 +8,11 @@ updates:
     schedule: { interval: weekly }
     groups:
       python: { patterns: ["*"] }
+  - package-ecosystem: uv
+    directory: /packages/server
+    schedule: { interval: weekly }
+    groups:
+      server: { patterns: ["*"] }
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly }

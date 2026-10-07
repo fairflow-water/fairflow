@@ -1,5 +1,5 @@
 {
-  "$comment": "SPDX-License-Identifier: CC-BY-4.0 · ADR 0003 floor-shortfall options as players see them. Working labels (maintainer decision 2026-10-07), to be tested in the paper pilot (§9.3). The rule column is the engine's floorScaling key; whatever_works applies the proportional cut.",
+  "$comment": "CC BY 4.0 (see REUSE.toml). ADR 0003 floor-shortfall options as players see them. Working labels (maintainer decision 2026-10-07), to be tested in the paper pilot (§9.3). The rule column is the engine's floorScaling key; whatever_works applies the proportional cut.",
   "status": "working labels",
   "options": [
     { "rule": "proportional", "label": "Same share of the minimum", "explain": "Every farm gets the same fraction of its minimum." },

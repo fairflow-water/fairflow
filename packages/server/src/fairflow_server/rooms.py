@@ -30,11 +30,28 @@ def load_registry(settings: Settings) -> dict[str, Any]:
     return {p["key"]: p["default"] for p in data["parameters"]}
 
 
+PUBLIC_SCHEME_FIELDS = ("id", "name", "seat", "shape", "glyph", "crop")
+
+
 @dataclass
 class Room:
     code: str
     game: Game
+    scenario: dict[str, Any] = field(default_factory=dict)
     tokens: dict[str, str] = field(default_factory=dict)  # token → role (AUTHORITY, a scheme id, or DISPLAY)
+
+    def public_scenario(self) -> dict[str, Any]:
+        """What every screen may show about the basin: names, seats, shapes and lens plain names. No model numbers
+        (the engine sends those in events) and nothing private."""
+        return {
+            "name": self.scenario.get("name"),
+            "schemes": [{k: s[k] for k in PUBLIC_SCHEME_FIELDS if k in s} for s in self.scenario.get("schemes", [])],
+            "lenses": [
+                {"id": lens["id"], "plainName": lens.get("plainName", lens["id"])}
+                for lens in self.scenario.get("lenses", [])
+                if lens["enabled"]
+            ],
+        }
 
     def free_roles(self) -> list[str]:
         taken = set(self.tokens.values())
@@ -59,11 +76,12 @@ class RoomRegistry:
         path = (self.settings.scenarios_dir / f"{scenario_id}.json").resolve()
         if path.parent != self.settings.scenarios_dir.resolve() or not path.is_file():
             raise Rejection("unknown_scenario", scenario_id)
-        load = load_scenario(json.loads(path.read_text(encoding="utf-8")), self.registry)
+        scenario = json.loads(path.read_text(encoding="utf-8"))
+        load = load_scenario(scenario, self.registry)
         if load.setup is None:
             raise Rejection("invalid_scenario", "; ".join(load.errors))
         code = self._code()
-        room = Room(code, Game.create(load.setup, code, "room", {"appVersion": server_version}, _now))
+        room = Room(code, Game.create(load.setup, code, "room", {"appVersion": server_version}, _now), scenario)
         facilitator, display = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
         room.game.submit(AUTHORITY, "join", deviceHash="facilitator", consentGiven=True, presurveyComplete=True)
         room.tokens[facilitator], room.tokens[display] = AUTHORITY, DISPLAY

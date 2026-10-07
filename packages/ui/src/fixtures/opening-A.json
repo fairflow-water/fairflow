@@ -1,0 +1,337 @@
+{
+ "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
+ "scenario": {
+  "name": "Fairflow default basin",
+  "schemes": [
+   {
+    "id": "A",
+    "name": "Orchard Estate",
+    "seat": 1,
+    "shape": "circle",
+    "glyph": "pomegranate",
+    "crop": "pomegranate"
+   },
+   {
+    "id": "B",
+    "name": "Paddy Cooperative",
+    "seat": 2,
+    "shape": "square",
+    "glyph": "rice",
+    "crop": "rice"
+   },
+   {
+    "id": "C",
+    "name": "Tail-end Smallholders",
+    "seat": 3,
+    "shape": "triangle",
+    "glyph": "wheat",
+    "crop": "cereals"
+   }
+  ],
+  "lenses": [
+   {
+    "id": "utilitarian",
+    "plainName": "Biggest harvest"
+   },
+   {
+    "id": "egalitarian",
+    "plainName": "Same for each"
+   },
+   {
+    "id": "proportional",
+    "plainName": "Same share of need"
+   },
+   {
+    "id": "capability",
+    "plainName": "Per person"
+   },
+   {
+    "id": "sufficientarian",
+    "plainName": "Enough first"
+   }
+  ]
+ },
+ "events": [
+  {
+   "seq": 1,
+   "t": "2026-10-07T09:00:00Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "game.created",
+   "payload": {
+    "gameId": "FIXTR",
+    "mode": "room",
+    "appVersion": "fixture",
+    "schemeRoles": [
+     "A",
+     "B",
+     "C"
+    ],
+    "aquiferInitial": 20,
+    "commitments": {
+     "gameLength": "fe5398412e9a214da5112ca88ebeeaf7cce9262b4b49b1a9973381217108ac10",
+     "deckOrder": "26cab06743fb28dc6389da3f2a608e17000190e31fb082e4bc31c2280768b1f3"
+    },
+    "lenses": [
+     "utilitarian",
+     "egalitarian",
+     "proportional",
+     "capability",
+     "sufficientarian"
+    ],
+    "defaultLens": "proportional",
+    "floorRules": [
+     "capability",
+     "cea",
+     "cel",
+     "proportional",
+     "talmud"
+    ],
+    "runtime": {
+     "fairflowEngine": "1.0.0.dev0",
+     "numpy": "2.5.3",
+     "scipy": "1.18.1"
+    }
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 2,
+   "t": "2026-10-07T09:00:01Z",
+   "season": 0,
+   "actor": "A",
+   "type": "player.joined",
+   "payload": {
+    "role": "A",
+    "deviceId": "fixture-A",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 3,
+   "t": "2026-10-07T09:00:02Z",
+   "season": 0,
+   "actor": "B",
+   "type": "player.joined",
+   "payload": {
+    "role": "B",
+    "deviceId": "fixture-B",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 4,
+   "t": "2026-10-07T09:00:03Z",
+   "season": 0,
+   "actor": "C",
+   "type": "player.joined",
+   "payload": {
+    "role": "C",
+    "deviceId": "fixture-C",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 5,
+   "t": "2026-10-07T09:00:04Z",
+   "season": 0,
+   "actor": "authority",
+   "type": "player.joined",
+   "payload": {
+    "role": "authority",
+    "deviceId": "fixture-authority",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 6,
+   "t": "2026-10-07T09:00:05Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "dry",
+    "inflow": 12.0,
+    "reserve": 2,
+    "allocable": 10.0,
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       0.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.038889,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "egalitarian",
+      "Q": [
+       3.333333,
+       3.333333,
+       3.333333
+      ],
+      "shareOfNeed": [
+       0.533333,
+       0.37037,
+       0.980392
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       3.351206,
+       4.825737,
+       1.823056
+      ],
+      "shareOfNeed": [
+       0.536193,
+       0.536193,
+       0.536193
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "capability",
+      "Q": [
+       0.658537,
+       9.0,
+       0.341463
+      ],
+      "shareOfNeed": [
+       0.105366,
+       1.0,
+       0.10043
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "sufficientarian",
+      "Q": [
+       3.8,
+       4.5,
+       1.7
+      ],
+      "shareOfNeed": [
+       0.608,
+       0.5,
+       0.5
+      ],
+      "floorVoteNeeded": false
+     }
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 7,
+   "t": "2026-10-07T09:00:06Z",
+   "season": 1,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "proportional",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 8,
+   "t": "2026-10-07T09:00:07Z",
+   "season": 1,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "utilitarian",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 9,
+   "t": "2026-10-07T09:00:08Z",
+   "season": 1,
+   "actor": "A",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "utilitarian",
+    "voter": "A"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 10,
+   "t": "2026-10-07T09:00:09Z",
+   "season": 1,
+   "actor": "B",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "B"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 11,
+   "t": "2026-10-07T09:00:10Z",
+   "season": 1,
+   "actor": "C",
+   "type": "lens.voted",
+   "payload": {
+    "lens": "proportional",
+    "voter": "C"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 12,
+   "t": "2026-10-07T09:00:11Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "proportional",
+    "tally": {
+     "utilitarian": 1,
+     "proportional": 2
+    },
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 13,
+   "t": "2026-10-07T09:00:12Z",
+   "season": 1,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "proportional",
+    "floorRule": null,
+    "Q": [
+     3.351206,
+     4.825737,
+     1.823056
+    ],
+    "surplusToAquifer": 0.0
+   },
+   "visibility": "public"
+  }
+ ]
+}

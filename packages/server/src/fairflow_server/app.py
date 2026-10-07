@@ -108,7 +108,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             room = registry.get(code)
         except Rejection as e:
             raise http_error(e) from None
-        return {"room": room.code, "freeRoles": room.free_roles(), "phase": room.game.state.phase}
+        return {
+            "room": room.code,
+            "freeRoles": room.free_roles(),
+            "phase": room.game.state.phase,
+            "scenario": room.public_scenario(),
+        }
 
     @app.post("/rooms/{code}/join")
     def join(code: str, body: JoinRequest) -> dict[str, str]:

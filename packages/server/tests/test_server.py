@@ -176,3 +176,11 @@ def test_rest_errors(client: TestClient) -> None:
     )
     assert again.status_code == 409
     assert client.post("/rooms", json={"scenario": "default-basin", "admin": True}).status_code == 422
+
+
+def test_room_info_exposes_only_public_scenario_fields(client: TestClient) -> None:
+    info = open_room(client)
+    scenario = client.get(f"/rooms/{info['room']}").json()["scenario"]
+    assert [s["id"] for s in scenario["schemes"]] == ["A", "B", "C"]
+    assert {k for s in scenario["schemes"] for k in s} <= {"id", "name", "seat", "shape", "glyph", "crop"}
+    assert scenario["lenses"][0]["plainName"] == "Biggest harvest"

@@ -289,5 +289,7 @@ def test_season_opens_with_engine_previews_of_every_enabled_lens():
     assert [p["lens"] for p in previews] == [lens for lens, _ in g.setup.lenses]
     for p, (lens, params) in zip(previews, g.setup.lenses, strict=True):
         assert p["Q"] == list(allocate(lens, g.setup.schemes, climate["allocable"], params, g.setup.scoring.survivalFloor).Q)
-        assert all(abs(a - q / s.demandMm3) <= 1e-6 for a, q, s in zip(p["shareOfNeed"], p["Q"], g.setup.schemes, strict=True))
+        assert all(
+            abs(a - q / s.demandMm3) <= 1e-6 for a, q, s in zip(p["shareOfNeed"], p["Q"], g.setup.schemes, strict=True)
+        )
     assert all(e["visibility"] == "public" for e in g.events if e["type"] == "season.climate")

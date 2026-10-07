@@ -276,3 +276,18 @@ def test_audit_reports_a_numpy_version_change_instead_of_assuming():
     moved = copy.deepcopy(g.events)
     moved[0]["payload"]["runtime"]["numpy"] = "0.0.0"
     assert any("cannot be re-derived" in p for p in audit(g.setup, moved))
+
+
+def test_season_opens_with_engine_previews_of_every_enabled_lens():
+    """S4 draws share-bars from the engine: each enabled lens's allocation and share of need, in card order."""
+    from fairflow_engine import allocate
+
+    g = new_game()
+    g.submit(AUTHORITY, "start_season")
+    climate = g.events[-1]["payload"]
+    previews = climate["previews"]
+    assert [p["lens"] for p in previews] == [lens for lens, _ in g.setup.lenses]
+    for p, (lens, params) in zip(previews, g.setup.lenses, strict=True):
+        assert p["Q"] == list(allocate(lens, g.setup.schemes, climate["allocable"], params, g.setup.scoring.survivalFloor).Q)
+        assert all(abs(a - q / s.demandMm3) <= 1e-6 for a, q, s in zip(p["shareOfNeed"], p["Q"], g.setup.schemes, strict=True))
+    assert all(e["visibility"] == "public" for e in g.events if e["type"] == "season.climate")

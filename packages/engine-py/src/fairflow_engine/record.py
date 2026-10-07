@@ -21,7 +21,8 @@ from typing import Any, Literal, cast
 import numpy as np
 import scipy
 
-from .model import Basin, LensId, LensParams, Scheme, Scoring
+from .allocate import allocate
+from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
 from .season import SeasonResult, resolve_season, verdict
 
 Visibility = Literal["public", "self", "sealed", "mixed"]
@@ -318,6 +319,7 @@ class Game:
         season = s.season + 1
         card = self.secrets.deckOrder[season - 1]
         inflow = self.setup.inflow[card] - s.inflowLoss
+        allocable = max(0.0, inflow - self.setup.basin.reserve)
         self._emit(
             "season.climate",
             "engine",
@@ -326,10 +328,30 @@ class Game:
                 "card": card,
                 "inflow": inflow,
                 "reserve": self.setup.basin.reserve,
-                "allocable": max(0.0, inflow - self.setup.basin.reserve),
+                "allocable": allocable,
+                "previews": self._previews(allocable),
             },
             season=season,
         )
+
+    def _previews(self, allocable: float) -> list[dict[str, Any]]:
+        """S4: every enabled lens's allocation for this season, computed by the engine so the vote screen only draws it.
+        Public: allocations are public (R17). Where the sufficientarian floors exceed the water, the preview uses the
+        "whatever works" cut and says that the table would choose (ADR 0003)."""
+        floor = self.setup.scoring.survivalFloor
+        out = []
+        for lens, params in self.setup.lenses:
+            Q = list(allocate(lens, self.setup.schemes, allocable, params, floor).Q)
+            out.append(
+                {
+                    "lens": lens,
+                    "Q": Q,
+                    "shareOfNeed": [round6(q / s.demandMm3) for q, s in zip(Q, self.setup.schemes, strict=True)],
+                    "floorVoteNeeded": lens == "sufficientarian"
+                    and sum(params.need("floor", lens) * x.demandMm3 for x in self.setup.schemes) >= allocable,
+                }
+            )
+        return out
 
     def _on_propose(self, s: State, actor: str, lens: str) -> None:
         """R7: lenses are proposed aloud; the record keeps lens and proposer."""

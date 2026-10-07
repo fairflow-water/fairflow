@@ -4,10 +4,10 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'coverage/**', 'eslint.config.js'] },
+  { ignores: ['dist/**', 'coverage/**', 'test-results/**', 'playwright-report/**', 'eslint.config.js'] },
   js.configs.recommended,
   {
-    files: ['src/**/*.{ts,tsx}', 'vite.config.ts'],
+    files: ['src/**/*.{ts,tsx}', 'e2e/**/*.ts', 'vite.config.ts', 'playwright.config.ts'],
     ignores: ['src/**/*.test.{ts,tsx}'],
     extends: [tseslint.configs.recommendedTypeChecked],
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },

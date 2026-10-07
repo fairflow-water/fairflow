@@ -74,7 +74,7 @@ def _viewer(role: str) -> str:
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    settings = settings or Settings()
+    settings = settings or Settings.from_env()
     registry = RoomRegistry(settings)
     connections: dict[str, list[Connection]] = {}
     locks: dict[str, asyncio.Lock] = {}

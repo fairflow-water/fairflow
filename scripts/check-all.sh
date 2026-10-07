@@ -28,4 +28,7 @@ npm run lint -w packages/engine && npm run lint -w packages/ui
 npm run build >/dev/null
 npm run coverage -w packages/engine >/dev/null && npm run coverage -w packages/ui >/dev/null
 
+step "real-browser game (Playwright; first time: npx -w packages/ui playwright install chromium)"
+npm run e2e -w packages/ui >/dev/null
+
 step "all checks passed"

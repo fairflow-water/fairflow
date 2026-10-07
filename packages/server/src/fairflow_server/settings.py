@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -24,3 +26,10 @@ class Settings:
     room_code_length: int = 5
     room_code_alphabet: str = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
     scenarios_dir: Path = field(default_factory=lambda: REPO / "packages" / "scenarios")
+
+    @classmethod
+    def from_env(cls, environ: Mapping[str, str] = os.environ) -> Settings:
+        """Deployment configuration: FAIRFLOW_ALLOWED_ORIGINS is a comma-separated list of browser origins (e.g. the
+        site's own https origin; http://localhost:5173 for development). Unset means no browser may connect."""
+        raw = environ.get("FAIRFLOW_ALLOWED_ORIGINS", "")
+        return cls(allowed_origins=tuple(o.strip() for o in raw.split(",") if o.strip()))

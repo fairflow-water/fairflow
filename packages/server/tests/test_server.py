@@ -184,3 +184,9 @@ def test_room_info_exposes_only_public_scenario_fields(client: TestClient) -> No
     assert [s["id"] for s in scenario["schemes"]] == ["A", "B", "C"]
     assert {k for s in scenario["schemes"] for k in s} <= {"id", "name", "seat", "shape", "glyph", "crop"}
     assert scenario["lenses"][0]["plainName"] == "Biggest harvest"
+
+
+def test_allowed_origins_come_from_the_environment() -> None:
+    assert Settings.from_env({}).allowed_origins == ()
+    env = {"FAIRFLOW_ALLOWED_ORIGINS": " https://play.example.org, http://localhost:5173 ,"}
+    assert Settings.from_env(env).allowed_origins == ("https://play.example.org", "http://localhost:5173")

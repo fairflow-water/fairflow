@@ -49,3 +49,7 @@ svg { width: 100%; max-height: 320px; }
 .arc { fill: none; stroke: #e3e7ea; stroke-width: 12; }
 .needle { stroke-width: 4; stroke-linecap: round; }
 .needle.pj { stroke: var(--accent); } .needle.se { stroke: var(--dry); stroke-dasharray: 6 4; }
+.tick { font-size: 12px; fill: var(--muted); }
+.legend { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.key { display: inline-block; width: 24px; height: 0; border-top: 4px solid var(--accent); }
+.key.se { border-top: 4px dashed var(--dry); }

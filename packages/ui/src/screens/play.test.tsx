@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import gameA from '../fixtures/game-A.json';
 import gamePublic from '../fixtures/game-public.json';
 import { viewOf, type PublicScenario, type RecordEvent } from '../room';
-import { GameEnd } from './GameEnd';
+import { GameEnd, lensRuns } from './GameEnd';
 import { PrivateTurn } from './PrivateTurn';
 import { needleAngle, Reveal } from './Reveal';
 import { Season } from './Season';
@@ -146,5 +146,12 @@ describe('S8 game end', () => {
     expect(onIntent).toHaveBeenLastCalledWith({ intent: 'open_debrief', perPlayer: true });
     await userEvent.click(screen.getByRole('button', { name: /totals only/ }));
     expect(onIntent).toHaveBeenLastCalledWith({ intent: 'open_debrief', perPlayer: false });
+  });
+});
+
+describe('debrief brief', () => {
+  it('groups consecutive seasons under one lens', () => {
+    expect(lensRuns(['a', 'a', 'b', 'a'], x => x.toUpperCase())).toBe('A (seasons 1–2) → B (season 3) → A (season 4)');
+    expect(lensRuns([], x => x)).toBe('');
   });
 });

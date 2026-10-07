@@ -10,5 +10,7 @@ resolves every season on the server, which alone holds sealed data until the deb
 ```sh
 uv sync --locked
 uv run pytest
-uv run uvicorn fairflow_server.app:create_app --factory --port 8000
+FAIRFLOW_ALLOWED_ORIGINS=http://localhost:5173 uv run uvicorn fairflow_server.app:create_app --factory --port 8000
 ```
+
+`FAIRFLOW_ALLOWED_ORIGINS` lists the browser origins allowed to open a WebSocket (comma-separated); unset, none is.

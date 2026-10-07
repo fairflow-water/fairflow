@@ -24,6 +24,8 @@ function Gauge({ pj, se }: { pj: number; se: number }) {
       <path d="M 10 100 A 90 90 0 0 1 190 100" className="arc" />
       {needle(pj, 'needle pj', 'needle-pj')}
       {needle(se, 'needle se', 'needle-se')}
+      <text x={10} y={110} className="tick">−1</text>
+      <text x={190} y={110} className="tick" textAnchor="end">1</text>
     </svg>
   );
 }
@@ -39,6 +41,7 @@ export function Reveal({ result, mine, season }: { result: PublicResult; mine: M
     <div key="equity">
       <h3>How fair was the sharing?</h3>
       <Gauge pj={result.asAllocated.ePJ} se={result.asAllocated.eSE.claimant} />
+      <p className="legend"><span className="key pj" /> fair shares of need · <span className="key se" /> equal amounts</p>
       <p>As allocated, fair shares of need are {bands?.ePJ ?? '—'}; equal amounts are {bands?.eSE ?? '—'}.</p>
     </div>,
     <div key="productive">

@@ -4,12 +4,16 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 // In development the room server runs on :8000; Vite proxies REST and the WebSocket so the page and the server share
-// one origin, as they will in production behind one host.
+// one origin, as they will in production behind one host. `vite preview` (the end-to-end test) proxies the same way.
+const proxy = { '/rooms': { target: 'http://localhost:8000', ws: true } };
+
 export default defineConfig({
   plugins: [react()],
-  server: { proxy: { '/rooms': { target: 'http://localhost:8000', ws: true } } },
+  server: { proxy },
+  preview: { proxy },
   test: {
     environment: 'jsdom',
+    include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

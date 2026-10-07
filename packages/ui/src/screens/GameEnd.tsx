@@ -14,6 +14,17 @@ const GOAL_TEXT: Record<string, (t: number) => string> = {
   adequacy_in_half_seasons: t => `reach ${pct(t)} of your need in at least half the seasons`,
 };
 
+/** "Same share of need (seasons 1–6) → …": the lens chosen in each season, consecutive repeats grouped. */
+export function lensRuns(bySeason: readonly string[], name: (id: string) => string): string {
+  const runs: { lens: string; from: number; to: number }[] = [];
+  bySeason.forEach((lens, i) => {
+    const last = runs[runs.length - 1];
+    if (last && last.lens === lens) last.to = i + 1;
+    else runs.push({ lens, from: i + 1, to: i + 1 });
+  });
+  return runs.map(r => `${name(r.lens)} (${r.from === r.to ? `season ${r.from}` : `seasons ${r.from}–${r.to}`})`).join(' → ');
+}
+
 export function GameEnd({ end, goal, role, lenses, debriefOpened, onIntent }: {
   end: End; goal: GoalResult | null; role: string; lenses: PublicLens[]; debriefOpened: boolean;
   onIntent: (intent: Record<string, unknown>) => void;
@@ -34,7 +45,7 @@ export function GameEnd({ end, goal, role, lenses, debriefOpened, onIntent }: {
           <h3>Debrief brief</h3>
           <ul>
             <li>Heaviest pumping: {end.brief.heaviestPumping ? `season ${end.brief.heaviestPumping.season}, ${end.brief.heaviestPumping.pumpsTotal} Mm³` : 'none'}.</li>
-            <li>Lens by season: {end.brief.lensBySeason.map(name).join(' → ')} ({end.brief.lensChanges} changes).</li>
+            <li>Lens by season: {lensRuns(end.brief.lensBySeason, name)} ({end.brief.lensChanges} changes).</li>
             <li>Floor votes held: {end.brief.floorVotes}.</li>
           </ul>
           {!debriefOpened && (

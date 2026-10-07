@@ -47,6 +47,27 @@ def test_worst_season_without_water_is_refused():
     assert any("no water is left to share" in p for p in hard_checks(s, REG))
 
 
+def test_aquifer_capacity_below_start_or_low_threshold_is_refused():
+    """ADR 0006: the aquifer cannot start above its capacity, and a capacity at B_low leaves no room above it."""
+    a = DEFAULT["basin"]["aquifer"]
+    assert any("below the initial stock" in p for p in hard_checks(broken(basin__aquifer__capacity=a["initial"] / 2), REG))
+    low = broken(basin__aquifer__capacity=a["lowThreshold"])
+    assert any("above the low threshold" in p for p in hard_checks(low, REG))
+
+
+def test_capacity_defaults_to_the_registry_value_and_the_initial_stock():
+    """ADR 0006: the shipped capacity is the registry default, which equals B0; a scenario that omits it is full at
+    the start."""
+    load = load_scenario(DEFAULT, REG)
+    assert load.setup is not None
+    assert load.setup.basin.aquifer.capacity == REG["basin.aquifer.capacity"] == DEFAULT["basin"]["aquifer"]["initial"]
+    s = copy.deepcopy(DEFAULT)
+    del s["basin"]["aquifer"]["capacity"]
+    omitted = load_scenario(s, REG).setup
+    assert omitted is not None
+    assert omitted.basin.aquifer.capacity == s["basin"]["aquifer"]["initial"]
+
+
 def test_fraction_reserve_is_refused_until_supported():
     s = broken(basin__reserve__mode="fraction")
     assert hard_checks(s, REG) == ["reserve.mode 'fraction' is not supported yet; give the reserve in Mm³"]

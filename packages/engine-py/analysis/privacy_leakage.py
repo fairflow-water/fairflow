@@ -8,7 +8,7 @@ knows their own pumping. All indicators are computed with the engine's own funct
 equation. Band edges come from the parameter registry. Grid step, season count and tank resolutions are analysis
 settings, not model values.
 
-Run: python analysis/privacy_leakage.py   (prints a Markdown table)
+Run: python analysis/privacy_leakage.py   (prints a Markdown table; --capacity uses the shipped aquifer capacity)
 """
 
 from __future__ import annotations
@@ -51,6 +51,8 @@ SCHEMES = [
 BASIN = Basin.from_dict(
     {**base["basin"], "aquifer": {**base["basin"]["aquifer"], "naturalRecharge": float(bp.natural_recharge())}}
 )
+if "--capacity" in sys.argv:  # ADR 0006: the shipped aquifer capacity (the §3 basin above is unbounded)
+    BASIN = replace(BASIN, aquifer=replace(BASIN.aquifer, capacity=float(params["basin.aquifer.capacity"])))
 FLOOR = params["indicators.survivalFloor"]
 BANDS = {
     "equity": params["indicators.equityBands"],

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { allocate, type LensParams } from './allocate.js';
-import { inflowLossNext, nextStock, observedStock, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
+import { aquiferFull, aquiferSpill, inflowLossNext, nextStock, observedStock, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
 import { efficiency, equityPJ, equitySE, gini, giniCorrected, sustainability, sustainabilityBand, triangle } from './indicators.js';
 import { yieldOf } from './production.js';
 import { at, round6, type Allocation, type Basin, type LensId, type Scheme } from './types.js';
@@ -21,11 +21,12 @@ export interface SeasonInput {
 
 export interface SeasonResult {
   observedStockNext: number;
+  aquiferFull: boolean;
   asAllocated: { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } };
   sustainabilityBand: 'good' | 'warning' | 'unsustainable';
   allocable: number; allocation: Allocation;
   pumpCost: number[]; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[];
-  pumpsTotal: number; returnFlow: number; stockNext: number; inflowLossNext: number;
+  pumpsTotal: number; returnFlow: number; stockNext: number; spill: number; inflowLossNext: number;
   ePJ: number; eSE: { claimant: number; hectare: number; person: number };
   gini: number; giniCorrected: number;
   F: { consumed: number; diverted: number }; S: number;
@@ -51,6 +52,7 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
   const pumpsTotal = P.reduce((a, b) => a + b, 0);
   const returns = returnFlow(s, W);
   const stockNext = nextStock(basin, stock, allocation.surplusToAquifer, returns, pumpsTotal);
+  const spill = aquiferSpill(basin, stock, allocation.surplusToAquifer, returns, pumpsTotal);
   const ePJ = equityPJ(s, W);
   const F = { consumed: efficiency(s, W, 'consumed', floor), diverted: efficiency(s, W, 'diverted', floor) };
   const S = sustainability(s, W, allocable, basin.aquifer.naturalRecharge);
@@ -61,6 +63,7 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
   const wf = welfare(s, A, { gamma: input.scoring.welfareGamma, floor, supplyFloor: input.scoring.welfareSupplyFloor });
   return {
     observedStockNext: r(observedStock(basin, stockNext)),
+    aquiferFull: aquiferFull(basin, stockNext),
     asAllocated: {
       ePJ: r(equityPJ(s, Q)),
       eSE: { claimant: r(equitySE(s, Q, 'claimant')), hectare: r(equitySE(s, Q, 'hectare')), person: r(equitySE(s, Q, 'person')) },
@@ -69,7 +72,7 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
     sustainabilityBand: sustainabilityBand(S, input.scoring.sustainabilityBands),
     allocable: r(allocable), allocation,
     pumpCost: pumpCost.map(r), P: P.map(r), W: W.map(r), A: A.map(r), Y: Y.map(r), dL: dL.map(r),
-    pumpsTotal: r(pumpsTotal), returnFlow: r(returns), stockNext: r(stockNext), inflowLossNext: r(inflowLossNext(basin, stockNext)),
+    pumpsTotal: r(pumpsTotal), returnFlow: r(returns), stockNext: r(stockNext), spill: r(spill), inflowLossNext: r(inflowLossNext(basin, stockNext)),
     ePJ: r(ePJ), eSE: { claimant: r(equitySE(s, W, 'claimant')), hectare: r(equitySE(s, W, 'hectare')), person: r(equitySE(s, W, 'person')) },
     gini: r(gini(sCapped)), giniCorrected: r(giniCorrected(sCapped)),
     F: { consumed: r(F.consumed), diverted: r(F.diverted) }, S: r(S),

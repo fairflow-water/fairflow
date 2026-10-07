@@ -4,7 +4,16 @@
 its section; no parameter has a default in code (values come from a scenario or the sourced parameter registry)."""
 
 from .allocate import FLOOR_RULES, Allocation, allocate, cel, max_value, sufficientarian, talmud, weighted_cea, weights_for
-from .aquifer import inflow_loss_next, next_stock, observed_stock, pump_cost_per_mm3, ration_pumps, return_flow
+from .aquifer import (
+    aquifer_full,
+    aquifer_spill,
+    inflow_loss_next,
+    next_stock,
+    observed_stock,
+    pump_cost_per_mm3,
+    ration_pumps,
+    return_flow,
+)
 from .indicators import (
     adequacy_band,
     collective_score,
@@ -63,6 +72,8 @@ __all__ = [
     "adequacy_band",
     "allocate",
     "apply_event",
+    "aquifer_full",
+    "aquifer_spill",
     "audit",
     "basin_from_scenario",
     "cel",

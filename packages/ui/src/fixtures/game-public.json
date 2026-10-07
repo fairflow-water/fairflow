@@ -412,7 +412,8 @@
     "public": {
      "allocable": 10.0,
      "pumpsTotal": 1.0,
-     "observedStockNext": 22.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
      "inflowLossNext": 0.0,
      "asAllocated": {
       "ePJ": 1.0,
@@ -647,7 +648,8 @@
     "public": {
      "allocable": 15.0,
      "pumpsTotal": 1.0,
-     "observedStockNext": 27.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
      "inflowLossNext": 0.0,
      "asAllocated": {
       "ePJ": 1.0,
@@ -882,7 +884,8 @@
     "public": {
      "allocable": 15.0,
      "pumpsTotal": 1.0,
-     "observedStockNext": 31.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
      "inflowLossNext": 0.0,
      "asAllocated": {
       "ePJ": 1.0,
@@ -1117,7 +1120,8 @@
     "public": {
      "allocable": 10.0,
      "pumpsTotal": 1.0,
-     "observedStockNext": 34.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
      "inflowLossNext": 0.0,
      "asAllocated": {
       "ePJ": 1.0,
@@ -1352,7 +1356,8 @@
     "public": {
      "allocable": 15.0,
      "pumpsTotal": 1.0,
-     "observedStockNext": 38.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
      "inflowLossNext": 0.0,
      "asAllocated": {
       "ePJ": 1.0,

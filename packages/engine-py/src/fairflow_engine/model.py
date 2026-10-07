@@ -55,6 +55,7 @@ class Aquifer:
     seatCostMultipliers: tuple[float, ...]
     maxInflowLossMm3: float
     tankResolution: float  # ADR 0004: resolution of the observed level (prices pumping, drives coupling)
+    capacity: float | None = None  # ADR 0006: B_max, recharge beyond it is rejected; None = unbounded (§2.6 as written)
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,7 @@ class Basin:
                 tuple(a["seatCostMultipliers"]),
                 a["maxInflowLossMm3"],
                 a["tankResolution"],
+                a.get("capacity"),
             ),
             pump=Pump(d["pump"]["cap"], d["pump"]["costBase"], d["pump"]["costSlope"]),
         )

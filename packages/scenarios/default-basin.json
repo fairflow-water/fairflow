@@ -12,9 +12,9 @@
     "inflow": { "wet": 22, "normal": 17, "dry": 12, "unit": "Mm3/season", "dryDrift": 0, "source": "Interannual CV of runoff in semi-arid basins; Balotra draft 181–250 % of recharge (§2.2)" },
     "deck": { "wet": 1, "normal": 3, "dry": 2 },
     "reserve": { "value": 2, "mode": "absolute", "source": "Tennant 1976 10 % minimum; Kenya Q95 reserve (Cherry 2025)" },
-    "aquifer": { "initial": 20, "reserve": 5, "lowThreshold": 10, "naturalRecharge": 1.0, "surplusRecharge": true, "returnFlows": true,
+    "aquifer": { "initial": 20, "capacity": 20, "reserve": 5, "lowThreshold": 10, "naturalRecharge": 1.0, "surplusRecharge": true, "returnFlows": true,
       "gwSwCoupling": { "enabled": true, "maxInflowLossMm3": 1.0 }, "seatCostMultipliers": [1.0, 1.5, 2.0],
-      "source": "~1.2 years of inflow; Alley & Leake 2004; Healy & Cook 2002" },
+      "source": "~1.2 years of inflow; Alley & Leake 2004; Healy & Cook 2002; capacity = B0, rejected recharge (ADR 0006; Theis 1940)" },
     "gameLength": { "min": 5, "max": 6 }
   },
   "schemes": [

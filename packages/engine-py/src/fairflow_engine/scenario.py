@@ -36,6 +36,7 @@ def basin_from_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]
                 "seatCostMultipliers": a.get("seatCostMultipliers", registry["basin.aquifer.seatCostMultipliers"]),
                 "maxInflowLossMm3": a["gwSwCoupling"]["maxInflowLossMm3"] if a["gwSwCoupling"]["enabled"] else 0.0,
                 "tankResolution": a.get("tankResolution", registry["basin.aquifer.tankResolution"]),
+                "capacity": a.get("capacity", a["initial"]),  # ADR 0006: omitted means full at the start
             },
             "pump": {
                 "cap": pump.get("cap", registry["actions.pump.cap"]),
@@ -74,6 +75,12 @@ def hard_checks(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> lis
         problems.append(
             f"no scarcity: the dry year leaves {dry - reserve} Mm³ for {demand} Mm³ of demand, so the lens never matters"
         )
+    a = b["aquifer"]
+    capacity = a.get("capacity", a["initial"])
+    if capacity < a["initial"]:
+        problems.append(f"aquifer capacity ({capacity} Mm³) is below the initial stock ({a['initial']} Mm³)")
+    if capacity <= a["lowThreshold"]:
+        problems.append(f"aquifer capacity ({capacity} Mm³) must be above the low threshold ({a['lowThreshold']} Mm³)")
     worst = worst_case_allocable(scenario, registry)
     if worst <= 0:
         problems.append(

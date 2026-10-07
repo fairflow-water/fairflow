@@ -96,6 +96,13 @@ describe('S7 reveal', () => {
     expect(screen.getByTestId('needle-se').getAttribute('transform')).toBe(`rotate(${needleAngle(result.asAllocated.eSE.claimant)} 100 100)`);
     expect(screen.getByRole('region').textContent).toContain(result.bands!.eSE);
   });
+  it('says when the aquifer is full (ADR 0006), and only then', () => {
+    const { unmount } = render(<Reveal result={{ ...result, aquiferFull: true }} mine={null} season={1} />);
+    expect(screen.getByTestId('full')).toBeTruthy();
+    unmount();
+    render(<Reveal result={{ ...result, aquiferFull: false }} mine={null} season={1} />);
+    expect(screen.queryByTestId('full')).toBeNull();
+  });
   it('clips the needle to [-1, 1]', () => {
     expect(needleAngle(-5)).toBe(needleAngle(-1));
     expect(needleAngle(5)).toBe(needleAngle(1));

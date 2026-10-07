@@ -23,6 +23,7 @@ from fairflow_engine import (
     allocate,
     audit,
     project,
+    pump_cost_per_mm3,
     replay,
     resolve_season,
     value_of,
@@ -95,6 +96,40 @@ def test_aquifer_balance_closes(s, fraction, stock_above, lens, data):
     balance = stock + r["allocation"]["surplusToAquifer"] + BASIN.aquifer.naturalRecharge + r["returnFlow"] - r["pumpsTotal"]
     assert abs(r["stockNext"] - max(BASIN.aquifer.reserve, balance)) <= 1e-5
     assert r["pumpsTotal"] <= stock - BASIN.aquifer.reserve + 1e-6
+
+
+@settings(max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@given(
+    s=schemes(),
+    fraction=st.floats(0.01, 1.3),
+    stock_above=st.floats(0, 25),
+    headroom=st.floats(0, 15),
+    lens=st.sampled_from(LENSES),
+    data=st.data(),
+)
+def test_capacity_holds_and_the_spill_closes_the_balance(s, fraction, stock_above, headroom, lens, data):
+    """ADR 0006: B never exceeds B_max, and B_{t+1} + spill is the §2.6 balance; the spill is never negative."""
+    capacity = BASIN.aquifer.lowThreshold + 1 + headroom
+    basin = replace(BASIN, aquifer=replace(BASIN.aquifer, capacity=capacity))
+    pumps = data.draw(st.lists(st.floats(0, basin.pump.cap), min_size=len(s), max_size=len(s)))
+    stock = min(capacity, basin.aquifer.reserve + stock_above)
+    AW = fraction * sum(x.demandMm3 for x in s)
+    r = resolve_season(
+        s, basin, basin.reserve + AW, stock, lens, replace(lens_params(lens), floorScaling="cea"), pumps, SCORING
+    )
+    balance = stock + r["allocation"]["surplusToAquifer"] + basin.aquifer.naturalRecharge + r["returnFlow"] - r["pumpsTotal"]
+    assert r["stockNext"] <= capacity + 1e-6
+    assert r["spill"] >= 0
+    assert abs(r["stockNext"] + r["spill"] - max(basin.aquifer.reserve, balance)) <= 1e-5
+    assert r["aquiferFull"] == (
+        r["observedStockNext"] >= int(capacity // basin.aquifer.tankResolution) * basin.aquifer.tankResolution
+    )
+
+
+@given(stock=st.floats(0, 200), seat=st.integers(1, 5))
+def test_pump_cost_never_below_cost_base(stock, seat):
+    """ADR 0006: c >= costBase at every level, however full the aquifer; below B0 the §2.2 formula is unchanged."""
+    assert pump_cost_per_mm3(BASIN, stock, seat) >= BASIN.pump.costBase - 1e-12
 
 
 class SeasonRecordMachine(RuleBasedStateMachine):

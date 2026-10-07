@@ -80,6 +80,7 @@
             },
             "seatCostMultipliers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/positive" } },
             "tankResolution": { "$ref": "#/$defs/positive" },
+            "capacity": { "$ref": "#/$defs/positive" },
             "source": { "$ref": "#/$defs/source" }
           }
         },

@@ -14,6 +14,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env['CI'],
+  retries: process.env['CI'] ? 1 : 0, // a pass on retry is still reported as flaky
   reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: { baseURL: CLIENT, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

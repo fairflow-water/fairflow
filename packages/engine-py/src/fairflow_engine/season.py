@@ -8,7 +8,16 @@ from collections.abc import Sequence
 from typing import Literal, TypedDict
 
 from .allocate import allocate
-from .aquifer import inflow_loss_next, next_stock, observed_stock, pump_cost_per_mm3, ration_pumps, return_flow
+from .aquifer import (
+    aquifer_full,
+    aquifer_spill,
+    inflow_loss_next,
+    next_stock,
+    observed_stock,
+    pump_cost_per_mm3,
+    ration_pumps,
+    return_flow,
+)
 from .indicators import efficiency, equity_pj, equity_se, gini, gini_corrected, sustainability, sustainability_band, triangle
 from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
 from .production import yield_of
@@ -59,6 +68,7 @@ class SeasonResult(TypedDict):
     """Everything one season produces; record.py decides which fields are public during play (ADR 0004)."""
 
     observedStockNext: float
+    aquiferFull: bool
     asAllocated: Dials
     sustainabilityBand: Literal["good", "warning", "unsustainable"]
     allocable: float
@@ -72,6 +82,7 @@ class SeasonResult(TypedDict):
     pumpsTotal: float
     returnFlow: float
     stockNext: float
+    spill: float
     inflowLossNext: float
     ePJ: float
     eSE: ByEqualisandum
@@ -131,6 +142,7 @@ def resolve_season(
     pumped = sum(P)
     returns = return_flow(schemes, W)
     stock_next = next_stock(basin, stock, alloc.surplusToAquifer, returns, pumped)
+    spill = aquifer_spill(basin, stock, alloc.surplusToAquifer, returns, pumped)
     e_pj = equity_pj(schemes, W)
     S = sustainability(schemes, W, allocable, basin.aquifer.naturalRecharge)
     s_capped = [max(scoring.welfareSupplyFloor, min(a, 1.0)) for a in A]
@@ -140,6 +152,7 @@ def resolve_season(
     r = round6
     return {
         "observedStockNext": r(observed_stock(basin, stock_next)),
+        "aquiferFull": aquifer_full(basin, stock_next),
         "asAllocated": _dials(schemes, list(alloc.Q), floor),  # ADR 0004: the in-play dials, on the public allocation
         "sustainabilityBand": sustainability_band(S, scoring.sustainabilityBands),
         "allocable": r(allocable),
@@ -153,6 +166,7 @@ def resolve_season(
         "pumpsTotal": r(pumped),
         "returnFlow": r(returns),
         "stockNext": r(stock_next),
+        "spill": r(spill),
         "inflowLossNext": r(inflow_loss_next(basin, stock_next)),
         "ePJ": actual["ePJ"],
         "eSE": actual["eSE"],

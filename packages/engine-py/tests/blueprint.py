@@ -216,6 +216,7 @@ def basin_v1() -> dict:
             "seatCostMultipliers": pump[3:6],
             "maxInflowLossMm3": coupling[0],
             "tankResolution": registry()["basin.aquifer.tankResolution"],
+            "capacity": None,  # ADR 0006: the §3 fixtures isolate one term each, so the v1 basin is unbounded
         },  # ADR 0004
         "pump": {"cap": pump[0], "costBase": pump[1], "costSlope": pump[2]},
     }

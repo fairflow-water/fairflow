@@ -68,6 +68,7 @@ export function basin(value: unknown, path: string): Basin {
       seatCostMultipliers: numbers(a['seatCostMultipliers'], `${path}.aquifer.seatCostMultipliers`),
       maxInflowLossMm3: number(a['maxInflowLossMm3'], `${path}.aquifer.maxInflowLossMm3`),
       tankResolution: number(a['tankResolution'], `${path}.aquifer.tankResolution`),
+      capacity: a['capacity'] === undefined || a['capacity'] === null ? null : number(a['capacity'], `${path}.aquifer.capacity`),
     },
     pump: { cap: number(p['cap'], `${path}.pump.cap`), costBase: number(p['costBase'], `${path}.pump.costBase`),
       costSlope: number(p['costSlope'], `${path}.pump.costSlope`) },

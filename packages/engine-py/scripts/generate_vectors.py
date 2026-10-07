@@ -151,6 +151,8 @@ def random_cases(params: dict, n: int) -> list[dict]:
                 "seatCostMultipliers": sorted(float(x) for x in rng.uniform(1, 3, int(rng.integers(1, 6)))),
                 "maxInflowLossMm3": float(rng.uniform(0, 2)),
                 "tankResolution": float(rng.choice([0.25, 0.5, 1.0, 2.0])),
+                # ADR 0006: half the cases have a capacity (B0 up to 1.5 B0), half none (§2.6 as written)
+                "capacity": float(rng.uniform(b0, 1.5 * b0)) if k % 2 else None,
             },
             "pump": {
                 "cap": float(rng.uniform(0.5, 3)),

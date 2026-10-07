@@ -30,7 +30,7 @@ export interface PrivateTurn {
 }
 export interface Dials { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } }
 export interface PublicResult {
-  allocable: number; pumpsTotal: number; observedStockNext: number; inflowLossNext: number; asAllocated: Dials;
+  allocable: number; pumpsTotal: number; observedStockNext: number; aquiferFull?: boolean; inflowLossNext: number; asAllocated: Dials;
   sustainabilityBand: Band; bands?: { ePJ: Band; eSE: Band; F: Band };
 }
 /** This farm's own results for a season (the `self` part of season.resolved). */

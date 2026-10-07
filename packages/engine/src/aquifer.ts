@@ -13,12 +13,12 @@ export function observedStock(basin: Basin, stock: number): number {
 
 /**
  * Blueprint §2.2 — pump cost per Mm³ from the observed level at the start of the season (ADR 0004):
- * c = costBase + costSlope·(1 − B/B₀), times the seat multiplier once B < B_low.
+ * c = costBase + costSlope·max(0, 1 − B/B₀), times the seat multiplier once B < B_low. ADR 0006: never below costBase.
  */
 export function pumpCostPerMm3(basin: Basin, stock: number, seat: number): number {
   const { aquifer: q, pump } = basin;
   const seen = observedStock(basin, stock);
-  const base = pump.costBase + pump.costSlope * (1 - seen / q.initial);
+  const base = pump.costBase + pump.costSlope * Math.max(0, 1 - seen / q.initial);
   if (seen >= q.lowThreshold) return base;
   const m = q.seatCostMultipliers;
   return base * at(m, Math.min(seat, m.length) - 1);
@@ -35,9 +35,25 @@ export function rationPumps(basin: Basin, stock: number, requests: number[]): nu
 /** Return flows Σ(1 − β_i) W_i recharge the aquifer (§2.6). */
 export const returnFlow = (schemes: Scheme[], W: number[]): number => W.reduce((t, w, i) => t + (1 - at(schemes, i).beta) * w, 0);
 
-/** §2.6 — B_{t+1} = max(B_res, B_t + surplus + r₀ + return flows − Σ P). */
+/** §2.6 before the capacity of ADR 0006: max(B_res, B_t + surplus + r₀ + return flows − Σ P). */
+const unboundedStock = (basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number =>
+  Math.max(basin.aquifer.reserve, stock + surplus + basin.aquifer.naturalRecharge + returns - pumped);
+
+/** §2.6 with ADR 0006 — B_{t+1} = min(B_max, max(B_res, B_t + surplus + r₀ + return flows − Σ P)). */
 export function nextStock(basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number {
-  return Math.max(basin.aquifer.reserve, stock + surplus + basin.aquifer.naturalRecharge + returns - pumped);
+  const unbounded = unboundedStock(basin, stock, surplus, returns, pumped);
+  const cap = basin.aquifer.capacity;
+  return cap === null ? unbounded : Math.min(cap, unbounded);
+}
+
+/** ADR 0006 — recharge a full aquifer rejects; it leaves the basin (already in the cards' inflows), sealed until the debrief. */
+export const aquiferSpill = (basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number =>
+  unboundedStock(basin, stock, surplus, returns, pumped) - nextStock(basin, stock, surplus, returns, pumped);
+
+/** ADR 0006 — whether the observed level has reached the observed capacity (no more than the table already sees). */
+export function aquiferFull(basin: Basin, stock: number): boolean {
+  const cap = basin.aquifer.capacity;
+  return cap !== null && observedStock(basin, stock) >= observedStock(basin, cap);
 }
 
 /** §2.6 GW–SW coupling — next inflow falls by maxLoss·(B_low − B)/B_low while B < B_low, B the observed level (ADR 0004). */

@@ -37,6 +37,7 @@ export function Reveal({ result, mine, season }: { result: PublicResult; mine: M
     <div key="water">
       <h3>The table pumped {fmt(result.pumpsTotal)} Mm³.</h3>
       <p>The aquifer is at about {fmt(result.observedStockNext)} Mm³. Water use is {SUSTAIN[result.sustainabilityBand] ?? result.sustainabilityBand} ({result.sustainabilityBand}).</p>
+      {result.aquiferFull && <p data-testid="full">The aquifer is full: any more recharge flows on out of the basin.</p>}
     </div>,
     <div key="equity">
       <h3>How fair was the sharing?</h3>

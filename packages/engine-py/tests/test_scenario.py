@@ -55,6 +55,13 @@ def test_aquifer_capacity_below_start_or_low_threshold_is_refused():
     assert any("above the low threshold" in p for p in hard_checks(low, REG))
 
 
+def test_aquifer_starting_below_its_reserve_is_refused():
+    """Review E2: below B_res the §2.6 floor max(B_res, ·) would add water that never entered the basin."""
+    a = DEFAULT["basin"]["aquifer"]
+    problems = hard_checks(broken(basin__aquifer__initial=a["reserve"] / 2), REG)
+    assert any("below its reserve" in p for p in problems)
+
+
 def test_capacity_defaults_to_the_registry_value_and_the_initial_stock():
     """ADR 0006: the shipped capacity is the registry default, which equals B0; a scenario that omits it is full at
     the start."""

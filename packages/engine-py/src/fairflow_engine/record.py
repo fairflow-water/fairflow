@@ -657,7 +657,11 @@ class Game:
         failed = [s.cropFailure[role] or run >= CROP_FAILURE_RUN for role, run in zip(roles, low_run, strict=True)]
         # §2.4 ΔL = pY/100 − c_p P − c_action: the engine's dL holds the first two terms; the action cost is charged here
         L = [round6(s.livelihood[role] + d - action_cost[role]) for role, d in zip(roles, r["dL"], strict=True)]
-        v = verdict(self._schemes(s), r["allocable"], r["W"], lens, r["pumpsTotal"], self.setup.lenses, floor)
+        applied = [  # the parameters actually applied, with the table's floor rule (review E1)
+            (name, self._lens_params(name, s.floorRule if name == "sufficientarian" else None))
+            for name, _ in self.setup.lenses
+        ]
+        v = verdict(self._schemes(s), r["allocable"], r["W"], lens, r["pumpsTotal"], applied, floor)
         result: dict[str, Any] = dict(r)
         public = {k: result[k] for k in PUBLIC_RESULT_FIELDS}
         public["bands"] = {  # band words of the as-allocated dials (ADR 0004: computed on the public allocation)
@@ -675,6 +679,8 @@ class Game:
                 "cropFailure": failed,
                 "cropFailureFlag": any(failed),
                 "actionCost": [action_cost[role] for role in roles],
+                # §2.4 ΔL in full, the season's change in L; dL omits the action cost (review E10)
+                "points": [round6(d - action_cost[role]) for role, d in zip(roles, r["dL"], strict=True)],
                 "verdict": {"voted": v["voted"], "satisfied": v["satisfied"], "pumpingGap": v["pumpingGap"]},
             }
         )
@@ -693,6 +699,7 @@ class Game:
                 "roles": roles,
                 "L": [s.livelihood[role] for role in roles],
                 "cropFailure": [s.cropFailure[role] for role in roles],
+                "points": list(r["dL"]),  # no actions in the tutorial, so ΔL = dL
             }
         )
         public = {k: result[k] for k in PUBLIC_RESULT_FIELDS}
@@ -769,7 +776,7 @@ class Game:
                 "deckOrder": sec.deckOrder,
                 "truncated": s.timeboxed or s.season < sec.T,
                 "seasonsPlayed": s.season,
-                "collectiveScore": float(np.mean(s.scores)) if s.scores else 0.0,
+                "collectiveScore": round6(float(np.mean(s.scores))) if s.scores else 0.0,  # §7.2 rounding (review E9)
                 "cropFailureFlag": any(s.cropFailure.values()),
                 "brief": self._brief(),
                 "authorityGoal": authority,
@@ -843,6 +850,9 @@ def debrief_welfare(setup: GameSetup, events: Sequence[Event]) -> dict[str, Any]
         return [round6(pwf_ede(A, float("inf") if g is None else g, floor)) for g in gammas]
 
     climates = {e["season"]: e["payload"] for e in events if e["type"] == "season.climate"}
+    # The chosen lens's row uses the allocation issued, which applies the floor rule the table voted (review E1); the
+    # season.climate previews use the "whatever works" cut for the sufficientarian lens.
+    issued = {e["season"]: e["payload"] for e in events if e["type"] == "allocation.issued"}
     seasons = []
     for e in events:
         if e["type"] != "season.resolved":
@@ -853,6 +863,9 @@ def debrief_welfare(setup: GameSetup, events: Sequence[Event]) -> dict[str, Any]
             "season": e["season"],
             "lenses": {p["lens"]: row([q / d for q, d in zip(p["Q"], demand, strict=True)]) for p in c["previews"]},
         }
+        chosen = issued.get(e["season"])
+        if chosen is not None and chosen["lens"] in entry["lenses"]:
+            entry["lenses"][chosen["lens"]] = row([q / d for q, d in zip(chosen["Q"], demand, strict=True)])
         if opened["perPlayer"]:
             entry["used"] = row(e["payload"]["sealed"]["A"])
         seasons.append(entry)
@@ -862,8 +875,9 @@ def debrief_welfare(setup: GameSetup, events: Sequence[Event]) -> dict[str, Any]
 # ---- projections (§6.2: derived, never stored) -------------------------------------------------------------------
 def project(events: Sequence[Event], viewer: str) -> list[Event]:
     """The events a viewer may see: 'public' (shared screen, exports before the debrief, relay broadcasts) or a role.
-    A role sees public fields plus its own self/sealed entries. After debrief.opened, sealed fields are public; with
-    perPlayer = false no per-scheme figure is opened (each of W, A, Y, ΔL, L reveals pumping, R17)."""
+    A role sees public fields plus its own self/sealed entries. Sealed fields open to everyone only when the debrief is
+    opened with perPlayer = true; a totals-only debrief opens no per-scheme figure (each of W, A, Y, ΔL, L reveals
+    pumping, R17; ADR 0004)."""
     opened = next((e["payload"] for e in events if e["type"] == "debrief.opened"), None)
     out: list[Event] = []
     for e in events:
@@ -881,14 +895,13 @@ def project(events: Sequence[Event], viewer: str) -> list[Event]:
             mine: dict[str, Any] = {}
             if viewer in p["sealed"]["roles"]:
                 i = p["sealed"]["roles"].index(viewer)
-                mine = {k: p["sealed"][k][i] for k in ("pumpCost", "P", "W", "A", "Y", "dL", "L", "cropFailure")}
+                mine = {k: p["sealed"][k][i] for k in ("pumpCost", "P", "W", "A", "Y", "dL", "points", "L", "cropFailure")}
             payload: dict[str, Any]
             if opened and opened["perPlayer"]:
                 payload = {"public": p["public"], "sealed": p["sealed"]}
-            elif opened:
-                # perPlayer false: every per-scheme figure stays sealed, because W, A, Y, ΔL and L each reveal pumping
-                payload = {"public": p["public"], "self": mine}
             else:
+                # before the debrief, or a totals-only debrief: every per-scheme figure stays sealed, because W, A, Y,
+                # ΔL and L each reveal pumping (ADR 0004)
                 payload = {"public": p["public"], "self": mine}
             out.append({**e, "payload": payload})
     return out
@@ -934,6 +947,10 @@ def audit(setup: GameSetup, events: Sequence[Event]) -> list[str]:
             for k in SEALED_RESULT_FIELDS:
                 if r[k] != e["payload"]["sealed"][k]:
                     problems.append(f"season {e['season']}: sealed {k} differs")
+            sealed = e["payload"]["sealed"]
+            cost = sealed.get("actionCost", [0.0] * len(roles))
+            if sealed["points"] != [round6(d - c) for d, c in zip(r["dL"], cost, strict=True)]:
+                problems.append(f"season {e['season']}: sealed points differ from ΔL")
         state = apply_event(state, e)
     recorded_welfare = next((e["payload"] for e in events if e["type"] == "debrief.welfare"), None)
     if recorded_welfare is not None:

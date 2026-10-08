@@ -201,14 +201,18 @@ def verdict(
     lenses: Sequence[tuple[LensId, LensParams]],
     survival_floor: float,
 ) -> Verdict:
-    """§2.7: the lens whose ideal allocation is nearest the realised one by Σ|A_i − A_i*|; ties to the earlier card."""
+    """§2.7: the lens whose ideal allocation is nearest the realised one by Σ|A_i − A_i*|. Ties go to the voted lens,
+    then to the earlier card: two lenses can prescribe the same allocation (a proportional cut of the sufficientarian
+    floors is the proportional lens), and the table's own rule must then be named (review 2026-10-08, E1).
+    `lenses` must carry the parameters actually applied, including the floor rule the table voted."""
     A = [w / s.demandMm3 for s, w in zip(schemes, W, strict=True)]
-    best: Verdict | None = None
+    distances: list[tuple[LensId, float]] = []
     for lens, params in lenses:
         ideal = allocate(lens, schemes, allocable, params, survival_floor).Q
-        d = sum(abs(a - q / s.demandMm3) for a, q, s in zip(A, ideal, schemes, strict=True))
-        if best is None or d < best["distance"] - 1e-9:  # tolerance for ties (§2.7: ties to the earlier card)
-            best = {"voted": voted, "satisfied": lens, "distance": d, "pumpingGap": pumping_gap}
-    if best is None:
+        distances.append((lens, sum(abs(a - q / s.demandMm3) for a, q, s in zip(A, ideal, schemes, strict=True))))
+    if not distances:
         raise ValueError("verdict: no lenses to compare")
-    return best
+    nearest = min(d for _, d in distances)
+    tied = [lens for lens, d in distances if d <= nearest + 1e-9]  # tolerance: 1e-9 on a sum of rounded shares (§7.2)
+    satisfied = voted if voted in tied else tied[0]
+    return {"voted": voted, "satisfied": satisfied, "distance": dict(distances)[satisfied], "pumpingGap": pumping_gap}

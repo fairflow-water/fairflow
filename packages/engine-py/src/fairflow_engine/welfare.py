@@ -16,13 +16,19 @@ from .model import Scheme
 def pwf_ede(A: Sequence[float], gamma: float, supply_floor: float) -> float:
     """The equally-distributed equivalent of PWF_γ (Atkinson 1970) on s_i = min(A_i, 1) floored at `supply_floor`: the
     share of need which, given to every farm, is worth as much. γ = 0 is the mean (every share counts the same); γ = ∞
-    is its limit, the smallest share (only the worst-off counts); γ = 1 is the geometric mean."""
+    is its limit, the smallest share (only the worst-off counts); γ = 1 is the geometric mean.
+
+    Computed relative to the smallest share m as m·exp(log1p(mean(expm1(t·ln(s/m))))/t), t = 1 − γ, which is the same
+    power mean without overflow at large γ or cancellation near γ = 1 (review 2026-10-08, E6)."""
     s = np.maximum(supply_floor, np.minimum(np.asarray(A, dtype=float), 1.0))
+    m = float(s.min())
     if math.isinf(gamma):
-        return float(s.min())
-    if gamma == 1:
-        return float(np.exp(np.log(s).mean()))
-    return float(np.mean(s ** (1 - gamma)) ** (1 / (1 - gamma)))
+        return m
+    x = np.log(s / m)
+    t = 1 - gamma
+    if t == 0:
+        return float(m * np.exp(x.mean()))
+    return float(m * np.exp(np.log1p(np.mean(np.expm1(t * x))) / t))
 
 
 def welfare(schemes: Sequence[Scheme], A: Sequence[float], gamma: float, m: float, supply_floor: float) -> dict[str, float]:
@@ -30,14 +36,12 @@ def welfare(schemes: Sequence[Scheme], A: Sequence[float], gamma: float, m: floa
     UWF = mean s; PWF_γ = Σ s^(1−γ)/(1−γ) (Atkinson 1970, increasing in supply) with its equally-distributed-equivalent
     PWFede; SWF = 0 if any s_i < m, else (1/2n)[Σ min(1, s/m) + Σ (s − m)/(1 − m)]; EWF = 1 − Gini(s), uncorrected,
     as the §3.1 fixtures use; CWF = Σ N_i s_i / Σ N_i."""
+    if not math.isfinite(gamma):
+        raise ValueError("welfare: PWF_γ is defined for finite γ; use pwf_ede for the γ → ∞ limit")
     s = np.maximum(supply_floor, np.minimum(np.asarray(A, dtype=float), 1.0))
     n = len(s)
-    if gamma == 1:
-        pwf = float(np.log(s).sum())
-        ede = float(np.exp(pwf / n))
-    else:
-        pwf = float((s ** (1 - gamma) / (1 - gamma)).sum())
-        ede = float(((1 - gamma) * pwf / n) ** (1 / (1 - gamma)))
+    pwf = float(np.log(s).sum()) if gamma == 1 else float((s ** (1 - gamma) / (1 - gamma)).sum())
+    ede = pwf_ede(A, gamma, supply_floor)
     swf = 0.0 if (s < m).any() else float((np.minimum(1, s / m).sum() + ((s - m) / (1 - m)).sum()) / (2 * n))  # §2.7 SWF
     N = np.array([x.people for x in schemes], dtype=float)
     return {

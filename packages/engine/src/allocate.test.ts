@@ -5,10 +5,10 @@
 // parameters come from the registry. No model number is written in this file.
 
 import { describe, expect, it } from 'vitest';
-import { allocate, FLOOR_RULES, MissingParameter, type FloorRule, type LensParams } from './allocate.js';
+import { allocate, FLOOR_RULES, maxValue, MissingParameter, weightedCEA, type FloorRule, type LensParams } from './allocate.js';
 import { valueOf } from './production.js';
 import { lensParams, registry } from './registry.testutil.js';
-import type { LensId, Scheme } from './types.js';
+import { at, type LensId, type Scheme } from './types.js';
 import fixtures from '../fixtures/default-basin-v1.json' with { type: 'json' };
 
 const schemes = fixtures.schemes as Scheme[];
@@ -30,6 +30,21 @@ for (const card of ['dry', 'normal'] as const) {
     }
   });
 }
+
+describe('review E5: tied marginal values are left to the Python engine', () => {
+  it('refuses rather than return a different optimum', () => {
+    const s = at(schemes, 2);
+    const same = ['X', 'Y', 'Z'].map(id => ({ ...s, id }));
+    expect(() => maxValue(same, 7, 0.5)).toThrow(/tied marginal values/);
+  });
+});
+
+describe('review E4: zero weights are refused, as in the Python engine', () => {
+  it('throws instead of returning NaN', () => {
+    expect(() => weightedCEA([3, 5], [0, 0], 6)).toThrow(/positive weight/);
+    expect(weightedCEA([0, 5], [0, 1], 6)).toEqual([0, 5]);
+  });
+});
 
 describe('blueprint §3.2 normal-year coincidences', () => {
   const Q = (lens: LensId) => allocate(lens, schemes, allocable('normal'), lensParams(lens), floor).Q;

@@ -74,7 +74,7 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
     <section aria-labelledby="turn-title" className="turn">
       <h2 id="turn-title">Your turn</h2>
       {last && demand !== null && (
-        <p className="banner">Last season you received {fmt(last.W)} of your {fmt(demand)} Mm³; harvest {fmt(last.Y, 0)} t; {signed(last.dL)} points.</p>
+        <p className="banner">Last season you received {fmt(last.W)} of your {fmt(demand)} Mm³; harvest {fmt(last.Y, 0)} t; {signed(last.points)} points.</p>
       )}
       {left !== null && <p className="timer" aria-live="polite">{left} s</p>}
       <div className="pump-card">

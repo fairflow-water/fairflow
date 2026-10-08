@@ -62,7 +62,7 @@ export function Reveal({ result, mine, season, practice = false }: {
       {mine && (
         <aside className="mine" aria-label="Your farm (only you see this)">
           <h3>Your farm</h3>
-          <p>Harvest {fmt(mine.Y)} t, {signed(mine.dL)} points this season; {fmt(mine.L)} points in total.</p>
+          <p>Harvest {fmt(mine.Y)} t, {signed(mine.points)} points this season; {fmt(mine.L)} points in total.</p>
         </aside>
       )}
     </section>

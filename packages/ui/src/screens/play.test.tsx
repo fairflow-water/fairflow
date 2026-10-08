@@ -30,7 +30,7 @@ const decisionS = scenario.session!.decisionS!;
 describe('S6 private turn', () => {
   it("shows last season's own results and the engine preview for each pump level", async () => {
     render(<PrivateTurn turn={turn} last={lastMine} demand={lastMine.W} decisionS={null} onCommit={() => undefined} />);
-    expect(screen.getByText(/Last season you received/).textContent).toContain(fmt(lastMine.dL));
+    expect(screen.getByText(/Last season you received/).textContent).toContain(fmt(lastMine.points));
     for (const option of turn.options) {
       expect(screen.getByTestId('preview').textContent).toContain(fmt(option.points['none']!));
       if (option.pumps < turn.cap) await userEvent.click(screen.getByRole('button', { name: 'One more' }));

@@ -8,7 +8,8 @@ export interface Verdict { voted: LensId; satisfied: LensId; distance: number; p
 
 /**
  * Blueprint §2.7 — the lens whose ideal allocation for this season is nearest the realised one, by Σ|A_i − A_i*|.
- * `lenses` are the scenario's enabled lenses in card order; ties go to the earlier card, so the verdict maps onto a card.
+ * `lenses` are the scenario's enabled lenses in card order, with the parameters actually applied (the voted floor rule).
+ * Ties go to the voted lens, then to the earlier card: two lenses can prescribe the same allocation (review E1).
  * "You voted X; the outcome best satisfied Y; the gap came from Z Mm³ of pumping."
  */
 export function verdict(
@@ -16,12 +17,13 @@ export function verdict(
   lenses: { id: LensId; params: LensParams }[], survivalFloor: number,
 ): Verdict {
   const A = W.map((w, i) => w / at(schemes, i).demandMm3);
-  let best: Verdict | null = null;
-  for (const l of lenses) {
+  const distances = lenses.map(l => {
     const ideal = allocate(l.id, schemes, allocable, l.params, survivalFloor).Q;
-    const distance = ideal.reduce((t, q, i) => t + Math.abs(at(A, i) - q / at(schemes, i).demandMm3), 0);
-    if (best === null || distance < best.distance - 1e-9) best = { voted, satisfied: l.id, distance, pumpingGap }; // tolerance for ties (§2.7)
-  }
-  if (best === null) throw new Error('verdict: no lenses to compare');
-  return best;
+    return { id: l.id, d: ideal.reduce((t, q, i) => t + Math.abs(at(A, i) - q / at(schemes, i).demandMm3), 0) };
+  });
+  if (distances.length === 0) throw new Error('verdict: no lenses to compare');
+  const nearest = Math.min(...distances.map(x => x.d));
+  const tied = distances.filter(x => x.d <= nearest + 1e-9); // tolerance: 1e-9 on a sum of rounded shares (§7.2)
+  const pick = tied.find(x => x.id === voted) ?? at(tied, 0);
+  return { voted, satisfied: pick.id, distance: pick.d, pumpingGap };
 }

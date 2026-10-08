@@ -86,7 +86,8 @@ def test_utilitarian_is_never_beaten_by_another_lens(s, fraction):
     s=schemes(), fraction=st.floats(0.01, 1.3), stock_above=st.floats(0, 25), lens=st.sampled_from(LENSES), data=st.data()
 )
 def test_aquifer_balance_closes(s, fraction, stock_above, lens, data):
-    """§9.1: B_{t+1} = max(B_res, B_t + surplus + r₀ + return flows − ΣP), and pumping never draws below B_res."""
+    """§9.1: B_{t+1} = max(B_res, B_t + surplus + r₀ + return flows − ΣP), and pumping never draws below B_res. The floor
+    never binds (review E2): the balance closes exactly, so the max(B_res, ·) creates no water from a valid stock."""
     pumps = data.draw(st.lists(st.floats(0, BASIN.pump.cap), min_size=len(s), max_size=len(s)))
     stock = BASIN.aquifer.reserve + stock_above
     AW = fraction * sum(x.demandMm3 for x in s)
@@ -94,7 +95,7 @@ def test_aquifer_balance_closes(s, fraction, stock_above, lens, data):
         s, BASIN, BASIN.reserve + AW, stock, lens, replace(lens_params(lens), floorScaling="cea"), pumps, SCORING
     )
     balance = stock + r["allocation"]["surplusToAquifer"] + BASIN.aquifer.naturalRecharge + r["returnFlow"] - r["pumpsTotal"]
-    assert abs(r["stockNext"] - max(BASIN.aquifer.reserve, balance)) <= 1e-5
+    assert abs(r["stockNext"] - balance) <= 1e-5
     assert r["pumpsTotal"] <= stock - BASIN.aquifer.reserve + 1e-6
 
 
@@ -120,7 +121,7 @@ def test_capacity_holds_and_the_spill_closes_the_balance(s, fraction, stock_abov
     balance = stock + r["allocation"]["surplusToAquifer"] + basin.aquifer.naturalRecharge + r["returnFlow"] - r["pumpsTotal"]
     assert r["stockNext"] <= capacity + 1e-6
     assert r["spill"] >= 0
-    assert abs(r["stockNext"] + r["spill"] - max(basin.aquifer.reserve, balance)) <= 1e-5
+    assert abs(r["stockNext"] + r["spill"] - balance) <= 1e-5  # review E2: exact closure, the B_res floor never binds
     assert r["aquiferFull"] == (
         r["observedStockNext"] >= int(capacity // basin.aquifer.tankResolution) * basin.aquifer.tankResolution
     )

@@ -116,12 +116,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         }
 
     @app.post("/rooms/{code}/join")
-    def join(code: str, body: JoinRequest) -> dict[str, str]:
+    async def join(code: str, body: JoinRequest) -> dict[str, str]:
+        # Under the room's lock, like every intent, and broadcast, so the lobby sees who has joined.
         try:
-            token = registry.join(code, body.role, body.deviceHash, body.consentGiven, body.presurveyComplete)
+            room = registry.get(code)
         except Rejection as e:
             raise http_error(e) from None
-        log.info("joined room=%s role=%s", code.upper(), body.role)
+        async with locks.setdefault(room.code, asyncio.Lock()):
+            before = len(room.game.events)
+            try:
+                token = registry.join(code, body.role, body.deviceHash, body.consentGiven, body.presurveyComplete)
+            except Rejection as e:
+                raise http_error(e) from None
+            log.info("joined room=%s role=%s", room.code, body.role)
+            await broadcast(room, before)
         return {"token": token, "role": body.role}
 
     async def send_projection(room: Room, conn: Connection, full: bool) -> None:

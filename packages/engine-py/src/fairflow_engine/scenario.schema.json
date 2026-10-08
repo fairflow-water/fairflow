@@ -107,7 +107,18 @@
       }
     },
     "moduleParams": { "type": "object" },
-    "indicators": { "type": "object" },
+    "indicators": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "review E7: values that divide by zero or take the log of zero are refused",
+      "properties": {
+        "survivalFloor": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "welfareSupplyFloor": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "welfareGamma": { "$ref": "#/$defs/nonNegative" },
+        "r3Ramp": { "$ref": "#/$defs/positive" },
+        "sustainabilityBands": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+      }
+    },
     "session": { "type": "object" },
     "spatial": {
       "type": "object",
@@ -172,10 +183,10 @@
         "depthMm": { "$ref": "#/$defs/positive" },
         "beta": { "$ref": "#/$defs/fraction" },
         "yieldTHa": { "$ref": "#/$defs/positive" },
-        "ky": { "$ref": "#/$defs/nonNegative" },
+        "ky": { "type": "number", "minimum": 0, "maximum": 2, "$comment": "review E7: at the 0.5 survival floor FAO-33 gives Y = K(1 − 0.5 Ky), negative for Ky > 2" },
         "people": { "$ref": "#/$defs/positive" },
         "peopleUnit": { "enum": ["employees", "households", "dependants", "people"] },
-        "kappa": { "$ref": "#/$defs/nonNegative" },
+        "kappa": { "$ref": "#/$defs/positive", "$comment": "review E4: a zero weight empties the capability lens's weight sum" },
         "price": { "$ref": "#/$defs/nonNegative" },
         "derived": {
           "type": "object",

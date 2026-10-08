@@ -302,3 +302,25 @@ def test_season_opens_with_engine_previews_of_every_enabled_lens():
             abs(a - q / s.demandMm3) <= 1e-6 for a, q, s in zip(p["shareOfNeed"], p["Q"], g.setup.schemes, strict=True)
         )
     assert all(e["visibility"] == "public" for e in g.events if e["type"] == "season.climate")
+
+
+def test_season_points_are_the_change_in_the_running_total():
+    """Review E10: §2.4 ΔL = pY/100 − c_p P − c_action. The points shown for a season must be what the total moved by,
+    action cost included (an Orchard season used to show the points before the token's cost)."""
+    g = new_game()
+    g.submit(AUTHORITY, "start_season")
+    g.submit(AUTHORITY, "propose", lens="proportional")
+    g.submit(AUTHORITY, "close_vote")
+    g.submit("A", "commit", pumps=BASIN.pump.cap, action="orchard")
+    for role in ROLES[1:]:
+        g.submit(role, "commit", pumps=0.0)
+    play_game(g)
+    before = {r: 0.0 for r in ROLES}
+    for e in (e for e in g.events if e["type"] == "season.resolved"):
+        sealed = e["payload"]["sealed"]
+        for i, role in enumerate(sealed["roles"]):
+            assert sealed["points"][i] == pytest.approx(sealed["L"][i] - before[role], abs=1e-6)
+            before[role] = sealed["L"][i]
+    first = next(e for e in g.events if e["type"] == "season.resolved")["payload"]["sealed"]
+    assert first["actionCost"][0] > 0 and first["points"][0] < first["dL"][0]
+    assert audit(g.setup, g.events) == []

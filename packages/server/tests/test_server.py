@@ -209,3 +209,18 @@ def test_the_facilitator_can_open_the_practice_round(client: TestClient) -> None
         events = ws.receive_json()["events"]
     climate = next(e for e in events if e["type"] == "season.climate")
     assert climate["season"] == 0 and climate["payload"]["tutorial"] is True
+
+
+def test_the_lobby_hears_each_join(client: TestClient) -> None:
+    """A join arrives over HTTP; the open sockets must receive it, or the facilitator's lobby never sees who has joined."""
+    room = client.post("/rooms", json={"scenario": "default-basin"}).json()
+    with ExitStack() as stack:
+        facilitator = connect(client, stack, room["room"], room["facilitatorToken"])
+        r = client.post(
+            f"/rooms/{room['room']}/join",
+            json={"role": "A", "deviceHash": "hash-A-lobby", "consentGiven": True, "presurveyComplete": True},
+        )
+        assert r.status_code == 200
+        msg = facilitator.receive_json()
+        assert msg["type"] == "events"
+        assert [(e["type"], e["payload"]["role"]) for e in msg["events"]] == [("player.joined", "A")]

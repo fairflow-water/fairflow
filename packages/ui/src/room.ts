@@ -35,10 +35,11 @@ export interface PublicResult {
   sustainabilityBand: Band; bands?: { ePJ: Band; eSE: Band; F: Band };
 }
 /** This farm's own results for a season (the `self` part of season.resolved). */
-export interface MyResult { pumpCost: number; P: number; W: number; A: number; Y: number; dL: number; L: number; cropFailure: boolean }
+// points: the season's full ΔL (harvest value − pumping − action cost, §2.4); dL leaves out the action cost
+export interface MyResult { pumpCost: number; P: number; W: number; A: number; Y: number; dL: number; points: number; L: number; cropFailure: boolean }
 /** Everything computed on actual use (ADR 0004): readable only after a per-player debrief (R19). */
 export interface Sealed {
-  roles: string[]; pumpsBy: Record<string, number>; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[]; L: number[];
+  roles: string[]; pumpsBy: Record<string, number>; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[]; points: number[]; L: number[];
   ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number }; S: number;
   triangle: { r1: number; r2: number; r3: number; area: number; score: number };
   verdict: { voted: string; satisfied: string; pumpingGap: number };
@@ -83,13 +84,14 @@ export interface RoomView {
   climates: Record<number, Climate>; // every season's climate, for the debrief replay
   tutorial: boolean; // the open season is the practice round (R3 season 0)
   tutorialResult: SeasonResult | null; // its reveal; never part of `results`
+  seated: string[]; // roles that have joined, in join order (the lobby shows who is still missing)
 }
 
 export const emptyView = (): RoomView => ({
   phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
-  tutorial: false, tutorialResult: null,
+  tutorial: false, tutorialResult: null, seated: [],
 });
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -108,8 +110,11 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
           ...emptyView(), phase: 'vote', season: e.season, climate: p as unknown as Climate,
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
-          tutorial: p['tutorial'] === true,
+          tutorial: p['tutorial'] === true, seated: v.seated,
         };
+        break;
+      case 'player.joined':
+        v = { ...v, seated: v.seated.includes(str(p['role'])) ? v.seated : [...v.seated, str(p['role'])] };
         break;
       case 'allocation.issued':
         v = { ...v, allocation: p as unknown as Allocation };

@@ -14,6 +14,7 @@ from .model import LensId, LensParams, MissingParameter, Scheme, round6
 from .production import value_of
 
 ROOT_XTOL = 1e-12  # tolerance of the root finder for λ (far below the 1e-6 rounding)
+LEXIMIN_TOL = 1e-7  # tolerance: adequacy levels equal to within the solver's feasibility tolerance (HiGHS 1e-7)
 MILP_GAP = 1e-9  # tolerance: HiGHS stops at a 1e-4 relative gap by default; require the optimum
 
 
@@ -28,6 +29,8 @@ def weighted_cea(claims: Sequence[float], weights: Sequence[float], estate: floa
     """§2.3: Q_i = min(D_i, C_i/Σ_{j∈U} C_j · AW^(k)), iterated over the uncapped set U until no cap binds."""
     D = np.asarray(claims, dtype=float)
     C = np.asarray(weights, dtype=float)
+    if np.any((D > 0) & (C <= 0)):  # review E4: a zero weight leaves Σ C_j = 0 once the others are capped
+        raise ValueError("weighted_cea: every positive claim needs a positive weight")
     Q = np.zeros_like(D)
     target = min(estate, D.sum())
     uncapped = np.ones(len(D), dtype=bool)
@@ -127,7 +130,75 @@ def max_value(
     if not res.success:
         raise ValueError(f"max_value: no feasible allocation ({res.message})")
     x = res.x
-    return [round6(x[i] + x[n + i]) for i in range(n)]
+    per_scheme = [{round(float(a[i]), 9), round(float(b[i]), 9)} for i in range(n)]  # rounding: 1e-9 t per Mm³
+    if sum(len(x) for x in per_scheme) == len(set().union(*per_scheme)):  # no slope shared by two schemes: unique
+        return [round6(x[i] + x[n + i]) for i in range(n)]
+    # Review E5 (maintainer decision 2026-10-08): equal marginal values make the optimum non-unique; among the optimal
+    # allocations take the leximin one in adequacy (equal adequacy among the tied farms), so the result is canonical.
+    best = float(-res.fun)
+    tol = MILP_GAP * max(1.0, abs(best))
+    fixed: dict[int, float] = {}
+    while len(fixed) < n:
+        free = [i for i in range(n) if i not in fixed]
+        stage = (c, A, lb, ub, L, H, D, best - tol, fixed)
+        level = _adequacy_stage(*stage, objective=None, level=0.0)
+        pinned = [i for i in free if _adequacy_stage(*stage, objective=i, level=level) <= level + LEXIMIN_TOL]
+        for i in pinned or free:
+            fixed[i] = level
+    Q = np.array([fixed[i] for i in range(n)]) * D
+    Q = np.minimum(D, Q * budget / Q.sum()) if Q.sum() > 0 else Q  # close Σ Q = budget after the solver tolerances
+    return [round6(q) for q in Q]
+
+
+def _adequacy_stage(
+    c: np.ndarray,
+    A: np.ndarray,
+    lb: np.ndarray,
+    ub: np.ndarray,
+    L: np.ndarray,
+    H: np.ndarray,
+    D: np.ndarray,
+    least_value: float,
+    fixed: dict[int, float],
+    objective: int | None,
+    level: float,
+) -> float:
+    """One leximin stage over the optimal set {Σ value ≥ least_value}: maximise the common floor t of the free schemes'
+    adequacy (objective None), or one free scheme's adequacy with the other free schemes held at `level` (objective i)."""
+    n = len(D)
+    k = 3 * n + 1  # layout: x1, x2, z, t
+    value = np.concatenate([-c[: 2 * n], np.zeros(n + 1)])  # layout: x1, x2 values; z, t carry none
+    rows = [np.hstack([A, np.zeros((A.shape[0], 1))]), value[None, :]]
+    lows: list[np.ndarray] = [lb, np.array([least_value])]
+    highs: list[np.ndarray] = [ub, np.array([np.inf])]
+    for i in range(n):
+        row = np.zeros(k)
+        row[i] = row[n + i] = 1.0 / D[i]  # A_i = (x1_i + x2_i) / D_i
+        if i in fixed:
+            lows.append(np.array([fixed[i] - LEXIMIN_TOL]))
+            highs.append(np.array([fixed[i] + LEXIMIN_TOL]))
+        elif objective is None or i != objective:
+            row[-1] = -1.0 if objective is None else 0.0
+            lows.append(np.array([0.0 if objective is None else level - LEXIMIN_TOL]))
+            highs.append(np.array([np.inf]))
+        else:
+            continue
+        rows.append(row[None, :])
+    goal = np.zeros(k)
+    if objective is None:
+        goal[-1] = -1.0
+    else:
+        goal[objective] = goal[n + objective] = -1.0 / D[objective]
+    res = milp(
+        goal,
+        constraints=LinearConstraint(np.vstack(rows), np.concatenate(lows), np.concatenate(highs)),
+        integrality=np.concatenate([np.zeros(2 * n), np.ones(n), [0]]),  # layout: x1, x2 continuous; z binary; t
+        bounds=Bounds(np.zeros(k), np.concatenate([L, H, np.ones(n), [np.inf]])),  # layout: 3 blocks of n, then t
+        options={"mip_rel_gap": MILP_GAP},
+    )
+    if not res.success:
+        raise ValueError(f"max_value: leximin stage failed ({res.message})")
+    return float(-res.fun)
 
 
 # ADR 0003 floor-shortfall options → the §2.3 lens that cuts the floors.

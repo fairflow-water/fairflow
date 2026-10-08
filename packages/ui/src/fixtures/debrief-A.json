@@ -722,6 +722,11 @@
       5,
       0.0
      ],
+     "points": [
+      35.847718,
+      17.041554,
+      10.723859
+     ],
      "verdict": {
       "voted": "proportional",
       "satisfied": "proportional",
@@ -1250,6 +1255,11 @@
       0.0,
       0.0,
       0.0
+     ],
+     "points": [
+      43.739853,
+      38.16968,
+      14.669929
      ],
      "verdict": {
       "voted": "proportional",
@@ -1780,6 +1790,11 @@
       0.0,
       0.0
      ],
+     "points": [
+      43.739853,
+      38.16968,
+      14.669929
+     ],
      "verdict": {
       "voted": "proportional",
       "satisfied": "proportional",
@@ -2308,6 +2323,11 @@
       0.0,
       0.0,
       0.0
+     ],
+     "points": [
+      33.959904,
+      23.765283,
+      9.779953
      ],
      "verdict": {
       "voted": "proportional",
@@ -2838,6 +2858,11 @@
       0.0,
       0.0
      ],
+     "points": [
+      43.739853,
+      38.16968,
+      14.669929
+     ],
      "verdict": {
       "voted": "proportional",
       "satisfied": "proportional",
@@ -2866,7 +2891,7 @@
     ],
     "truncated": false,
     "seasonsPlayed": 5,
-    "collectiveScore": 0.9615212,
+    "collectiveScore": 0.961521,
     "cropFailureFlag": false,
     "brief": {
      "heaviestPumping": {

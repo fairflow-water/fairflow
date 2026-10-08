@@ -21,6 +21,9 @@ const BISECTION_STEPS = 100; // tolerance: halvings of the λ interval (far belo
  * Q_i = min(D_i, C_i / Σ_{j∈U} C_j · AW^(k)), iterated over the uncapped set U until no cap binds.
  */
 export function weightedCEA(demand: number[], weights: number[], estate: number): number[] {
+  if (demand.some((d, i) => d > 0 && at(weights, i) <= 0)) { // review E4: a zero weight leaves Σ C_j = 0 once the others are capped
+    throw new Error('weightedCEA: every positive claim needs a positive weight');
+  }
   const n = demand.length; const Q = new Array<number>(n).fill(0);
   let uncapped = demand.map((_, i) => i); let remaining = Math.min(estate, demand.reduce((a, b) => a + b, 0));
   while (uncapped.length > 0 && remaining > EPS_WATER) {
@@ -73,6 +76,8 @@ export const FLOOR_RULES = {
 } as const satisfies Record<string, LensId>;
 export type FloorRule = keyof typeof FLOOR_RULES;
 
+const TIE_DIGITS = 9; // rounding: slopes equal to 1e-9 t per Mm³ tie, as in the Python engine
+
 /**
  * §2.3 utilitarian — maximise Σ p_i Y_i subject to lo_i ≤ Q_i ≤ D_i and Σ Q_i = min(AW, ΣD).
  * The Python authority solves this as a MILP (scipy/HiGHS). The mirror enumerates instead: with each Q_i's segment
@@ -82,6 +87,16 @@ export type FloorRule = keyof typeof FLOOR_RULES;
  */
 export function maxValue(schemes: Scheme[], allocable: number, survivalFloor: number, lo: number[] = schemes.map(() => 0)): number[] {
   const n = schemes.length;
+  // Review E5: equal marginal values make the optimum non-unique. The Python authority then takes the leximin optimum in
+  // adequacy (a sequence of MILPs); the mirror has no MILP, so it refuses rather than return a different optimum.
+  const perScheme = schemes.map(s => {
+    const L = survivalFloor * s.demandMm3; const H = s.demandMm3 - L;
+    const vL = valueOf(s, L, survivalFloor);
+    return new Set([L > 0 ? vL / L : 0, H > 0 ? (valueOf(s, s.demandMm3, survivalFloor) - vL) / H : 0].map(v => v.toFixed(TIE_DIGITS)));
+  }); // only a slope shared by two schemes makes a tie
+  if (perScheme.reduce((t, x) => t + x.size, 0) > new Set(perScheme.flatMap(x => [...x])).size) {
+    throw new Error('maxValue: tied marginal values; the canonical (leximin) optimum is computed by the Python engine');
+  }
   const hi = schemes.map(s => s.demandMm3);
   const budget = Math.min(allocable, hi.reduce((a, b) => a + b, 0));
   const points = schemes.map((s, i) => [...new Set([at(lo, i), survivalFloor * s.demandMm3, at(hi, i)])].filter(x => x >= at(lo, i) && x <= at(hi, i)));

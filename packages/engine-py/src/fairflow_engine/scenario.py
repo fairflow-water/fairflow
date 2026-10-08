@@ -7,6 +7,8 @@ with the engine's own function, so the check cannot drift from the model."""
 from __future__ import annotations
 
 import json
+import math
+import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
 from importlib import resources
@@ -75,8 +77,16 @@ def hard_checks(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> lis
         problems.append(
             f"no scarcity: the dry year leaves {dry - reserve} Mm³ for {demand} Mm³ of demand, so the lens never matters"
         )
+    # review E3: these options are in the schema but not in the engine yet; refuse rather than play them as stationary
+    if b["inflow"].get("dryDrift", 0.0) != 0:
+        problems.append("inflow.dryDrift is not implemented yet: the dry inflow would not fall; set it to 0")
+    for flag in ("surplusRecharge", "returnFlows"):
+        if b["aquifer"].get(flag, True) is not True:
+            problems.append(f"aquifer.{flag} = false is not implemented yet: the engine always applies it")
     a = b["aquifer"]
     capacity = a.get("capacity", a["initial"])
+    if a["initial"] < a["reserve"]:  # review E2: below B_res the §2.6 floor max(B_res, ·) would create water
+        problems.append(f"aquifer initial stock ({a['initial']} Mm³) is below its reserve ({a['reserve']} Mm³)")
     if capacity < a["initial"]:
         problems.append(f"aquifer capacity ({capacity} Mm³) is below the initial stock ({a['initial']} Mm³)")
     if capacity <= a["lowThreshold"]:
@@ -178,6 +188,10 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
 
     indicators = scenario.get("indicators", {})
     scoring = Scoring.from_dict({k: indicators.get(k, registry[f"indicators.{k}"]) for k in SCORING_KEYS})
+    # review E6: PWF_γ = Σ s^(1−γ)/(1−γ) with s ≥ the supply floor must stay a finite float for every season
+    log_worst = math.log(len(schemes)) + (1 - scoring.welfareGamma) * math.log(scoring.welfareSupplyFloor)
+    if scoring.welfareGamma > 1 and log_worst >= math.log(sys.float_info.max):
+        return ScenarioLoad(None, [f"welfareGamma {scoring.welfareGamma} overflows PWF at the supply floor"], warnings)
     inflow = scenario["basin"]["inflow"]
     setup = GameSetup(
         schemes=tuple(

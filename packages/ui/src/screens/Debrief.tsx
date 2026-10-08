@@ -119,7 +119,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
                 <tr key={role}>
                   <th scope="row">{schemeName(role)}</th>
                   <td>{fmt(sealed.pumpsBy[role] ?? 0)}</td><td>{fmt(sealed.W[i] ?? 0)}</td>
-                  <td>{Math.round(sealed.Y[i] ?? 0)}</td><td>{fmt(sealed.dL[i] ?? 0)}</td>
+                  <td>{Math.round(sealed.Y[i] ?? 0)}</td><td>{fmt(sealed.points[i] ?? 0)}</td>
                 </tr>
               ))}
             </tbody>

@@ -21,11 +21,21 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
   const isPlayer = scenario.schemes.some(s => s.id === role);
   const [tab, setTab] = useState<'debrief' | 'review'>('debrief');
   if (view.phase === 'lobby') {
+    const missing = scenario.schemes.filter(x => !view.seated.includes(x.id));
     return role === 'authority'
       ? (
         <>
-          <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_tutorial' })}>Start the practice round</button>
-          <button type="button" onClick={() => onIntent({ intent: 'start_season' })}>Skip it and open season 1</button>
+          <h2>Farms at the table</h2>
+          <ul className="seats" aria-label="Farms at the table">
+            {scenario.schemes.map(x => (
+              <li key={x.id}>{x.name}: {view.seated.includes(x.id) ? 'joined' : 'waiting to join'}</li>
+            ))}
+          </ul>
+          {missing.length > 0 && (
+            <p className="waiting">Every farm must join before the game starts ({missing.length} still to join). Each farm joins on its own phone or browser.</p>
+          )}
+          <button type="button" className="cta" disabled={missing.length > 0} onClick={() => onIntent({ intent: 'start_tutorial' })}>Start the practice round</button>
+          <button type="button" disabled={missing.length > 0} onClick={() => onIntent({ intent: 'start_season' })}>Skip it and open season 1</button>
         </>
       )
       : <p className="waiting">Waiting for the facilitator to open season 1.</p>;

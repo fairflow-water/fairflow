@@ -3,9 +3,22 @@
 //
 // Real-browser end-to-end test: the Python room server and the production client build (served by `vite preview`,
 // which proxies /rooms to the server so page and server share one origin, as in deployment).
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-const CLIENT = 'http://localhost:4173';
+// Ports of the test's own servers, chosen away from the development defaults (8000, 5173) so that the test never talks
+// to something else already listening there; both servers always start fresh from the working tree.
+const SERVER_PORT = 8765;
+const CLIENT_PORT = 4173;
+const SERVER = `http://localhost:${SERVER_PORT}`;
+// Vite is started by file path with this Node, not through PATH: on Windows a long PATH with stray quotes can hide
+// node_modules/.bin from the shell Playwright starts. The type check runs in its own CI job, so only the build runs here.
+const vite = join(dirname(createRequire(import.meta.url).resolve('vite/package.json')), 'bin', 'vite.js');
+const node = `"${process.execPath}"`;
+// webServer.env replaces the environment rather than extending it, so pass the current one through (PATH included).
+const inherited = Object.fromEntries(Object.entries(process.env).filter((e): e is [string, string] => e[1] !== undefined));
+const CLIENT = `http://localhost:${CLIENT_PORT}`;
 
 export default defineConfig({
   testDir: 'e2e',
@@ -20,17 +33,18 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: 'uv run uvicorn fairflow_server.app:create_app --factory --port 8000',
+      command: `uv run uvicorn fairflow_server.app:create_app --factory --port ${SERVER_PORT}`,
       cwd: '../server',
-      url: 'http://localhost:8000/openapi.json',
-      env: { FAIRFLOW_ALLOWED_ORIGINS: CLIENT },
-      reuseExistingServer: !process.env['CI'],
+      url: `${SERVER}/openapi.json`,
+      env: { ...inherited, FAIRFLOW_ALLOWED_ORIGINS: CLIENT },
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
-      command: 'npx vite build && npx vite preview --port 4173 --strictPort',
+      command: `${node} "${vite}" build && ${node} "${vite}" preview --port ${CLIENT_PORT} --strictPort`,
       url: CLIENT,
-      reuseExistingServer: !process.env['CI'],
+      env: { ...inherited, FAIRFLOW_SERVER_URL: SERVER },
+      reuseExistingServer: false,
       timeout: 120_000,
     },
   ],

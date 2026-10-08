@@ -22,7 +22,12 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
   const [tab, setTab] = useState<'debrief' | 'review'>('debrief');
   if (view.phase === 'lobby') {
     return role === 'authority'
-      ? <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_season' })}>Open season 1</button>
+      ? (
+        <>
+          <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_tutorial' })}>Start the practice round</button>
+          <button type="button" onClick={() => onIntent({ intent: 'start_season' })}>Skip it and open season 1</button>
+        </>
+      )
       : <p className="waiting">Waiting for the facilitator to open season 1.</p>;
   }
   if (view.phase === 'ended' && view.debriefOpened) {
@@ -45,7 +50,8 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
       debriefOpened={view.debriefOpened} onIntent={onIntent} />;
   }
   if (!view.climate) return null;
-  const last = view.results[view.results.length - 1] ?? null;
+  const last = view.tutorial ? view.tutorialResult : view.results[view.results.length - 1] ?? null;
+  const banner = view.results[view.results.length - 1] ?? null; // S6 banner: last scored season
   const demand = view.climate.schemes?.find(s => s.id === role)?.demandMm3 ?? null;
   return (
     <>
@@ -56,16 +62,18 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
       {(view.phase === 'vote' || view.phase === 'tiebreak') && <LensVote view={view} scenario={scenario} role={role} onIntent={onIntent} />}
       {view.phase === 'floor_vote' && <FloorVote view={view} role={role} isPlayer={isPlayer} onIntent={onIntent} />}
       {view.phase === 'private' && (isPlayer && view.privateTurn && !view.myCommit
-        ? <PrivateTurn key={view.season} turn={view.privateTurn} last={last?.mine ?? null} demand={demand}
+        ? <PrivateTurn key={view.season} turn={view.privateTurn} last={banner?.mine ?? null} demand={demand}
             decisionS={scenario.session?.decisionS ?? null}
             onCommit={(pumps, action) => onIntent({ intent: 'commit', pumps, action })} />
         : <p className="waiting">{!isPlayer ? 'Private turns: each farm decides on its own device.'
             : view.myCommit ? 'Committed. Waiting for the other farms.' : 'Opening your private turn…'}</p>)}
       {view.phase === 'reveal' && last && (
         <>
-          <Reveal key={view.season} result={last.public} mine={last.mine} season={view.season} />
+          <Reveal key={view.season} result={last.public} mine={last.mine} season={view.season} practice={view.tutorial} />
           {role === 'authority' && (
-            <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_season' })}>Open the next season</button>
+            <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_season' })}>
+              {view.tutorial ? 'Open season 1' : 'Open the next season'}
+            </button>
           )}
         </>
       )}

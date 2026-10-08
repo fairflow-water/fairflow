@@ -20,6 +20,7 @@ export interface Preview { lens: string; Q: number[]; shareOfNeed: number[]; flo
 export interface SchemeInForce { id: string; demandMm3: number; capacityT: number; price: number; beta: number; areaHa: number }
 export interface Climate {
   card: string; inflow: number; reserve: number; allocable: number; previews: Preview[]; schemes?: SchemeInForce[];
+  tutorial?: boolean;
 }
 export type Band = 'good' | 'fair' | 'ok' | 'poor' | 'warning' | 'unsustainable';
 export interface Allocation { lens: string; Q: number[]; adequacyBands?: Band[] }
@@ -80,12 +81,15 @@ export interface RoomView {
   debriefWelfare: DebriefWelfare | null;
   review: Record<string, string>; // this player's latest answer per review item (S10)
   climates: Record<number, Climate>; // every season's climate, for the debrief replay
+  tutorial: boolean; // the open season is the practice round (R3 season 0)
+  tutorialResult: SeasonResult | null; // its reveal; never part of `results`
 }
 
 export const emptyView = (): RoomView => ({
   phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
+  tutorial: false, tutorialResult: null,
 });
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -104,6 +108,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
           ...emptyView(), phase: 'vote', season: e.season, climate: p as unknown as Climate,
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
+          tutorial: p['tutorial'] === true,
         };
         break;
       case 'allocation.issued':
@@ -151,6 +156,13 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         const sealed = (p['sealed'] as Sealed | undefined) ?? null;
         const result: SeasonResult = { season: e.season, public: pub, mine: 'Y' in mine ? (mine as MyResult) : null, sealed };
         v = { ...v, phase: 'reveal', results: [...v.results, result], aquifer: pub.observedStockNext };
+        break;
+      }
+      case 'tutorial.resolved': {
+        const pub = p['public'] as PublicResult;
+        const mine = (p['self'] as Partial<MyResult> | undefined) ?? {};
+        const result: SeasonResult = { season: 0, public: pub, mine: 'Y' in mine ? (mine as MyResult) : null, sealed: null };
+        v = { ...v, phase: 'reveal', tutorialResult: result };
         break;
       }
       case 'game.ended':

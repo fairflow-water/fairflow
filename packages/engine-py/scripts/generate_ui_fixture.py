@@ -68,9 +68,25 @@ def main() -> None:
     totals.submit(AUTHORITY, "open_debrief", perPlayer=False)
     g.submit(AUTHORITY, "open_debrief", perPlayer=True)
     g.submit("A", "review_answer", part=1, item="like.1", value="fixture answer")
+    # R3 season 0: a practice round through its reveal, in a game of its own (A pumps the cap, for free)
+    stamp = lambda: f"2026-10-07T08:00:{next(tick):02d}Z"  # noqa: E731
+    practice = Game.create(setup, "FIXTP", "room", {"appVersion": "fixture"}, stamp, NONCE)
+    for role in [*(s.id for s in setup.schemes), AUTHORITY]:
+        practice.submit(role, "join", deviceHash=f"fixture-{role}", consentGiven=True, presurveyComplete=True)
+    practice.submit(AUTHORITY, "start_tutorial")
+    practice.submit(AUTHORITY, "propose", lens="utilitarian")
+    practice.submit(AUTHORITY, "close_vote")
+    for i, s in enumerate(setup.schemes):
+        practice.submit(s.id, "commit", pumps=setup.basin.pump.cap if i == 0 else 0.0)
     OUT.mkdir(parents=True, exist_ok=True)
     played = g.events[: len(totals.events) - 2]  # the game as it ended, before debrief.opened and debrief.welfare
-    stages = (("opening", opening), ("game", played), ("debrief", g.events), ("totals", totals.events))
+    stages = (
+        ("opening", opening),
+        ("game", played),
+        ("debrief", g.events),
+        ("totals", totals.events),
+        ("tutorial", practice.events),
+    )
     for stage, events in stages:
         for name, viewer in (("public", "public"), ("A", "A")):
             data = {

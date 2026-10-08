@@ -35,6 +35,8 @@ Event = dict[str, Any]  # one Season Record entry (§6.2)
 AUTHORITY = "authority"
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
 CROP_FAILURE_RUN = 2  # §2.4 "A ≤ 0.5 in two consecutive seasons is crop failure"
+TUTORIAL_LENSES = ("proportional", "utilitarian")  # R3 season 0: "two lenses (proportional, utilitarian)"
+TUTORIAL_CARD = "normal"  # R3 season 0: "normal year"
 REVIEW_PARTS = (1, 2, 3)  # §5.2 S10 "Parts 1–3 of the review form"
 REVIEW_ITEM = re.compile(r"[a-z0-9_.-]{1,40}")  # item ids come from content/review-form.json
 ONCE_PER_GAME = ("orchard", "drip")  # §4.3 Orchard "once", Drip "once"; Expand "repeatable"
@@ -224,6 +226,8 @@ def apply_event(state: State, event: Event) -> State:
         s.scores.append(sealed["triangle"]["score"])
         for role, L, run, failed in zip(sealed["roles"], sealed["L"], sealed["lowRun"], sealed["cropFailure"], strict=True):
             s.livelihood[role], s.lowRun[role], s.cropFailure[role] = L, run, failed
+    elif kind == "tutorial.resolved":  # R3: season 0 is practice; nothing it computed carries into the game
+        s.phase, s.previousLens = "reveal", None
     elif kind == "game.timeboxed":
         s.timeboxed = True
     elif kind == "game.ended":
@@ -363,6 +367,45 @@ class Game:
             {"role": actor, "deviceId": deviceHash, "consentGiven": consentGiven, "presurveyComplete": presurveyComplete},
         )
 
+    def _on_start_tutorial(self, s: State, actor: str) -> None:
+        """R3: season 0, a facilitated practice round before season 1: a normal year, two lenses (proportional,
+        utilitarian), one practice private turn with pump cost 0 and no actions, nothing scored. The committed deck and
+        length are untouched: season 1 still draws the first card."""
+        self._need(actor == AUTHORITY, "not_authority", "only the Authority opens the tutorial")
+        self._need(s.phase == "lobby", "wrong_phase", "the tutorial comes before season 1")
+        self._need(set(self._scheme_roles()) <= set(s.players), "seats_empty", "every scheme role must be taken")
+        lenses = self._tutorial_lenses()
+        self._need(bool(lenses), "lens_not_enabled", "the tutorial needs the proportional or utilitarian lens")
+        inflow = self.setup.inflow[TUTORIAL_CARD]
+        allocable = max(0.0, inflow - self.setup.basin.reserve)
+        schemes = self._schemes(s)
+        self._emit(
+            "season.climate",
+            "engine",
+            "public",
+            {
+                "card": TUTORIAL_CARD,
+                "inflow": inflow,
+                "reserve": self.setup.basin.reserve,
+                "allocable": allocable,
+                "schemes": [{"id": x.id, **{k: getattr(x, k) for k in SCHEME_STATE}} for x in schemes],
+                "previews": [p for p in self._previews(allocable, schemes) if p["lens"] in lenses],
+                "tutorial": True,
+            },
+            season=0,
+        )
+
+    def _tutorial_lenses(self) -> list[str]:
+        return [name for name, _ in self.setup.lenses if name in TUTORIAL_LENSES]
+
+    @staticmethod
+    def _is_tutorial(s: State) -> bool:
+        return s.climate is not None and bool(s.climate.get("tutorial"))
+
+    def _basin(self, s: State) -> Basin:
+        """The basin for this season's computation; in the tutorial pumping costs nothing (R3 "pump cost 0")."""
+        return tutorial_basin(self.setup.basin) if self._is_tutorial(s) else self.setup.basin
+
     def _on_start_season(self, s: State, actor: str) -> None:
         """R6: the Authority opens the next season; the engine reveals the card and the allocable water."""
         self._need(actor == AUTHORITY, "not_authority", "only the Authority opens a season")
@@ -414,6 +457,7 @@ class Game:
         """R7: lenses are proposed aloud; the record keeps lens and proposer."""
         self._need(s.phase == "vote", "wrong_phase", s.phase)
         self._need(lens in [name for name, _ in self.setup.lenses], "lens_not_enabled", lens)
+        self._need(not self._is_tutorial(s) or lens in self._tutorial_lenses(), "lens_not_in_tutorial", lens)
         self._need(lens not in s.proposals, "already_proposed", lens)
         self._emit("lens.proposed", actor, "public", {"lens": lens, "proposer": actor}, season=s.season)
 
@@ -536,7 +580,11 @@ class Game:
         schemes = self._schemes(s)
         cap = self.setup.basin.pump.cap
         for i, x in enumerate(schemes):
-            open_actions = [a for a in self.setup.actions if not (a in ONCE_PER_GAME and a in s.used.get(x.id, []))]
+            open_actions = [
+                a
+                for a in self.setup.actions
+                if not self._is_tutorial(s) and not (a in ONCE_PER_GAME and a in s.used.get(x.id, []))
+            ]
             options = []
             for k in range(int(cap) + 1):  # layout: whole pump tokens, 0..cap (R10)
                 pumps = [0.0] * len(schemes)
@@ -552,7 +600,7 @@ class Game:
                 {
                     "role": x.id,
                     "cap": cap,
-                    "pumpCostPerMm3": round6(pump_cost_per_mm3(self.setup.basin, s.stock, x.seat)),
+                    "pumpCostPerMm3": round6(pump_cost_per_mm3(self._basin(s), s.stock, x.seat)),
                     "actions": {a: self.setup.actions[a]["cost"] for a in open_actions},
                     "options": options,
                     "assumes": "the other farms do not pump",
@@ -567,6 +615,7 @@ class Game:
         self._need(actor not in s.committed, "already_committed", actor)
         self._need(0 <= pumps <= self.setup.basin.pump.cap, "pump_out_of_range", f"0..{self.setup.basin.pump.cap}")
         if action is not None:  # R10: at most one Action token
+            self._need(not self._is_tutorial(s), "no_actions_in_tutorial", action)
             self._need(action in self.setup.actions, "unknown_action", action)
             self._need(not (action in ONCE_PER_GAME and action in s.used.get(actor, [])), "action_used", action)
         self._emit(
@@ -582,7 +631,7 @@ class Game:
     def _resolve(self, s: State, lens: LensId, floor_rule: str | None, pumps: list[float]) -> SeasonResult:
         return resolve_season(
             self._schemes(s),
-            self.setup.basin,
+            self._basin(s),
             self._climate(s)["inflow"],
             s.stock,
             lens,
@@ -600,6 +649,9 @@ class Game:
         pumps = [played[r] for r in roles]
         lens = self._chosen_lens(s)
         r = self._resolve(s, lens, s.floorRule, pumps)
+        if self._is_tutorial(s):
+            self._resolve_tutorial(s, roles, r)
+            return
         floor = self.setup.scoring.survivalFloor
         low_run = [s.lowRun[role] + 1 if a <= floor else 0 for role, a in zip(roles, r["A"], strict=True)]
         failed = [s.cropFailure[role] or run >= CROP_FAILURE_RUN for role, run in zip(roles, low_run, strict=True)]
@@ -631,6 +683,21 @@ class Game:
         if after.season >= self.secrets.T or after.timeboxed:
             self._end(after)
 
+    def _resolve_tutorial(self, s: State, roles: list[str], r: SeasonResult) -> None:
+        """R3: the practice round's reveal, with the same visibility as a season; nothing is scored or carried over
+        (livelihood, aquifer, crop-failure runs and the lens default stay as they were)."""
+        result: dict[str, Any] = dict(r)
+        sealed = {k: result[k] for k in SEALED_RESULT_FIELDS}
+        sealed.update(
+            {
+                "roles": roles,
+                "L": [s.livelihood[role] for role in roles],
+                "cropFailure": [s.cropFailure[role] for role in roles],
+            }
+        )
+        public = {k: result[k] for k in PUBLIC_RESULT_FIELDS}
+        self._emit("tutorial.resolved", "engine", "mixed", {"public": public, "sealed": sealed}, season=0)
+
     def _on_timebox(self, s: State, actor: str, sessionMinute: float) -> None:
         """R20: the facilitator time-box ends play after the current season; T is still revealed."""
         self._need(actor == AUTHORITY, "not_authority", "only the facilitator time-boxes")
@@ -645,7 +712,7 @@ class Game:
         """The facilitator's debrief brief (§5.0), from public events only: the heaviest pumping season, the lens of each
         season and how often it changed, whether a floor vote was held."""
         resolved = [e for e in self.events if e["type"] == "season.resolved"]
-        lenses = [e["payload"]["lens"] for e in self.events if e["type"] == "lens.chosen"]
+        lenses = [e["payload"]["lens"] for e in self.events if e["type"] == "lens.chosen" and e["season"] > 0]
         heaviest = max(resolved, key=lambda e: e["payload"]["public"]["pumpsTotal"], default=None)
         return {
             "heaviestPumping": None
@@ -746,6 +813,11 @@ class Game:
         )
 
 
+def tutorial_basin(basin: Basin) -> Basin:
+    """R3: the practice round's basin, identical except that pumping costs nothing ("pump cost 0")."""
+    return replace(basin, pump=replace(basin.pump, costBase=0.0, costSlope=0.0))
+
+
 # ---- debrief (S9, ADR 0003) --------------------------------------------------------------------------------------
 SLIDER_STEPS = 20  # display resolution of the S9 γ slider, which shows no number (ADR 0003); not a model value
 
@@ -828,9 +900,10 @@ def audit(setup: GameSetup, events: Sequence[Event]) -> list[str]:
     problems: list[str] = []
     state = State()
     for e in events:
-        if e["type"] == "season.resolved" and (state.lens is None or state.climate is None):
+        resolution = e["type"] in ("season.resolved", "tutorial.resolved")
+        if resolution and (state.lens is None or state.climate is None):
             problems.append(f"season {e['season']}: resolved without a chosen lens or an open season")
-        elif e["type"] == "season.resolved" and state.lens is not None and state.climate is not None:
+        elif resolution and state.lens is not None and state.climate is not None:
             played = {
                 x["payload"]["role"]: x["payload"]["pumps"]
                 for x in events
@@ -844,7 +917,7 @@ def audit(setup: GameSetup, events: Sequence[Event]) -> list[str]:
             r: dict[str, Any] = dict(
                 resolve_season(
                     schemes,
-                    setup.basin,
+                    tutorial_basin(setup.basin) if e["type"] == "tutorial.resolved" else setup.basin,
                     state.climate["inflow"],
                     state.stock,
                     state.lens,

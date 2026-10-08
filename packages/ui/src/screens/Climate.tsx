@@ -32,7 +32,7 @@ export function Climate({ climate, scenario, season, bands = null }: {
   return (
     <section aria-labelledby="climate-title" className="climate">
       <div className={`card card-${climate.card}`}>
-        <p className="eyebrow">Season {season}</p>
+        <p className="eyebrow">{climate.tutorial ? 'Practice round (not scored)' : `Season ${season}`}</p>
         <h2 id="climate-title">{sentence(climate)}</h2>
       </div>
       <svg viewBox="0 0 320 300" role="img" aria-label="Schematic basin: the river flows past the farms from upstream to the tail">

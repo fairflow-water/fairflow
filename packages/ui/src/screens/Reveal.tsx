@@ -30,7 +30,9 @@ function Gauge({ pj, se }: { pj: number; se: number }) {
   );
 }
 
-export function Reveal({ result, mine, season }: { result: PublicResult; mine: MyResult | null; season: number }) {
+export function Reveal({ result, mine, season, practice = false }: {
+  result: PublicResult; mine: MyResult | null; season: number; practice?: boolean;
+}) {
   const [beat, setBeat] = useState(0);
   const bands = result.bands;
   const beats = [
@@ -52,7 +54,7 @@ export function Reveal({ result, mine, season }: { result: PublicResult; mine: M
   ];
   return (
     <section aria-labelledby="reveal-title" className="reveal">
-      <h2 id="reveal-title">Season {season}: what happened</h2>
+      <h2 id="reveal-title">{practice ? 'Practice round: what happened (not scored)' : `Season ${season}: what happened`}</h2>
       {beats[beat]}
       {beat < beats.length - 1
         ? <button type="button" onClick={() => setBeat(b => b + 1)}>Next</button>

@@ -199,3 +199,13 @@ def test_allowed_origins_come_from_the_environment() -> None:
     assert Settings.from_env({}).allowed_origins == ()
     env = {"FAIRFLOW_ALLOWED_ORIGINS": " https://play.example.org, http://localhost:5173 ,"}
     assert Settings.from_env(env).allowed_origins == ("https://play.example.org", "http://localhost:5173")
+
+
+def test_the_facilitator_can_open_the_practice_round(client: TestClient) -> None:
+    info = open_room(client)
+    with ExitStack() as stack:
+        ws = connect(client, stack, info["room"], info["authority"])
+        ws.send_text(json.dumps({"intent": "start_tutorial"}))
+        events = ws.receive_json()["events"]
+    climate = next(e for e in events if e["type"] == "season.climate")
+    assert climate["season"] == 0 and climate["payload"]["tutorial"] is True

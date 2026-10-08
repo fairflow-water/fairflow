@@ -1,0 +1,406 @@
+{
+ "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
+ "scenario": {
+  "name": "Fairflow default basin",
+  "schemes": [
+   {
+    "id": "A",
+    "name": "Orchard Estate",
+    "seat": 1,
+    "shape": "circle",
+    "glyph": "pomegranate",
+    "crop": "pomegranate"
+   },
+   {
+    "id": "B",
+    "name": "Paddy Cooperative",
+    "seat": 2,
+    "shape": "square",
+    "glyph": "rice",
+    "crop": "rice"
+   },
+   {
+    "id": "C",
+    "name": "Tail-end Smallholders",
+    "seat": 3,
+    "shape": "triangle",
+    "glyph": "wheat",
+    "crop": "cereals"
+   }
+  ],
+  "lenses": [
+   {
+    "id": "utilitarian",
+    "plainName": "Biggest harvest"
+   },
+   {
+    "id": "egalitarian",
+    "plainName": "Same for each"
+   },
+   {
+    "id": "proportional",
+    "plainName": "Same share of need"
+   },
+   {
+    "id": "capability",
+    "plainName": "Per person"
+   },
+   {
+    "id": "sufficientarian",
+    "plainName": "Enough first"
+   }
+  ],
+  "session": {
+   "negotiationS": {
+    "seasons0to2": 180,
+    "from3": 240
+   },
+   "decisionS": 45,
+   "handoverStartsTimer": true,
+   "season0Minutes": 10,
+   "timeboxMinute": 80,
+   "deliberation": "table",
+   "plannedMinutes": 120
+  }
+ },
+ "events": [
+  {
+   "seq": 1,
+   "t": "2026-10-07T08:00:100Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "game.created",
+   "payload": {
+    "gameId": "FIXTP",
+    "mode": "room",
+    "appVersion": "fixture",
+    "schemeRoles": [
+     "A",
+     "B",
+     "C"
+    ],
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 9.0,
+      "capacityT": 4500,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 900
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "aquiferInitial": 20,
+    "commitments": {
+     "gameLength": "fe5398412e9a214da5112ca88ebeeaf7cce9262b4b49b1a9973381217108ac10",
+     "deckOrder": "26cab06743fb28dc6389da3f2a608e17000190e31fb082e4bc31c2280768b1f3"
+    },
+    "lenses": [
+     "utilitarian",
+     "egalitarian",
+     "proportional",
+     "capability",
+     "sufficientarian"
+    ],
+    "defaultLens": "proportional",
+    "floorRules": [
+     "capability",
+     "cea",
+     "cel",
+     "proportional",
+     "talmud"
+    ],
+    "runtime": {
+     "fairflowEngine": "1.0.0.dev0",
+     "numpy": "2.5.3",
+     "scipy": "1.18.1"
+    }
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 2,
+   "t": "2026-10-07T08:00:101Z",
+   "season": 0,
+   "actor": "A",
+   "type": "player.joined",
+   "payload": {
+    "role": "A",
+    "deviceId": "fixture-A",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 3,
+   "t": "2026-10-07T08:00:102Z",
+   "season": 0,
+   "actor": "B",
+   "type": "player.joined",
+   "payload": {
+    "role": "B",
+    "deviceId": "fixture-B",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 4,
+   "t": "2026-10-07T08:00:103Z",
+   "season": 0,
+   "actor": "C",
+   "type": "player.joined",
+   "payload": {
+    "role": "C",
+    "deviceId": "fixture-C",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 5,
+   "t": "2026-10-07T08:00:104Z",
+   "season": 0,
+   "actor": "authority",
+   "type": "player.joined",
+   "payload": {
+    "role": "authority",
+    "deviceId": "fixture-authority",
+    "consentGiven": true,
+    "presurveyComplete": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 6,
+   "t": "2026-10-07T08:00:105Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "season.climate",
+   "payload": {
+    "card": "normal",
+    "inflow": 17,
+    "reserve": 2,
+    "allocable": 15,
+    "schemes": [
+     {
+      "id": "A",
+      "demandMm3": 6.25,
+      "capacityT": 5000,
+      "price": 1.0,
+      "beta": 0.9,
+      "areaHa": 625
+     },
+     {
+      "id": "B",
+      "demandMm3": 9.0,
+      "capacityT": 4500,
+      "price": 1.0,
+      "beta": 0.6,
+      "areaHa": 900
+     },
+     {
+      "id": "C",
+      "demandMm3": 3.4,
+      "capacityT": 2000,
+      "price": 1.0,
+      "beta": 0.75,
+      "areaHa": 340
+     }
+    ],
+    "previews": [
+     {
+      "lens": "utilitarian",
+      "Q": [
+       6.25,
+       5.35,
+       3.4
+      ],
+      "shareOfNeed": [
+       1.0,
+       0.594444,
+       1.0
+      ],
+      "floorVoteNeeded": false
+     },
+     {
+      "lens": "proportional",
+      "Q": [
+       5.02681,
+       7.238606,
+       2.734584
+      ],
+      "shareOfNeed": [
+       0.80429,
+       0.80429,
+       0.804289
+      ],
+      "floorVoteNeeded": false
+     }
+    ],
+    "tutorial": true
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 7,
+   "t": "2026-10-07T08:00:106Z",
+   "season": 0,
+   "actor": "authority",
+   "type": "lens.proposed",
+   "payload": {
+    "lens": "utilitarian",
+    "proposer": "authority"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 8,
+   "t": "2026-10-07T08:00:107Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "lens.chosen",
+   "payload": {
+    "lens": "utilitarian",
+    "tally": {},
+    "byTimeout": false,
+    "tieBreak": false,
+    "floorVoteNeeded": false
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 9,
+   "t": "2026-10-07T08:00:108Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "allocation.issued",
+   "payload": {
+    "lens": "utilitarian",
+    "floorRule": null,
+    "Q": [
+     6.25,
+     5.35,
+     3.4
+    ],
+    "surplusToAquifer": 0.0,
+    "adequacyBands": [
+     "good",
+     "poor",
+     "good"
+    ]
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 10,
+   "t": "2026-10-07T08:00:109Z",
+   "season": 0,
+   "actor": "A",
+   "type": "private.opened",
+   "payload": {
+    "role": "A",
+    "cap": 2,
+    "pumpCostPerMm3": 0.0,
+    "actions": {},
+    "options": [
+     {
+      "pumps": 0,
+      "yieldT": 5000.0,
+      "points": {
+       "none": 50.0
+      }
+     },
+     {
+      "pumps": 1,
+      "yieldT": 5000.0,
+      "points": {
+       "none": 50.0
+      }
+     },
+     {
+      "pumps": 2,
+      "yieldT": 5000.0,
+      "points": {
+       "none": 50.0
+      }
+     }
+    ],
+    "assumes": "the other farms do not pump"
+   },
+   "visibility": "self"
+  },
+  {
+   "seq": 13,
+   "t": "2026-10-07T08:00:113Z",
+   "season": 0,
+   "actor": "A",
+   "type": "action.played",
+   "payload": {
+    "role": "A",
+    "pumps": 2,
+    "action": null,
+    "committedAt": "2026-10-07T08:00:112Z"
+   },
+   "visibility": "sealed"
+  },
+  {
+   "seq": 16,
+   "t": "2026-10-07T08:00:118Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "tutorial.resolved",
+   "payload": {
+    "public": {
+     "allocable": 15.0,
+     "pumpsTotal": 2.0,
+     "observedStockNext": 20.0,
+     "aquiferFull": true,
+     "inflowLossNext": 0.0,
+     "asAllocated": {
+      "ePJ": 0.778934,
+      "eSE": {
+       "claimant": 0.762092,
+       "hectare": 0.778934,
+       "person": 0.327565
+      },
+      "F": {
+       "consumed": 0.984214,
+       "diverted": 1.026291
+      }
+     },
+     "sustainabilityBand": "warning"
+    },
+    "self": {
+     "pumpCost": 0.0,
+     "P": 2.0,
+     "W": 8.25,
+     "A": 1.32,
+     "Y": 5000.0,
+     "dL": 50.0,
+     "L": 0.0,
+     "cropFailure": false
+    }
+   },
+   "visibility": "mixed"
+  }
+ ]
+}

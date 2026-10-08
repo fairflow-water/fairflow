@@ -38,9 +38,21 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
     await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();
     phones.push(phone);
   }
-  await expect(facilitator.getByRole('button', { name: 'Open season 1' })).toBeVisible();
+  // R3 season 0: the practice round, two lenses, free pumping, nothing scored
+  await facilitator.getByRole('button', { name: 'Start the practice round' }).click();
+  await expect(display.getByText('Practice round (not scored)')).toBeVisible();
+  await expect(facilitator.getByTestId('lens-egalitarian')).toHaveCount(0);
+  await facilitator.getByTestId('lens-utilitarian').getByRole('button', { name: 'Propose' }).click();
+  for (const phone of phones) await phone.getByTestId('lens-utilitarian').getByRole('button', { name: 'Vote' }).click();
+  for (const phone of phones) await expect(phone.getByTestId('lens-utilitarian').getByRole('button', { name: 'Your vote' })).toBeVisible();
+  await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+  for (const phone of phones) {
+    await expect(phone.getByText(/Pump cost at today's aquifer level: 0 points/)).toBeVisible();
+    await phone.getByRole('button', { name: 'Commit my turn' }).click();
+  }
+  await expect(display.getByRole('heading', { name: /Practice round: what happened/ })).toBeVisible();
 
-  let open = facilitator.getByRole('button', { name: 'Open season 1' });
+  let open = facilitator.getByRole('button', { name: 'Open season 1', exact: true });
   for (let season = 1; ; season++) {
     await open.click();
     await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();

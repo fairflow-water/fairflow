@@ -113,8 +113,10 @@ describe('Season by phase', () => {
     const onIntent = vi.fn();
     const lobby = at(events.findIndex(e => e.type === 'season.climate'));
     const { unmount } = render(<Season view={lobby} scenario={scenario} role="authority" onIntent={onIntent} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Open season 1' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Skip it and open season 1' }));
     expect(onIntent).toHaveBeenCalledWith({ intent: 'start_season' });
+    await userEvent.click(screen.getByRole('button', { name: 'Start the practice round' }));
+    expect(onIntent).toHaveBeenCalledWith({ intent: 'start_tutorial' });
     unmount();
     render(<Season view={lobby} scenario={scenario} role="A" onIntent={onIntent} />);
     expect(screen.getByText(/Waiting for the facilitator/)).toBeTruthy();

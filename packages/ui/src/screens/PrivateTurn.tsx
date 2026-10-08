@@ -89,7 +89,7 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
       </div>
       <div className="actions">
         <button type="button" aria-expanded={openActions} onClick={() => setOpenActions(o => !o)}>
-          Actions: {Object.entries(turn.actions).map(([a, cost]) => `${ACTION_TEXT[a]?.name ?? a} ${cost}`).join(' · ') || 'none left'}
+          Actions: {Object.entries(turn.actions).map(([a, cost]) => `${ACTION_TEXT[a]?.name ?? a} ${cost}`).join(' · ') || 'none this season'}
         </button>
         {openActions && (
           <fieldset disabled={pending}>

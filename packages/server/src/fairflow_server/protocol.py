@@ -25,6 +25,12 @@ class StartSeason(_Intent):
     intent: Literal["start_season"]
 
 
+class StartTutorial(_Intent):
+    """R3: season 0, the practice round, before season 1."""
+
+    intent: Literal["start_tutorial"]
+
+
 class Propose(_Intent):
     intent: Literal["propose"]
     lens: str
@@ -83,6 +89,7 @@ class ReviewAnswer(_Intent):
 
 Intent = Annotated[
     StartSeason
+    | StartTutorial
     | Propose
     | Vote
     | CloseVote

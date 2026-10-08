@@ -142,7 +142,7 @@ export function weightsFor(lens: LensId, s: Scheme[], params: LensParams): numbe
   switch (lens) {
     case 'egalitarian': return s.map(() => 1);
     case 'proportional': return s.map(x => x.demandMm3);
-    case 'weighted_utilitarian': return s.map(x => x.capacityT / x.demandMm3);
+    case 'weighted_utilitarian': return s.map(x => (x.price * x.capacityT) / x.demandMm3); // ADR 0007: value productivity
     case 'capability': return s.map(x => x.people * x.kappa);
     case 'prioritarian': {
       // Q_i ∝ w_i^(1/γ) · D_i^(1−1/γ)

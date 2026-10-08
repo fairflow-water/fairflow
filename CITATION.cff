@@ -4,7 +4,7 @@ message: "If you use Fairflow, please cite the software and the blueprint below.
 type: software
 title: "Fairflow: a serious game of distributive justice in water allocation"
 abstract: >
-  Fairflow is a phone-first progressive web app in which three to five water users and a
+  Fairflow is a phone-first web app in which three to five water users and a
   basin authority share a river and an aquifer over five or six seasons, vote each season on
   the principle of distributive justice that decides the split, act privately on what they
   receive, and are scored together on equity, efficiency and sustainability. It is the
@@ -13,12 +13,10 @@ authors:
   - family-names: Yalew
     given-names: Seleshi
     affiliation: "IHE Delft Institute for Water Education"
-    orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO replace
     email: s.yalew@un-ihe.org
-version: 1.0.0
-date-released: 2026-11-02
+version: 1.0.0.dev0
 license:
-  - MIT          # code: packages/, apps/, scripts/, .github/
+  - MIT          # code: packages/, scripts/, .github/
   - CC-BY-4.0    # docs/, content/, scenarios, fixtures (see LICENSE-docs)
 license-url: "https://github.com/fairflow-water/fairflow/blob/main/README.md#licence--two-parts"
 repository-code: "https://github.com/fairflow-water/fairflow"
@@ -30,10 +28,6 @@ keywords:
   - claims problems
   - groundwater commons
   - water-energy-food nexus
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.0000000   # replaced by the concept DOI Zenodo mints on the first tag
-    description: "Concept DOI (all versions)"
 references:
   - type: report
     title: "Fairflow — Development Blueprint v3.1"

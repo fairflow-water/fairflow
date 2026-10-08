@@ -1,19 +1,19 @@
 {
  "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
  "scenario": {
-  "name": "Fairflow default basin",
+  "name": "Kelvara basin (hypothetical)",
   "schemes": [
    {
     "id": "A",
-    "name": "Orchard Estate",
+    "name": "Upper Citrus Estate",
     "seat": 1,
     "shape": "circle",
-    "glyph": "pomegranate",
-    "crop": "pomegranate"
+    "glyph": "citrus",
+    "crop": "citrus"
    },
    {
     "id": "B",
-    "name": "Paddy Cooperative",
+    "name": "Midstream Paddy Cooperative",
     "seat": 2,
     "shape": "square",
     "glyph": "rice",
@@ -21,17 +21,17 @@
    },
    {
     "id": "C",
-    "name": "Tail-end Smallholders",
+    "name": "Tail-end Wheat Farms",
     "seat": 3,
     "shape": "triangle",
     "glyph": "wheat",
-    "crop": "cereals"
+    "crop": "wheat"
    }
   ],
   "lenses": [
    {
     "id": "utilitarian",
-    "plainName": "Biggest harvest"
+    "plainName": "Biggest harvest value"
    },
    {
     "id": "egalitarian",
@@ -83,26 +83,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 9.0,
-      "capacityT": 4500,
-      "price": 1.0,
+      "capacityT": 4500.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 900
+      "areaHa": 900,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "aquiferInitial": 20,
@@ -204,26 +207,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 9.0,
-      "capacityT": 4500,
-      "price": 1.0,
+      "capacityT": 4500.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 900
+      "areaHa": 900,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -231,13 +237,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       0.35,
-       3.4
+       3.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.038889,
-       1.0
+       0.416667,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -272,14 +278,14 @@
      {
       "lens": "capability",
       "Q": [
-       0.658537,
-       9.0,
-       0.341463
+       0.996385,
+       8.211535,
+       0.792079
       ],
       "shareOfNeed": [
-       0.105366,
-       1.0,
-       0.10043
+       0.159422,
+       0.912393,
+       0.232964
       ],
       "floorVoteNeeded": false
      },
@@ -410,42 +416,51 @@
    "type": "private.opened",
    "payload": {
     "role": "A",
-    "cap": 2,
+    "cap": 3.125,
     "pumpCostPerMm3": 2.0,
+    "wellsDry": false,
     "actions": {
-     "orchard": 10,
-     "drip": 8,
      "expand": 5
     },
     "options": [
      {
-      "pumps": 0,
-      "yieldT": 3144.77184,
+      "pumps": 0.0,
+      "yieldT": 5593.83312,
       "points": {
-       "none": 31.447718,
-       "orchard": 21.447718,
-       "drip": 23.447718,
-       "expand": 26.447718
+       "none": 95.654546,
+       "expand": 90.654546
       }
      },
      {
-      "pumps": 1,
-      "yieldT": 3784.77184,
+      "pumps": 1.0,
+      "yieldT": 7113.83312,
       "points": {
-       "none": 35.847718,
-       "orchard": 25.847718,
-       "drip": 27.847718,
-       "expand": 30.847718
+       "none": 119.646546,
+       "expand": 114.646546
       }
      },
      {
-      "pumps": 2,
-      "yieldT": 4424.77184,
+      "pumps": 2.0,
+      "yieldT": 8633.83312,
       "points": {
-       "none": 40.247718,
-       "orchard": 30.247718,
-       "drip": 32.247718,
-       "expand": 35.247718
+       "none": 143.638546,
+       "expand": 138.638546
+      }
+     },
+     {
+      "pumps": 3.0,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 165.0,
+       "expand": 160.0
+      }
+     },
+     {
+      "pumps": 3.125,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 164.75,
+       "expand": 159.75
       }
      }
     ],
@@ -484,12 +499,12 @@
       "ePJ": 1.0,
       "eSE": {
        "claimant": 0.632229,
-       "hectare": 1.0,
-       "person": 0.350968
+       "hectare": 0.925568,
+       "person": 0.45133
       },
       "F": {
-       "consumed": 1.04137,
-       "diverted": 1.04137
+       "consumed": 0.995668,
+       "diverted": 0.995668
       }
      },
      "sustainabilityBand": "good",
@@ -504,10 +519,10 @@
      "P": 1.0,
      "W": 4.351206,
      "A": 0.696193,
-     "Y": 3784.77184,
-     "dL": 35.847718,
-     "points": 35.847718,
-     "L": 35.847718,
+     "Y": 7113.83312,
+     "dL": 119.646546,
+     "points": 119.646546,
+     "L": 119.646546,
      "cropFailure": false
     }
    },
@@ -528,26 +543,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 10.8,
       "capacityT": 5400.0,
-      "price": 1.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 1080.0
+      "areaHa": 1080.0,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -555,13 +573,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       5.35,
-       3.4
+       8.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.49537,
-       1.0
+       0.810185,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -596,14 +614,14 @@
      {
       "lens": "capability",
       "Q": [
-       2.765854,
+       2.339895,
        10.8,
-       1.434146
+       1.860105
       ],
       "shareOfNeed": [
-       0.442537,
+       0.374383,
        1.0,
-       0.421808
+       0.54709
       ],
       "floorVoteNeeded": false
      },
@@ -611,13 +629,13 @@
       "lens": "sufficientarian",
       "Q": [
        6.25,
-       5.4,
-       3.35
+       7.05,
+       1.7
       ],
       "shareOfNeed": [
        1.0,
-       0.5,
-       0.985294
+       0.652778,
+       0.5
       ],
       "floorVoteNeeded": false
      }
@@ -721,42 +739,51 @@
    "type": "private.opened",
    "payload": {
     "role": "A",
-    "cap": 2,
+    "cap": 3.125,
     "pumpCostPerMm3": 2.0,
+    "wellsDry": false,
     "actions": {
-     "orchard": 10,
-     "drip": 8,
      "expand": 5
     },
     "options": [
      {
-      "pumps": 0,
-      "yieldT": 3933.98528,
+      "pumps": 0.0,
+      "yieldT": 7468.21504,
       "points": {
-       "none": 39.339853,
-       "orchard": 29.339853,
-       "drip": 31.339853,
-       "expand": 34.339853
+       "none": 127.706477,
+       "expand": 122.706477
       }
      },
      {
-      "pumps": 1,
-      "yieldT": 4573.98528,
+      "pumps": 1.0,
+      "yieldT": 8988.21504,
       "points": {
-       "none": 43.739853,
-       "orchard": 33.739853,
-       "drip": 35.739853,
-       "expand": 38.739853
+       "none": 151.698477,
+       "expand": 146.698477
       }
      },
      {
-      "pumps": 2,
-      "yieldT": 5000.0,
+      "pumps": 2.0,
+      "yieldT": 10000.0,
       "points": {
-       "none": 46.0,
-       "orchard": 36.0,
-       "drip": 38.0,
-       "expand": 41.0
+       "none": 167.0,
+       "expand": 162.0
+      }
+     },
+     {
+      "pumps": 3.0,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 165.0,
+       "expand": 160.0
+      }
+     },
+     {
+      "pumps": 3.125,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 164.75,
+       "expand": 159.75
       }
      }
     ],
@@ -795,12 +822,12 @@
       "ePJ": 1.0,
       "eSE": {
        "claimant": 0.552935,
-       "hectare": 1.0,
-       "person": 0.362317
+       "hectare": 0.925568,
+       "person": 0.485504
       },
       "F": {
-       "consumed": 1.013478,
-       "diverted": 1.013478
+       "consumed": 0.996109,
+       "diverted": 0.996109
       }
      },
      "sustainabilityBand": "good",
@@ -815,10 +842,10 @@
      "P": 1.0,
      "W": 5.584352,
      "A": 0.893496,
-     "Y": 4573.98528,
-     "dL": 43.739853,
-     "points": 43.739853,
-     "L": 79.587571,
+     "Y": 8988.21504,
+     "dL": 151.698477,
+     "points": 151.698477,
+     "L": 271.345023,
      "cropFailure": false
     }
    },
@@ -839,26 +866,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 10.8,
       "capacityT": 5400.0,
-      "price": 1.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 1080.0
+      "areaHa": 1080.0,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -866,13 +896,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       5.35,
-       3.4
+       8.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.49537,
-       1.0
+       0.810185,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -907,14 +937,14 @@
      {
       "lens": "capability",
       "Q": [
-       2.765854,
+       2.339895,
        10.8,
-       1.434146
+       1.860105
       ],
       "shareOfNeed": [
-       0.442537,
+       0.374383,
        1.0,
-       0.421808
+       0.54709
       ],
       "floorVoteNeeded": false
      },
@@ -922,13 +952,13 @@
       "lens": "sufficientarian",
       "Q": [
        6.25,
-       5.4,
-       3.35
+       7.05,
+       1.7
       ],
       "shareOfNeed": [
        1.0,
-       0.5,
-       0.985294
+       0.652778,
+       0.5
       ],
       "floorVoteNeeded": false
      }
@@ -1032,42 +1062,51 @@
    "type": "private.opened",
    "payload": {
     "role": "A",
-    "cap": 2,
+    "cap": 3.125,
     "pumpCostPerMm3": 2.0,
+    "wellsDry": false,
     "actions": {
-     "orchard": 10,
-     "drip": 8,
      "expand": 5
     },
     "options": [
      {
-      "pumps": 0,
-      "yieldT": 3933.98528,
+      "pumps": 0.0,
+      "yieldT": 7468.21504,
       "points": {
-       "none": 39.339853,
-       "orchard": 29.339853,
-       "drip": 31.339853,
-       "expand": 34.339853
+       "none": 127.706477,
+       "expand": 122.706477
       }
      },
      {
-      "pumps": 1,
-      "yieldT": 4573.98528,
+      "pumps": 1.0,
+      "yieldT": 8988.21504,
       "points": {
-       "none": 43.739853,
-       "orchard": 33.739853,
-       "drip": 35.739853,
-       "expand": 38.739853
+       "none": 151.698477,
+       "expand": 146.698477
       }
      },
      {
-      "pumps": 2,
-      "yieldT": 5000.0,
+      "pumps": 2.0,
+      "yieldT": 10000.0,
       "points": {
-       "none": 46.0,
-       "orchard": 36.0,
-       "drip": 38.0,
-       "expand": 41.0
+       "none": 167.0,
+       "expand": 162.0
+      }
+     },
+     {
+      "pumps": 3.0,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 165.0,
+       "expand": 160.0
+      }
+     },
+     {
+      "pumps": 3.125,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 164.75,
+       "expand": 159.75
       }
      }
     ],
@@ -1106,12 +1145,12 @@
       "ePJ": 1.0,
       "eSE": {
        "claimant": 0.552935,
-       "hectare": 1.0,
-       "person": 0.362317
+       "hectare": 0.925568,
+       "person": 0.485504
       },
       "F": {
-       "consumed": 1.013478,
-       "diverted": 1.013478
+       "consumed": 0.996109,
+       "diverted": 0.996109
       }
      },
      "sustainabilityBand": "good",
@@ -1126,10 +1165,10 @@
      "P": 1.0,
      "W": 5.584352,
      "A": 0.893496,
-     "Y": 4573.98528,
-     "dL": 43.739853,
-     "points": 43.739853,
-     "L": 123.327424,
+     "Y": 8988.21504,
+     "dL": 151.698477,
+     "points": 151.698477,
+     "L": 423.0435,
      "cropFailure": false
     }
    },
@@ -1150,26 +1189,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 10.8,
       "capacityT": 5400.0,
-      "price": 1.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 1080.0
+      "areaHa": 1080.0,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -1177,13 +1219,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       0.35,
-       3.4
+       3.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.032407,
-       1.0
+       0.347222,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -1218,14 +1260,14 @@
      {
       "lens": "capability",
       "Q": [
-       0.381536,
-       9.420631,
-       0.197833
+       0.996385,
+       8.211535,
+       0.792079
       ],
       "shareOfNeed": [
-       0.061046,
-       0.872281,
-       0.058186
+       0.159422,
+       0.760327,
+       0.232964
       ],
       "floorVoteNeeded": false
      },
@@ -1343,42 +1385,51 @@
    "type": "private.opened",
    "payload": {
     "role": "A",
-    "cap": 2,
+    "cap": 3.125,
     "pumpCostPerMm3": 2.0,
+    "wellsDry": false,
     "actions": {
-     "orchard": 10,
-     "drip": 8,
      "expand": 5
     },
     "options": [
      {
-      "pumps": 0,
-      "yieldT": 2933.9856,
+      "pumps": 0.0,
+      "yieldT": 5134.4748,
       "points": {
-       "none": 29.339856,
-       "orchard": 19.339856,
-       "drip": 21.339856,
-       "expand": 24.339856
+       "none": 87.799519,
+       "expand": 82.799519
       }
      },
      {
-      "pumps": 1,
-      "yieldT": 3595.9904,
+      "pumps": 1.0,
+      "yieldT": 6665.4772,
       "points": {
-       "none": 33.959904,
-       "orchard": 23.959904,
-       "drip": 25.959904,
-       "expand": 28.959904
+       "none": 111.97966,
+       "expand": 106.97966
       }
      },
      {
-      "pumps": 2,
-      "yieldT": 4235.9904,
+      "pumps": 2.0,
+      "yieldT": 8185.4772,
       "points": {
-       "none": 38.359904,
-       "orchard": 28.359904,
-       "drip": 30.359904,
-       "expand": 33.359904
+       "none": 135.97166,
+       "expand": 130.97166
+      }
+     },
+     {
+      "pumps": 3.0,
+      "yieldT": 9705.4772,
+      "points": {
+       "none": 159.96366,
+       "expand": 154.96366
+      }
+     },
+     {
+      "pumps": 3.125,
+      "yieldT": 9895.4772,
+      "points": {
+       "none": 162.96266,
+       "expand": 157.96266
       }
      }
     ],
@@ -1417,12 +1468,12 @@
       "ePJ": 1.0,
       "eSE": {
        "claimant": 0.552935,
-       "hectare": 1.0,
-       "person": 0.362317
+       "hectare": 0.925568,
+       "person": 0.485504
       },
       "F": {
-       "consumed": 1.037097,
-       "diverted": 1.037097
+       "consumed": 0.989292,
+       "diverted": 0.989292
       }
      },
      "sustainabilityBand": "good",
@@ -1437,10 +1488,10 @@
      "P": 1.0,
      "W": 4.056235,
      "A": 0.648998,
-     "Y": 3595.9904,
-     "dL": 33.959904,
-     "points": 33.959904,
-     "L": 157.287328,
+     "Y": 6665.4772,
+     "dL": 111.97966,
+     "points": 111.97966,
+     "L": 535.02316,
      "cropFailure": false
     }
    },
@@ -1461,26 +1512,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 10.8,
       "capacityT": 5400.0,
-      "price": 1.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 1080.0
+      "areaHa": 1080.0,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -1488,13 +1542,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       5.35,
-       3.4
+       8.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.49537,
-       1.0
+       0.810185,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -1529,14 +1583,14 @@
      {
       "lens": "capability",
       "Q": [
-       2.765854,
+       2.339895,
        10.8,
-       1.434146
+       1.860105
       ],
       "shareOfNeed": [
-       0.442537,
+       0.374383,
        1.0,
-       0.421808
+       0.54709
       ],
       "floorVoteNeeded": false
      },
@@ -1544,13 +1598,13 @@
       "lens": "sufficientarian",
       "Q": [
        6.25,
-       5.4,
-       3.35
+       7.05,
+       1.7
       ],
       "shareOfNeed": [
        1.0,
-       0.5,
-       0.985294
+       0.652778,
+       0.5
       ],
       "floorVoteNeeded": false
      }
@@ -1654,42 +1708,51 @@
    "type": "private.opened",
    "payload": {
     "role": "A",
-    "cap": 2,
+    "cap": 3.125,
     "pumpCostPerMm3": 2.0,
+    "wellsDry": false,
     "actions": {
-     "orchard": 10,
-     "drip": 8,
      "expand": 5
     },
     "options": [
      {
-      "pumps": 0,
-      "yieldT": 3933.98528,
+      "pumps": 0.0,
+      "yieldT": 7468.21504,
       "points": {
-       "none": 39.339853,
-       "orchard": 29.339853,
-       "drip": 31.339853,
-       "expand": 34.339853
+       "none": 127.706477,
+       "expand": 122.706477
       }
      },
      {
-      "pumps": 1,
-      "yieldT": 4573.98528,
+      "pumps": 1.0,
+      "yieldT": 8988.21504,
       "points": {
-       "none": 43.739853,
-       "orchard": 33.739853,
-       "drip": 35.739853,
-       "expand": 38.739853
+       "none": 151.698477,
+       "expand": 146.698477
       }
      },
      {
-      "pumps": 2,
-      "yieldT": 5000.0,
+      "pumps": 2.0,
+      "yieldT": 10000.0,
       "points": {
-       "none": 46.0,
-       "orchard": 36.0,
-       "drip": 38.0,
-       "expand": 41.0
+       "none": 167.0,
+       "expand": 162.0
+      }
+     },
+     {
+      "pumps": 3.0,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 165.0,
+       "expand": 160.0
+      }
+     },
+     {
+      "pumps": 3.125,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 164.75,
+       "expand": 159.75
       }
      }
     ],
@@ -1728,12 +1791,12 @@
       "ePJ": 1.0,
       "eSE": {
        "claimant": 0.552935,
-       "hectare": 1.0,
-       "person": 0.362317
+       "hectare": 0.925568,
+       "person": 0.485504
       },
       "F": {
-       "consumed": 1.013478,
-       "diverted": 1.013478
+       "consumed": 0.996109,
+       "diverted": 0.996109
       }
      },
      "sustainabilityBand": "good",
@@ -1748,10 +1811,10 @@
      "P": 1.0,
      "W": 5.584352,
      "A": 0.893496,
-     "Y": 4573.98528,
-     "dL": 43.739853,
-     "points": 43.739853,
-     "L": 201.027181,
+     "Y": 8988.21504,
+     "dL": 151.698477,
+     "points": 151.698477,
+     "L": 686.721637,
      "cropFailure": false
     }
    },
@@ -1811,7 +1874,7 @@
     "role": "A",
     "kind": "livelihood_share",
     "threshold": 0.75,
-    "value": 0.804109,
+    "value": 0.803183,
     "met": true
    },
    "visibility": "self"

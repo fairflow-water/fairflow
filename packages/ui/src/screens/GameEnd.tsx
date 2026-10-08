@@ -9,7 +9,7 @@ import type { GameEnd as End, GoalResult, PublicLens } from '../room';
 const pct = (x: number): string => `${Math.round(x * 100)} %`;
 const SAFETY_NORM = 'The rules made pumping rational; we debrief the rules, not the person.'; // §5.3
 const GOAL_TEXT: Record<string, (t: number) => string> = {
-  livelihood_share: t => `keep your livelihood at ${pct(t)} of what full water would give`,
+  livelihood_share: t => `keep your livelihood points at least ${pct(t)} of what full water would have given`,
   adequacy_floor: t => `never fall below ${pct(t)} of your need`,
   adequacy_in_half_seasons: t => `reach ${pct(t)} of your need in at least half the seasons`,
 };
@@ -35,7 +35,7 @@ export function GameEnd({ end, goal, role, lenses, debriefOpened, onIntent }: {
       <h2 id="end-title">The game lasted {end.seasonsPlayed} seasons{end.truncated ? ' (time-boxed)' : ''}.</h2>
       <p>Collective score: <strong data-testid="score">{pct(end.collectiveScore)}</strong>{end.cropFailureFlag ? ' · a crop failed' : ''}</p>
       {end.authorityGoal && (
-        <p>Authority's goal (average pumping at most {end.authorityGoal.maxMeanPumping} Mm³): {end.authorityGoal.met ? 'met' : 'missed'}.</p>
+        <p>Authority's goal (the table's total pumping, averaged over seasons, at most {end.authorityGoal.maxMeanPumping} Mm³ a season): {end.authorityGoal.met ? 'met' : 'missed'}.</p>
       )}
       {goal && (
         <p className="mine">Your goal, to {GOAL_TEXT[goal.kind]?.(goal.threshold) ?? goal.kind}: <strong>{goal.met ? 'met' : 'missed'}</strong>.</p>

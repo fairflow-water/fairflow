@@ -27,7 +27,7 @@ export const roomInfo = async (code: string): Promise<RoomInfo> => json<RoomInfo
 export async function joinRoom(code: string, role: string, deviceHash: string): Promise<string> {
   const r = await json<{ token: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ role, deviceHash, consentGiven: true, presurveyComplete: true }),
+    body: JSON.stringify({ role, deviceHash, consentGiven: true, presurveyComplete: false }),
   }));
   return r.token;
 }

@@ -3,10 +3,10 @@
   "status": "working labels",
   "options": [
     { "rule": "proportional", "label": "Same share of the minimum", "explain": "Every farm gets the same fraction of its minimum." },
-    { "rule": "cea", "label": "Protect the smallest minimums", "explain": "Small farms keep their minimum; the largest absorbs the cut." },
+    { "rule": "cea", "label": "Protect the smallest minimums", "explain": "The smallest minimums are met in full first; the larger ones are cut down to a common level." },
     { "rule": "cel", "label": "Everyone gives up the same", "explain": "Each farm loses the same amount of water." },
     { "rule": "talmud", "label": "Half-claims first (Talmud)", "explain": "An old rule that splits the shortfall in a balanced way between large and small." },
-    { "rule": "capability", "label": "Per person", "explain": "The cut follows how many people each farm supports." },
+    { "rule": "capability", "label": "Per person", "explain": "Water for the minimums is shared in proportion to the people each farm supports, and no farm gets more than its minimum." },
     { "rule": "whatever_works", "label": "Whatever works", "explain": "No preference: a proportional cut is applied." }
   ]
 }

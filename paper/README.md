@@ -6,13 +6,13 @@ claims solver, welfare functions and privacy projections. It is cited from the l
 the methods are already reviewed.
 
 Checklist (JOSS submission requirements, as of 2026 — re-check at submission):
-- [ ] Open licence (MIT) — done
+- [x] Open licence (MIT)
 - [ ] Repository public with issue tracker — on v1.0 tag
 - [ ] Substantial scholarly effort: engine + harness, ≥ 3 months, tests, docs — v1.1
 - [ ] `paper.md` + `paper.bib` in `paper/` — skeleton here
-- [ ] Automated tests runnable by the reviewer (`npm test`, `pytest` in fairflow-balance)
+- [ ] Automated tests runnable by the reviewer (`pytest` in `packages/engine-py`, `npm test` for the mirror; `scripts/check-all.sh` runs everything)
 - [ ] API documentation (typedoc) and a worked example reproducing blueprint §3 fixtures
-- [ ] Contribution guidelines, code of conduct — done
+- [x] Contribution guidelines, code of conduct
 - [ ] Archive the reviewed tag on Zenodo; put the DOI in the paper
 - [ ] Authors: engine contributors; source-study co-authors acknowledged, not listed, unless they contribute code
 

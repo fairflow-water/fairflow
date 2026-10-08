@@ -110,12 +110,16 @@ def test_shipped_scenario_loads_into_the_blueprint_basin():
     ]
 
 
-def test_shipped_scenario_warnings_are_the_open_source_gaps():
-    """Missing sources and the mixed people unit are reported (warnings now; a release gate under §1.5)."""
-    warnings = load_scenario(DEFAULT, REG).warnings
+def test_shipped_scenario_has_a_source_for_every_field_and_one_people_unit():
+    """ADR 0007: every editable field of the Kelvara basin carries a source and people are in one unit, so loading
+    reports no warning; a scenario missing one still gets the warning (a release gate under §1.5)."""
+    assert load_scenario(DEFAULT, REG).warnings == []
+    s = broken()
+    del s["schemes"][0]["fields"]["areaHa"]
+    s["schemes"][1]["peopleUnit"] = "households"
+    warnings = load_scenario(s, REG).warnings
     assert "scheme A: areaHa has no source" in warnings
     assert any("mix people units" in w for w in warnings)
-    assert "scheme C: yieldTHa has no source" not in warnings
 
 
 def test_a_loaded_scenario_plays_and_audits():

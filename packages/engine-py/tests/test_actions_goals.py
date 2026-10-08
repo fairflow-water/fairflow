@@ -5,7 +5,7 @@ blueprint's §3.3 dynamic fixtures."""
 
 import blueprint as bp
 import pytest
-from test_record import ROLES, new_game
+from test_record import ROLES, kelvara_game, new_game
 
 from fairflow_engine import AUTHORITY, Rejection, audit, project, replay
 
@@ -35,37 +35,40 @@ def resolved(g, n):
 
 
 def test_orchard_lag():
-    """§3.3 'A plays Orchard in season 2 | D_A = 8.125, p_A = 2 from season 3; L_A −= 10 in season 2'."""
-    demand, price, cost = bp.grab(r"D\\_A = NUM, p\\_A = NUM from season 3; L\\_A −= NUM in season 2", S33)
-    g = new_game(gameLength=(5, 5))
+    """§3.3 'B plays Orchard in season 2 | D_B, K_B, p_B from season 3; L_B −= 10 in season 2' (ADR 0007: the basin's
+    orchard crop at B's own area and method, the diversion recomputed for B's β)."""
+    demand, capacity, price, cost = bp.grab(
+        r"D\\_B = NUM, K\\_B = NUM, p\\_B = NUM from season 3; L\\_B −= NUM in season 2", S33
+    )
+    g = kelvara_game(gameLength=(5, 5))
     season(g)
-    season(g, actions={"A": "orchard"})
+    season(g, actions={"B": "orchard"})
     season(g)
-    assert climate(g, 2)["schemes"]["A"]["demandMm3"] != demand  # not yet in force in season 2
-    assert climate(g, 3)["schemes"]["A"]["demandMm3"] == pytest.approx(float(demand), abs=demand.tol)
-    assert climate(g, 3)["schemes"]["A"]["price"] == pytest.approx(float(price), abs=price.tol)
-    a = resolved(g, 2)["roles"].index("A")
-    assert resolved(g, 2)["actionCost"][a] == pytest.approx(float(cost), abs=cost.tol)
+    assert climate(g, 2)["schemes"]["B"]["demandMm3"] != demand  # not yet in force in season 2
+    for key, want in (("demandMm3", demand), ("capacityT", capacity), ("price", price)):
+        assert climate(g, 3)["schemes"]["B"][key] == pytest.approx(float(want), abs=want.tol)
+    b = resolved(g, 2)["roles"].index("B")
+    assert resolved(g, 2)["actionCost"][b] == pytest.approx(float(cost), abs=cost.tol)
     assert audit(g.setup, g.events) == []
 
 
 def test_drip_then_expand_is_the_rebound():
-    """§3.3 'A: Drip season 1, Expand season 2 | D_A = 5.0, K_A = 5,000 from season 2; D_A = 6.0, K_A = 6,000,
-    area 750 ha from season 3; ΣD 17.4 then 18.4'."""
+    """§3.3 'C: Drip season 1, Expand season 2 | D_C, K_C from season 2; D_C, K_C, area from season 3; ΣD … then …'
+    (ADR 0007: Drip keeps 95 % of the consumption and recomputes the diversion at β = 0.90)."""
     d2, k2, d3, k3, area3, sum2, sum3 = bp.grab(
-        r"D\\_A = NUM, K\\_A = NUM from season 2; D\\_A = NUM, K\\_A = NUM, area NUM ha from season 3; ΣD NUM then NUM", S33
+        r"D\\_C = NUM, K\\_C = NUM from season 2; D\\_C = NUM, K\\_C = NUM, area NUM ha from season 3; ΣD NUM then NUM", S33
     )
-    g = new_game(gameLength=(5, 5))
-    season(g, actions={"A": "drip"})
-    season(g, actions={"A": "expand"})
+    g = kelvara_game(gameLength=(5, 5))
+    season(g, actions={"C": "drip"})
+    season(g, actions={"C": "expand"})
     season(g)
     s2, s3 = climate(g, 2)["schemes"], climate(g, 3)["schemes"]
     for got, want in (
-        (s2["A"]["demandMm3"], d2),
-        (s2["A"]["capacityT"], k2),
-        (s3["A"]["demandMm3"], d3),
-        (s3["A"]["capacityT"], k3),
-        (s3["A"]["areaHa"], area3),
+        (s2["C"]["demandMm3"], d2),
+        (s2["C"]["capacityT"], k2),
+        (s3["C"]["demandMm3"], d3),
+        (s3["C"]["capacityT"], k3),
+        (s3["C"]["areaHa"], area3),
     ):
         assert got == pytest.approx(float(want), abs=want.tol)
     assert sum(v["demandMm3"] for v in s2.values()) == pytest.approx(float(sum2), abs=sum2.tol)
@@ -73,27 +76,38 @@ def test_drip_then_expand_is_the_rebound():
     assert audit(g.setup, g.events) == []
 
 
+def test_actions_follow_each_schemes_method():
+    """ADR 0007: the citrus estate on drip may only Expand; the paddy may not play Drip."""
+    g = kelvara_game(gameLength=(5, 5))
+    g.submit(AUTHORITY, "start_season")
+    g.submit(AUTHORITY, "close_vote")
+    for role, action in (("A", "orchard"), ("A", "drip"), ("B", "drip")):
+        with pytest.raises(Rejection) as e:
+            g.submit(role, "commit", pumps=0.0, action=action)
+        assert e.value.code == "action_not_for_this_scheme"
+
+
 def test_orchard_and_drip_once_expand_repeatable():
     """§4.3: Orchard 'once', Drip 'once', Expand 'repeatable'; a refused commit leaves the record unchanged."""
-    g = new_game(gameLength=(5, 5))
-    season(g, actions={"A": "orchard", "B": "expand"})
-    season(g, actions={"B": "expand"})
+    g = kelvara_game(gameLength=(5, 5))
+    season(g, actions={"B": "orchard", "C": "expand"})
+    season(g, actions={"C": "expand"})
     g.submit(AUTHORITY, "start_season")
     g.submit(AUTHORITY, "close_vote")
     before = list(g.events)
     with pytest.raises(Rejection):
-        g.submit("A", "commit", pumps=0.0, action="orchard")
+        g.submit("B", "commit", pumps=0.0, action="orchard")
     with pytest.raises(Rejection):
-        g.submit("A", "commit", pumps=0.0, action="steal")
+        g.submit("B", "commit", pumps=0.0, action="steal")
     assert g.events == before
 
 
 def test_goal_attainability_full_cooperation():
-    """§3.3 'Full cooperation, proportional, 1W/3N/2D | A reaches 79.8 % of potential, so the 75 % goal (R15) is met'.
-    Checks the engine's 'full-demand potential' (Σ pK/100, §2.4) against the blueprint's own number."""
-    share, goal = bp.grab(r"A reaches NUM % of potential, so the NUM % goal", S33)
+    """§3.3 goal attainability: under proportional with the full deck A reaches the printed share of its potential and
+    meets its R15 goal; the engine's 'full-demand potential' is Σ pK/100 (§2.4)."""
+    share, goal = bp.grab(r"under proportional with the full deck A reaches NUM % of potential \(R15 goal NUM %\)", S33)
     deck_size = sum(int(v) for v in bp.grab(r"deck NUM W / NUM N / NUM D", bp.section("### 2.2 Parameters and grounding")))
-    g = new_game(gameLength=(deck_size, deck_size))
+    g = kelvara_game(gameLength=(deck_size, deck_size))
     while replay(g.events).phase != "ended":
         season(g)
     a = next(e["payload"] for e in g.events if e["type"] == "goal.result" and e["payload"]["role"] == "A")

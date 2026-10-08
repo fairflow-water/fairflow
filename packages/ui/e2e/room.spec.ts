@@ -33,7 +33,6 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
     const phone = await newPage(browser, PHONE);
     await phone.goto(`/join/${code}`);
     await phone.getByRole('checkbox', { name: /agree to take part/ }).check();
-    await phone.getByRole('checkbox', { name: /pre-session questions/ }).check();
     await phone.getByRole('list').getByRole('button').first().click();
     await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();
     phones.push(phone);
@@ -97,7 +96,7 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
     await expect(page.getByRole('table')).toBeVisible();
     await expect(page.getByRole('slider')).toBeVisible();
   }
-  await expect(display.getByTestId('verdict')).toContainText('You voted for');
+  await expect(display.getByTestId('verdict')).toContainText('The table chose');
 
   // S10: a farm saves an answer; nobody else receives it
   const reviewer = phones[0]!;

@@ -67,12 +67,14 @@ describe('S4 lens vote', () => {
 });
 
 describe('S2 join', () => {
-  it('shows no role until consent and the pre-session questions are confirmed', async () => {
+  it('shows no role until consent is given, and asks for no name', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ room: 'ABCDE', freeRoles: ['A', 'B'], phase: 'lobby', scenario }))));
     render(<Join code="ABCDE" onJoined={() => undefined} />);
     await screen.findByText(scenario.name);
     expect(screen.queryByText('Choose your farm')).toBeNull();
-    for (const box of screen.getAllByRole('checkbox')) await userEvent.click(box);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1); // no pre-session checkbox until the survey exists (D6)
+    expect(screen.queryByRole('textbox')).toBeNull();
+    await userEvent.click(screen.getByRole('checkbox', { name: /agree to take part/ }));
     expect(screen.getByText('Choose your farm')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     vi.unstubAllGlobals();

@@ -30,7 +30,7 @@
         { "id": "prompt.drip", "prompt": "What happened when Drip was followed by Expand?" },
         { "id": "prompt.dry", "prompt": "Which arguments did the table use in the dry season?" },
         { "id": "prompt.aquifer", "prompt": "What did the aquifer do over the game, and why?" },
-        { "id": "prompt.verdict", "prompt": "The lens you voted for and the lens the water as used came closest to: what explains the gap?" }
+        { "id": "prompt.verdict", "prompt": "The lens the table chose and the lens the water as used came closest to: what explains the gap?" }
       ]
     },
     {

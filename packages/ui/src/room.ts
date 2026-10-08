@@ -27,6 +27,7 @@ export interface Allocation { lens: string; Q: number[]; adequacyBands?: Band[] 
 /** S6: what the engine previewed for this farm alone (a `self` event). */
 export interface PrivateTurn {
   role: string; cap: number; pumpCostPerMm3: number; actions: Record<string, number>;
+  wellsDry?: boolean; // ADR 0008: shallow wells below their suction limit
   options: { pumps: number; yieldT: number; points: Record<string, number> }[];
 }
 export interface Dials { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } }

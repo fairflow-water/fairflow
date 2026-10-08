@@ -1,19 +1,19 @@
 {
  "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
  "scenario": {
-  "name": "Fairflow default basin",
+  "name": "Kelvara basin (hypothetical)",
   "schemes": [
    {
     "id": "A",
-    "name": "Orchard Estate",
+    "name": "Upper Citrus Estate",
     "seat": 1,
     "shape": "circle",
-    "glyph": "pomegranate",
-    "crop": "pomegranate"
+    "glyph": "citrus",
+    "crop": "citrus"
    },
    {
     "id": "B",
-    "name": "Paddy Cooperative",
+    "name": "Midstream Paddy Cooperative",
     "seat": 2,
     "shape": "square",
     "glyph": "rice",
@@ -21,17 +21,17 @@
    },
    {
     "id": "C",
-    "name": "Tail-end Smallholders",
+    "name": "Tail-end Wheat Farms",
     "seat": 3,
     "shape": "triangle",
     "glyph": "wheat",
-    "crop": "cereals"
+    "crop": "wheat"
    }
   ],
   "lenses": [
    {
     "id": "utilitarian",
-    "plainName": "Biggest harvest"
+    "plainName": "Biggest harvest value"
    },
    {
     "id": "egalitarian",
@@ -83,26 +83,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 9.0,
-      "capacityT": 4500,
-      "price": 1.0,
+      "capacityT": 4500.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 900
+      "areaHa": 900,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "aquiferInitial": 20,
@@ -204,26 +207,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 9.0,
-      "capacityT": 4500,
-      "price": 1.0,
+      "capacityT": 4500.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 900
+      "areaHa": 900,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -231,13 +237,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       0.35,
-       3.4
+       3.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.038889,
-       1.0
+       0.416667,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -272,14 +278,14 @@
      {
       "lens": "capability",
       "Q": [
-       0.658537,
-       9.0,
-       0.341463
+       0.996385,
+       8.211535,
+       0.792079
       ],
       "shareOfNeed": [
-       0.105366,
-       1.0,
-       0.10043
+       0.159422,
+       0.912393,
+       0.232964
       ],
       "floorVoteNeeded": false
      },

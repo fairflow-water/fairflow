@@ -61,9 +61,25 @@
             "source": { "$ref": "#/$defs/source" }
           }
         },
+        "orchardCrop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["depthMm", "beta", "yieldTHa", "ky", "price", "source"],
+          "$comment": "ADR 0007: the crop a scheme takes on when it plays Orchard",
+          "properties": {
+            "crop": { "type": "string" },
+            "depthMm": { "$ref": "#/$defs/positive" },
+            "beta": { "$ref": "#/$defs/fraction", "$comment": "consumed fraction of the method depthMm is given for" },
+            "yieldTHa": { "$ref": "#/$defs/positive" },
+            "ky": { "type": "number", "minimum": 0, "maximum": 2 },
+            "price": { "$ref": "#/$defs/nonNegative" },
+            "source": { "$ref": "#/$defs/source" }
+          }
+        },
         "aquifer": {
           "type": "object",
           "additionalProperties": false,
+          "$comment": "returnRecharge: share of non-consumed water that recharges the shared aquifer (ADR 0007)",
           "required": ["initial", "reserve", "lowThreshold", "naturalRecharge", "gwSwCoupling", "source"],
           "properties": {
             "initial": { "$ref": "#/$defs/positive" },
@@ -72,11 +88,17 @@
             "naturalRecharge": { "$ref": "#/$defs/nonNegative" },
             "surplusRecharge": { "type": "boolean" },
             "returnFlows": { "type": "boolean" },
+            "returnRecharge": { "$ref": "#/$defs/fraction" },
             "gwSwCoupling": {
               "type": "object",
               "additionalProperties": false,
               "required": ["enabled", "maxInflowLossMm3"],
-              "properties": { "enabled": { "type": "boolean" }, "maxInflowLossMm3": { "$ref": "#/$defs/nonNegative" } }
+              "$comment": "lossPerMm3BelowFull (ADR 0008): baseflow lost per Mm³ of storage below B₀; when present it replaces the maxInflowLossMm3 rule",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "maxInflowLossMm3": { "$ref": "#/$defs/nonNegative" },
+                "lossPerMm3BelowFull": { "$ref": "#/$defs/nonNegative" }
+              }
             },
             "seatCostMultipliers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/positive" } },
             "tankResolution": { "$ref": "#/$defs/positive" },
@@ -96,7 +118,23 @@
     "lenses": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/lens" } },
     "defaultLens": { "$ref": "#/$defs/lensId" },
     "floorRules": { "type": "array", "items": { "enum": ["proportional", "cea", "cel", "talmud", "capability"] }, "uniqueItems": true },
-    "actions": { "type": "object" },
+    "actions": {
+      "type": "object",
+      "properties": {
+        "pump": {
+          "type": "object",
+          "additionalProperties": false,
+          "$comment": "ADR 0008: capShare = well capacity as a share of each scheme's demand; costSlope may be derived from the head (see the scenario's source)",
+          "properties": {
+            "cap": { "$ref": "#/$defs/positive" },
+            "capShare": { "$ref": "#/$defs/fraction" },
+            "costBase": { "$ref": "#/$defs/nonNegative" },
+            "costSlope": { "$ref": "#/$defs/nonNegative" },
+            "source": { "$ref": "#/$defs/source" }
+          }
+        }
+      }
+    },
     "modules": {
       "type": "object",
       "additionalProperties": false,
@@ -179,6 +217,9 @@
         "glyph": { "type": "string" },
         "crop": { "type": "string" },
         "method": { "type": "string" },
+        "actions": { "type": "array", "items": { "enum": ["orchard", "drip", "expand"] }, "uniqueItems": true, "$comment": "actions this scheme may play; omitted = all" },
+        "pumpCostFactor": { "$ref": "#/$defs/positive", "$comment": "ADR 0008: pumping energy per m³ relative to the most efficient pump set, η_ref/η_i" },
+        "wellsFailAtOrBelow": { "$ref": "#/$defs/nonNegative", "$comment": "ADR 0008: observed aquifer stock at or below which this scheme's shallow wells stop delivering" },
         "areaHa": { "$ref": "#/$defs/positive" },
         "depthMm": { "$ref": "#/$defs/positive" },
         "beta": { "$ref": "#/$defs/fraction" },

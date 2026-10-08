@@ -68,7 +68,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
   const welfare = view.debriefWelfare?.seasons.find(w => w.season === r.season);
   const rows = welfare
     ? [...Object.entries(welfare.lenses).map(([lens, v]) => ({ key: lens, name: lensName(lens), value: v[g] ?? 0 })),
-       ...(welfare.used ? [{ key: 'used', name: 'Your water as used', value: welfare.used[g] ?? 0 }] : [])]
+       ...(welfare.used ? [{ key: 'used', name: 'The table’s water as used', value: welfare.used[g] ?? 0 }] : [])]
         .sort((a, b) => b.value - a.value)
     : [];
   const steps = (view.debriefWelfare?.gammas.length ?? 1) - 1;
@@ -104,7 +104,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
               <button key={u.id} type="button" role="radio" aria-checked={unit === u.id} onClick={() => setUnit(u.id)}>{u.label}</button>
             ))}
           </div>
-          <p data-testid="verdict">You voted for <strong>{lensName(sealed.verdict.voted)}</strong>.<br />
+          <p data-testid="verdict">The table chose <strong>{lensName(sealed.verdict.voted)}</strong>.<br />
             The water as used came closest to <strong>{lensName(sealed.verdict.satisfied)}</strong> ({fmt(r.public.pumpsTotal)} Mm³ pumped).</p>
           <p data-testid="f-line">Water productivity as used: {fmt(sealed.F[basis])} of design, per m³ {basis}.
             <button type="button" aria-pressed={basis === 'diverted'} onClick={() => setBasis(b => (b === 'consumed' ? 'diverted' : 'consumed'))}>
@@ -113,7 +113,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
           </p>
           <table className="sheet">
             <caption>Each farm this season</caption>
-            <thead><tr><th scope="col">Farm</th><th scope="col">Pumped</th><th scope="col">Received</th><th scope="col">Harvest t</th><th scope="col">Points</th></tr></thead>
+            <thead><tr><th scope="col">Farm</th><th scope="col">Pumped</th><th scope="col">Water used (allocated + pumped)</th><th scope="col">Harvest t</th><th scope="col">Points</th></tr></thead>
             <tbody>
               {sealed.roles.map((role, i) => (
                 <tr key={role}>
@@ -129,7 +129,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
         <>
           <Needles pj={null} se={null} ghostPj={alloc.ePJ} ghostSe={alloc.eSE[unit]} />
           <p>As allocated: fair shares of need {fmt(alloc.ePJ)}, equal amounts per farm {fmt(alloc.eSE.claimant)}. The table pumped {fmt(r.public.pumpsTotal)} Mm³.</p>
-          <p className="hint" data-testid="sealed-note">The table kept each farm's pumping private. Values on the water as used stay sealed as well: together with the public allocation they would show who pumped.</p>
+          <p className="hint" data-testid="sealed-note">Each farm's pumping was kept private for this debrief. Values on the water as used stay sealed as well: together with the public allocation they would show who pumped.</p>
         </>
       )}
 

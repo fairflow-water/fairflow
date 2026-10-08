@@ -26,7 +26,8 @@ export interface PrivateTurnProps {
 }
 
 export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: PrivateTurnProps) {
-  const [pumps, setPumps] = useState(0);
+  const [level, setLevel] = useState(0); // index into the engine's offered pump levels (ADR 0008: the last may be fractional)
+  const pumps = turn.options[level]?.pumps ?? 0;
   const [action, setAction] = useState<string | null>(null);
   const [openActions, setOpenActions] = useState(false);
   const [pending, setPending] = useState(false);
@@ -58,7 +59,7 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
 
   useEffect(() => () => { if (undo.current) clearTimeout(undo.current); }, []);
 
-  const option = turn.options.find(o => o.pumps === pumps) ?? turn.options[0];
+  const option = turn.options[level] ?? turn.options[0];
   const points = option ? option.points[action ?? 'none'] ?? option.points['none'] ?? 0 : 0;
 
   function commit() {
@@ -74,17 +75,19 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
     <section aria-labelledby="turn-title" className="turn">
       <h2 id="turn-title">Your turn</h2>
       {last && demand !== null && (
-        <p className="banner">Last season you received {fmt(last.W)} of your {fmt(demand)} Mm³; harvest {fmt(last.Y, 0)} t; {signed(last.points)} points.</p>
+        <p className="banner">Last season you used {fmt(last.W)} Mm³ (allocated + pumped), {fmt(last.A * 100, 0)} % of what you needed; harvest {fmt(last.Y, 0)} t; {signed(last.points)} points.</p>
       )}
       {left !== null && <p className="timer" aria-live="polite">{left} s</p>}
       <div className="pump-card">
         <p><strong>Borrow from the aquifer</strong></p>
         <div className="stepper" role="group" aria-label="Pump tokens">
-          <button type="button" aria-label="One less" disabled={pumps <= 0 || pending} onClick={() => setPumps(p => p - 1)}>−</button>
-          <output aria-valuetext={`${pumps} Mm³`} data-testid="pumps">{pumps}</output>
-          <button type="button" aria-label="One more" disabled={pumps >= turn.options.length - 1 || pending} onClick={() => setPumps(p => p + 1)}>+</button>
+          <button type="button" aria-label="One less" disabled={level <= 0 || pending} onClick={() => setLevel(l => l - 1)}>−</button>
+          <output aria-valuetext={`${fmt(pumps)} Mm³`} data-testid="pumps">{fmt(pumps)}</output>
+          <button type="button" aria-label="One more" disabled={level >= turn.options.length - 1 || pending} onClick={() => setLevel(l => l + 1)}>+</button>
         </div>
-        <p>Pump cost at today's aquifer level: {fmt(turn.pumpCostPerMm3)} points per Mm³. The table will see how much was pumped, not by whom.</p>
+        {turn.wellsDry && <p className="notice" role="status">Your wells are dry: the water table has fallen below what your pumps can lift, so you cannot pump this season.</p>}
+        {!turn.wellsDry && <p>Your wells can deliver up to {fmt(turn.cap)} Mm³ this season.</p>}
+        <p>Pump cost at today's aquifer level: {fmt(turn.pumpCostPerMm3)} points per Mm³. During play the table sees only the total pumped, though others may be able to work out part of it from the total. At the debrief the facilitator may show each farm's pumping.</p>
         {option && <p data-testid="preview">Harvest {fmt(option.yieldT, 0)} t → {signed(points)} points</p>}
       </div>
       <div className="actions">

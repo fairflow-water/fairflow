@@ -70,8 +70,8 @@ def weights_for(lens: LensId, schemes: Sequence[Scheme], params: LensParams) -> 
         return [1.0 for _ in schemes]
     if lens == "proportional":
         return [s.demandMm3 for s in schemes]
-    if lens == "weighted_utilitarian":
-        return [s.capacityT / s.demandMm3 for s in schemes]
+    if lens == "weighted_utilitarian":  # ADR 0007: productivity in value, pK/D; tonnes of different crops do not add
+        return [s.price * s.capacityT / s.demandMm3 for s in schemes]
     if lens == "capability":
         return [s.people * s.kappa for s in schemes]
     if lens == "prioritarian":

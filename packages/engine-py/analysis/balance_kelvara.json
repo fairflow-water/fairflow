@@ -1,0 +1,95 @@
+{
+ "overrides": {},
+ "gamesPerCell": 50,
+ "lensMatters": {
+  "ePJRange": 0.868519,
+  "qRangeShareMax": 0.9803920588235294,
+  "pass": true
+ },
+ "cooperationRewarded": {
+  "share": 1.0,
+  "pass": true
+ },
+ "dilemma": {
+  "profitableAboveLow": 0.9626933575978162,
+  "seatsPricedOutBelowLow": 0,
+  "deficitChecksBelowLow": 80,
+  "selfishReserveBySeason5": 0.0,
+  "selfishNotBeforeSeason3": 1.0,
+  "selfishBelowLowBySeason5": 0.82,
+  "principledEverBelowLow": 0.0,
+  "selfishMeanMinStock": 14.345441860000001,
+  "pass": true
+ },
+ "noDominantLens": {
+  "topShareByLens": {
+   "proportional": 1.0000000000000004
+  },
+  "pass": false,
+  "note": "share of seeds in which each all-principled lens has the highest collective score"
+ },
+ "goalsAttainable": {
+  "rates": {
+   "A": 0.716,
+   "B": 0.6,
+   "C": 0.4
+  },
+  "byLens": {
+   "utilitarian": {
+    "A": 1.0,
+    "B": 0.0,
+    "C": 0.0
+   },
+   "egalitarian": {
+    "A": 1.0,
+    "B": 0.0,
+    "C": 1.0
+   },
+   "proportional": {
+    "A": 0.58,
+    "B": 1.0,
+    "C": 1.0
+   },
+   "capability": {
+    "A": 0.0,
+    "B": 1.0,
+    "C": 0.0
+   },
+   "sufficientarian": {
+    "A": 1.0,
+    "B": 1.0,
+    "C": 0.0
+   }
+  },
+  "pass": true
+ },
+ "cropFailureMixed": {
+  "share": 0.42,
+  "pass": false
+ },
+ "meanFinalStock": {
+  "principled:utilitarian": 20.0,
+  "principled:egalitarian": 20.0,
+  "principled:proportional": 20.0,
+  "principled:capability": 20.0,
+  "principled:sufficientarian": 20.0,
+  "selfish": 15.149654580000002,
+  "mixed": 19.67091336
+ },
+ "meanSpill": {
+  "principled:utilitarian": 18.4526,
+  "principled:egalitarian": 18.2726,
+  "principled:proportional": 19.0622126,
+  "principled:capability": 20.8811109,
+  "principled:sufficientarian": 18.5867,
+  "selfish": 1.45316236,
+  "mixed": 17.043113679999998
+ },
+ "mixedLensMostPlayed": {
+  "capability": 15,
+  "egalitarian": 8,
+  "proportional": 16,
+  "sufficientarian": 2,
+  "utilitarian": 9
+ }
+}

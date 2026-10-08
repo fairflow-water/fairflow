@@ -192,7 +192,7 @@ def test_room_info_exposes_only_public_scenario_fields(client: TestClient) -> No
     scenario = client.get(f"/rooms/{info['room']}").json()["scenario"]
     assert [s["id"] for s in scenario["schemes"]] == ["A", "B", "C"]
     assert {k for s in scenario["schemes"] for k in s} <= {"id", "name", "seat", "shape", "glyph", "crop"}
-    assert scenario["lenses"][0]["plainName"] == "Biggest harvest"
+    assert scenario["lenses"][0]["plainName"] == "Biggest harvest value"
 
 
 def test_allowed_origins_come_from_the_environment() -> None:

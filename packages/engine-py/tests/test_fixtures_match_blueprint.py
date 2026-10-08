@@ -22,9 +22,11 @@ def test_tables_parse():
     }
     assert set(normal_year()) == {
         "utilitarian",
+        "weighted_utilitarian",
         "egalitarian",
         "proportional",
         "capability",
+        "sufficientarian",
         "prioritarian",
         "equal_sacrifice",
     }

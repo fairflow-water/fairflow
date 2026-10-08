@@ -14,6 +14,7 @@ from .aquifer import (
     inflow_loss_next,
     next_stock,
     observed_stock,
+    pump_cap,
     pump_cost_per_mm3,
     ration_pumps,
     return_flow,
@@ -133,18 +134,18 @@ def resolve_season(
     floor = scoring.survivalFloor
     allocable = max(0.0, inflow - basin.reserve)
     alloc = allocate(lens, schemes, allocable, lens_params, floor)
-    cost = [pump_cost_per_mm3(basin, stock, s.seat) for s in schemes]
-    P = ration_pumps(basin, stock, pumps)
+    cost = [pump_cost_per_mm3(basin, stock, s.seat, s.pumpCostFactor) for s in schemes]
+    P = ration_pumps(basin, stock, pumps, [pump_cap(basin, stock, s) for s in schemes])
     W = [q + p for q, p in zip(alloc.Q, P, strict=True)]
     A = [w / s.demandMm3 for s, w in zip(schemes, W, strict=True)]
     Y = [yield_of(s, w, floor) for s, w in zip(schemes, W, strict=True)]
     dL = [s.price * y / 100 - c * p for s, y, c, p in zip(schemes, Y, cost, P, strict=True)]  # §2.4 ΔL = pY/100 − c_p P
     pumped = sum(P)
-    returns = return_flow(schemes, W)
+    returns = return_flow(schemes, W, basin.aquifer.returnRecharge)
     stock_next = next_stock(basin, stock, alloc.surplusToAquifer, returns, pumped)
     spill = aquifer_spill(basin, stock, alloc.surplusToAquifer, returns, pumped)
     e_pj = equity_pj(schemes, W)
-    S = sustainability(schemes, W, allocable, basin.aquifer.naturalRecharge)
+    S = sustainability(schemes, W, allocable, basin.aquifer.naturalRecharge, basin.aquifer.returnRecharge)
     s_capped = [max(scoring.welfareSupplyFloor, min(a, 1.0)) for a in A]
     tri = triangle(e_pj, efficiency(schemes, W, "consumed", floor), S, scoring.r3Ramp)
     wf = welfare(schemes, A, scoring.welfareGamma, floor, scoring.welfareSupplyFloor)

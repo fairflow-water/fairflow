@@ -50,6 +50,8 @@ export function scheme(value: unknown, path: string): Scheme {
     demandMm3: number(o['demandMm3'], `${path}.demandMm3`), capacityT: number(o['capacityT'], `${path}.capacityT`),
     ky: number(o['ky'], `${path}.ky`), beta: number(o['beta'], `${path}.beta`), people: number(o['people'], `${path}.people`),
     kappa: number(o['kappa'], `${path}.kappa`), price: number(o['price'], `${path}.price`), areaHa: number(o['areaHa'], `${path}.areaHa`),
+    pumpCostFactor: o['pumpCostFactor'] === undefined ? 1 : number(o['pumpCostFactor'], `${path}.pumpCostFactor`),
+    wellsFailAtOrBelow: o['wellsFailAtOrBelow'] === undefined || o['wellsFailAtOrBelow'] === null ? null : number(o['wellsFailAtOrBelow'], `${path}.wellsFailAtOrBelow`),
   };
 }
 
@@ -69,9 +71,12 @@ export function basin(value: unknown, path: string): Basin {
       maxInflowLossMm3: number(a['maxInflowLossMm3'], `${path}.aquifer.maxInflowLossMm3`),
       tankResolution: number(a['tankResolution'], `${path}.aquifer.tankResolution`),
       capacity: a['capacity'] === undefined || a['capacity'] === null ? null : number(a['capacity'], `${path}.aquifer.capacity`),
+      returnRecharge: a['returnRecharge'] === undefined ? 1 : number(a['returnRecharge'], `${path}.aquifer.returnRecharge`),
+      baseflowLossPerMm3: a['baseflowLossPerMm3'] === undefined || a['baseflowLossPerMm3'] === null ? null : number(a['baseflowLossPerMm3'], `${path}.aquifer.baseflowLossPerMm3`),
     },
     pump: { cap: number(p['cap'], `${path}.pump.cap`), costBase: number(p['costBase'], `${path}.pump.costBase`),
-      costSlope: number(p['costSlope'], `${path}.pump.costSlope`) },
+      costSlope: number(p['costSlope'], `${path}.pump.costSlope`),
+      capShare: p['capShare'] === undefined || p['capShare'] === null ? null : number(p['capShare'], `${path}.pump.capShare`) },
   };
 }
 

@@ -48,9 +48,14 @@ describe('review E4: zero weights are refused, as in the Python engine', () => {
 
 describe('blueprint §3.2 normal-year coincidences', () => {
   const Q = (lens: LensId) => allocate(lens, schemes, allocable('normal'), lensParams(lens), floor).Q;
-  it('utilitarian = weighted utilitarian', () => expect(Q('utilitarian')).toEqual(Q('weighted_utilitarian')));
-  it('sufficientarian = utilitarian (every floor met first)', () => expect(Q('sufficientarian')).toEqual(Q('utilitarian')));
   it('equal sacrifice = Talmud', () => expect(Q('equal_sacrifice')).toEqual(Q('talmud')));
+  // With crop values (ADR 0007) the value maximiser no longer coincides with the weighted utilitarian or the
+  // sufficientarian lens: it leaves the wheat farms no water in the normal year (§3.2).
+  it('utilitarian differs from weighted utilitarian and sufficientarian', () => {
+    expect(Q('utilitarian')).not.toEqual(Q('weighted_utilitarian'));
+    expect(Q('utilitarian')).not.toEqual(Q('sufficientarian'));
+    expect(at(Q('utilitarian'), 2)).toBe(0);
+  });
 });
 
 describe('no defaults: a lens without its parameters is refused', () => {

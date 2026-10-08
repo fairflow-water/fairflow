@@ -18,7 +18,7 @@ from jsonschema import Draft202012Validator
 
 from .allocate import FLOOR_RULES
 from .aquifer import inflow_loss_next
-from .model import Basin, LensId, LensParams, Scheme, Scoring
+from .model import HA_MM_TO_MM3, Basin, LensId, LensParams, Scheme, Scoring
 from .record import GameSetup
 
 
@@ -39,11 +39,14 @@ def basin_from_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]
                 "maxInflowLossMm3": a["gwSwCoupling"]["maxInflowLossMm3"] if a["gwSwCoupling"]["enabled"] else 0.0,
                 "tankResolution": a.get("tankResolution", registry["basin.aquifer.tankResolution"]),
                 "capacity": a.get("capacity", a["initial"]),  # ADR 0006: omitted means full at the start
+                "returnRecharge": a.get("returnRecharge", 1.0),  # ADR 0007: omitted means all of it recharges
+                "baseflowLossPerMm3": a["gwSwCoupling"].get("lossPerMm3BelowFull") if a["gwSwCoupling"]["enabled"] else None,
             },
             "pump": {
                 "cap": pump.get("cap", registry["actions.pump.cap"]),
                 "costBase": pump.get("costBase", registry["actions.pump.costBase"]),
                 "costSlope": pump.get("costSlope", registry["actions.pump.costSlope"]),
+                "capShare": pump.get("capShare", registry.get("actions.pump.capShare")),
             },
         }
     )
@@ -101,7 +104,6 @@ def hard_checks(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> lis
 
 
 # ---- loading (E2) ------------------------------------------------------------------------------------------------
-HA_MM_TO_MM3 = 1e-5  # §2.2 "Area × gross seasonal depth": 1 ha × 1 mm = 10 m³ = 1e-5 Mm³ (unit conversion)
 T_PER_MM3_TO_KG_PER_M3 = 1e-3  # §6.1 wpKgM3: 1 t per Mm³ = 1000 kg per 1e6 m³ (unit conversion)
 RELATIVE_AGREEMENT = 1e-9  # tolerance: recomputed derived values must agree with the stored ones
 EDITABLE_SCHEME_FIELDS = ("areaHa", "depthMm", "beta", "yieldTHa", "ky", "people", "kappa", "price")
@@ -207,6 +209,8 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
                 kappa=s["kappa"],
                 price=s["price"],
                 areaHa=s["areaHa"],
+                pumpCostFactor=s.get("pumpCostFactor", 1.0),
+                wellsFailAtOrBelow=s.get("wellsFailAtOrBelow"),
             )
             for s in schemes
         ),
@@ -225,6 +229,12 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
             for name in ("orchard", "drip", "expand")
         },
         goals={s["id"]: (s["privateGoal"]["kind"], s["privateGoal"]["threshold"]) for s in schemes},
+        schemeActions={s["id"]: tuple(s["actions"]) for s in schemes if "actions" in s},
+        orchardCrop=(
+            {k: scenario["basin"]["orchardCrop"][k] for k in ("depthMm", "beta", "yieldTHa", "ky", "price")}
+            if "orchardCrop" in scenario["basin"]
+            else None
+        ),
         authorityMaxMeanPumping=registry["goals.authority.maxMeanPumping"],
         bands={
             "equity": tuple(registry["indicators.equityBands"]),

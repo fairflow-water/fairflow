@@ -30,17 +30,18 @@ const decisionS = scenario.session!.decisionS!;
 describe('S6 private turn', () => {
   it("shows last season's own results and the engine preview for each pump level", async () => {
     render(<PrivateTurn turn={turn} last={lastMine} demand={lastMine.W} decisionS={null} onCommit={() => undefined} />);
-    expect(screen.getByText(/Last season you received/).textContent).toContain(fmt(lastMine.points));
+    expect(screen.getByText(/Last season you used/).textContent).toContain(fmt(lastMine.points));
     for (const option of turn.options) {
       expect(screen.getByTestId('preview').textContent).toContain(fmt(option.points['none']!));
       if (option.pumps < turn.cap) await userEvent.click(screen.getByRole('button', { name: 'One more' }));
     }
   });
-  it('keeps pumping within 0..cap', async () => {
+  it('steps through the offered pump levels up to the cap, which may be fractional (ADR 0008)', async () => {
     render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={null} onCommit={() => undefined} />);
     expect((screen.getByRole('button', { name: 'One less' }) as HTMLButtonElement).disabled).toBe(true);
-    for (let k = 0; k < turn.cap; k++) await userEvent.click(screen.getByRole('button', { name: 'One more' }));
-    expect(screen.getByTestId('pumps').textContent).toBe(String(turn.cap));
+    for (let k = 1; k < turn.options.length; k++) await userEvent.click(screen.getByRole('button', { name: 'One more' }));
+    expect(screen.getByTestId('pumps').textContent).toBe(fmt(turn.cap));
+    expect(turn.options.at(-1)!.pumps).toBe(turn.cap);
     expect((screen.getByRole('button', { name: 'One more' }) as HTMLButtonElement).disabled).toBe(true);
   });
   it('shows the engine points for a chosen action', async () => {

@@ -33,7 +33,7 @@ export function Review({ storageKey, saved, onIntent }: {
   return (
     <section aria-labelledby="review-title" className="review">
       <h2 id="review-title">Review</h2>
-      <p className="hint">{done} of {total} answers saved. Only you see your answers.</p>
+      <p className="hint">{done} of {total} answers saved. Your answers are sent to the room server; other players and the facilitator do not see them. The server keeps them only while it runs, so export the record to keep a copy.</p>
       <div role="tablist" aria-label="Parts" className="tabs">
         {form.parts.map((p, i) => (
           <button key={p.part} type="button" role="tab" aria-selected={i === part} onClick={() => setPart(i)}>Part {p.part}</button>

@@ -1,19 +1,19 @@
 {
  "generatedBy": "packages/engine-py/scripts/generate_ui_fixture.py",
  "scenario": {
-  "name": "Fairflow default basin",
+  "name": "Kelvara basin (hypothetical)",
   "schemes": [
    {
     "id": "A",
-    "name": "Orchard Estate",
+    "name": "Upper Citrus Estate",
     "seat": 1,
     "shape": "circle",
-    "glyph": "pomegranate",
-    "crop": "pomegranate"
+    "glyph": "citrus",
+    "crop": "citrus"
    },
    {
     "id": "B",
-    "name": "Paddy Cooperative",
+    "name": "Midstream Paddy Cooperative",
     "seat": 2,
     "shape": "square",
     "glyph": "rice",
@@ -21,17 +21,17 @@
    },
    {
     "id": "C",
-    "name": "Tail-end Smallholders",
+    "name": "Tail-end Wheat Farms",
     "seat": 3,
     "shape": "triangle",
     "glyph": "wheat",
-    "crop": "cereals"
+    "crop": "wheat"
    }
   ],
   "lenses": [
    {
     "id": "utilitarian",
-    "plainName": "Biggest harvest"
+    "plainName": "Biggest harvest value"
    },
    {
     "id": "egalitarian",
@@ -83,26 +83,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 9.0,
-      "capacityT": 4500,
-      "price": 1.0,
+      "capacityT": 4500.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 900
+      "areaHa": 900,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "aquiferInitial": 20,
@@ -204,26 +207,29 @@
      {
       "id": "A",
       "demandMm3": 6.25,
-      "capacityT": 5000,
-      "price": 1.0,
+      "capacityT": 10000.0,
+      "price": 1.71,
       "beta": 0.9,
-      "areaHa": 625
+      "areaHa": 625,
+      "ky": 0.95
      },
      {
       "id": "B",
       "demandMm3": 9.0,
-      "capacityT": 4500,
-      "price": 1.0,
+      "capacityT": 4500.0,
+      "price": 1.99,
       "beta": 0.6,
-      "areaHa": 900
+      "areaHa": 900,
+      "ky": 1.1
      },
      {
       "id": "C",
       "demandMm3": 3.4,
-      "capacityT": 2000,
+      "capacityT": 2000.0,
       "price": 1.0,
       "beta": 0.75,
-      "areaHa": 340
+      "areaHa": 400,
+      "ky": 1.05
      }
     ],
     "previews": [
@@ -231,13 +237,13 @@
       "lens": "utilitarian",
       "Q": [
        6.25,
-       0.35,
-       3.4
+       3.75,
+       0.0
       ],
       "shareOfNeed": [
        1.0,
-       0.038889,
-       1.0
+       0.416667,
+       0.0
       ],
       "floorVoteNeeded": false
      },
@@ -272,14 +278,14 @@
      {
       "lens": "capability",
       "Q": [
-       0.658537,
-       9.0,
-       0.341463
+       0.996385,
+       8.211535,
+       0.792079
       ],
       "shareOfNeed": [
-       0.105366,
-       1.0,
-       0.10043
+       0.159422,
+       0.912393,
+       0.232964
       ],
       "floorVoteNeeded": false
      },
@@ -410,42 +416,51 @@
    "type": "private.opened",
    "payload": {
     "role": "A",
-    "cap": 2,
+    "cap": 3.125,
     "pumpCostPerMm3": 2.0,
+    "wellsDry": false,
     "actions": {
-     "orchard": 10,
-     "drip": 8,
      "expand": 5
     },
     "options": [
      {
-      "pumps": 0,
-      "yieldT": 3144.77184,
+      "pumps": 0.0,
+      "yieldT": 5593.83312,
       "points": {
-       "none": 31.447718,
-       "orchard": 21.447718,
-       "drip": 23.447718,
-       "expand": 26.447718
+       "none": 95.654546,
+       "expand": 90.654546
       }
      },
      {
-      "pumps": 1,
-      "yieldT": 3784.77184,
+      "pumps": 1.0,
+      "yieldT": 7113.83312,
       "points": {
-       "none": 35.847718,
-       "orchard": 25.847718,
-       "drip": 27.847718,
-       "expand": 30.847718
+       "none": 119.646546,
+       "expand": 114.646546
       }
      },
      {
-      "pumps": 2,
-      "yieldT": 4424.77184,
+      "pumps": 2.0,
+      "yieldT": 8633.83312,
       "points": {
-       "none": 40.247718,
-       "orchard": 30.247718,
-       "drip": 32.247718,
-       "expand": 35.247718
+       "none": 143.638546,
+       "expand": 138.638546
+      }
+     },
+     {
+      "pumps": 3.0,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 165.0,
+       "expand": 160.0
+      }
+     },
+     {
+      "pumps": 3.125,
+      "yieldT": 10000.0,
+      "points": {
+       "none": 164.75,
+       "expand": 159.75
       }
      }
     ],

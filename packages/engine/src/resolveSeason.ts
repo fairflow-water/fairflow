@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { allocate, type LensParams } from './allocate.js';
-import { aquiferFull, aquiferSpill, inflowLossNext, nextStock, observedStock, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
+import { aquiferFull, aquiferSpill, inflowLossNext, nextStock, observedStock, pumpCap, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
 import { efficiency, equityPJ, equitySE, gini, giniCorrected, sustainability, sustainabilityBand, triangle } from './indicators.js';
 import { yieldOf } from './production.js';
 import { at, round6, type Allocation, type Basin, type LensId, type Scheme } from './types.js';
@@ -43,19 +43,19 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
   const allocable = Math.max(0, input.inflow - basin.reserve);
   const floor = input.scoring.survivalFloor;
   const allocation = allocate(input.lens, s, allocable, input.lensParams, floor);
-  const pumpCost = s.map(x => pumpCostPerMm3(basin, stock, x.seat));
-  const P = rationPumps(basin, stock, input.pumps);
+  const pumpCost = s.map(x => pumpCostPerMm3(basin, stock, x.seat, x.pumpCostFactor));
+  const P = rationPumps(basin, stock, input.pumps, s.map(x => pumpCap(basin, stock, x)));
   const W = allocation.Q.map((q, i) => q + at(P, i));
   const A = W.map((w, i) => w / at(s, i).demandMm3);
   const Y = W.map((w, i) => yieldOf(at(s, i), w, floor));
   const dL = Y.map((y, i) => (at(s, i).price * y) / 100 - at(pumpCost, i) * at(P, i)); // §2.4 ΔL = pY/100 − c_p P
   const pumpsTotal = P.reduce((a, b) => a + b, 0);
-  const returns = returnFlow(s, W);
+  const returns = returnFlow(s, W, basin.aquifer.returnRecharge);
   const stockNext = nextStock(basin, stock, allocation.surplusToAquifer, returns, pumpsTotal);
   const spill = aquiferSpill(basin, stock, allocation.surplusToAquifer, returns, pumpsTotal);
   const ePJ = equityPJ(s, W);
   const F = { consumed: efficiency(s, W, 'consumed', floor), diverted: efficiency(s, W, 'diverted', floor) };
-  const S = sustainability(s, W, allocable, basin.aquifer.naturalRecharge);
+  const S = sustainability(s, W, allocable, basin.aquifer.naturalRecharge, basin.aquifer.returnRecharge);
   const sCapped = A.map(a => Math.max(input.scoring.welfareSupplyFloor, Math.min(a, 1)));
   const Q = allocation.Q; // ADR 0004: the in-play dials, on the public allocation only
   const r = round6;

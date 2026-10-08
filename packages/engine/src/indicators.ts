@@ -52,14 +52,19 @@ export function efficiency(s: Scheme[], W: number[], basis: 'consumed' | 'divert
   return realised / design;
 }
 
-/** S: consumptive use over renewable supply, Σ β W / (β* AW + r₀), β* the demand-weighted mean β (§2.5). */
-export function sustainability(s: Scheme[], W: number[], allocable: number, naturalRecharge: number): number {
-  const betaStar = sum(s.map(x => x.beta * x.demandMm3)) / sum(s.map(x => x.demandMm3));
-  const renewable = betaStar * allocable + naturalRecharge;
+/**
+ * S: what leaves the basin's shared stores (consumption plus returns to the river below the off-takes) over the renewable
+ * water available after the reserve, (Σ β W + (1 − ρ) Σ (1 − β) W) / (AW + r₀)
+ * (ADR 0007). Return flows are not supply: consumption already excludes them. S > 1 exactly when aquifer storage falls.
+ */
+export function sustainability(s: Scheme[], W: number[], allocable: number, naturalRecharge: number, returnRecharge = 1): number {
+  const renewable = allocable + naturalRecharge;
   if (renewable <= 0) {
-    throw new RangeError('sustainability undefined: no renewable supply (β*·AW + r₀ = 0); a scenario needs allocable water or natural recharge in every season (§5.2 hard checks)');
+    throw new RangeError('sustainability undefined: no renewable supply (AW + r₀ = 0); a scenario needs allocable water or natural recharge in every season (§5.2 hard checks)');
   }
-  return sum(W.map((w, i) => at(s, i).beta * w)) / renewable;
+  // draw: consumed water plus the non-consumed water returned to the river below the off-takes
+  const draw = sum(W.map((w, i) => at(s, i).beta * w + (1 - returnRecharge) * (1 - at(s, i).beta) * w));
+  return draw / renewable;
 }
 
 /** Triangle vertices (§2.5): r₁ = E_PJ clipped to [0, 1], r₂ = min(F, 1), r₃ = 1 − clip((S − 1)/ramp, 0, 1). */

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 //
-// S2 — joining a room from the QR code (blueprint §5.2, R3): consent and the pre-survey come first; nobody sees a role
-// before both are confirmed. The role token is stored on this device so a reload rejoins the same role.
+// S2 — joining a room from the QR code (blueprint §5.2, R3): consent comes first; nobody sees a role before it is given.
+// The pre-session survey is not built yet, so the join records it as not done (review 2026-10-08, D6). The role token is stored on this device so a reload rejoins the same role.
 import { useEffect, useState } from 'react';
 import { deviceHash, joinRoom, roomInfo, tokenStore, type RoomInfo } from '../api';
 
@@ -10,7 +10,6 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
-  const [presurvey, setPresurvey] = useState(false);
 
   useEffect(() => {
     roomInfo(code).then(setInfo, (e: unknown) => setError(e instanceof Error ? e.message : 'unknown_room'));
@@ -28,13 +27,13 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
 
   if (error) return <p role="alert" className="notice">This room could not be joined ({error}).</p>;
   if (!info) return <p>Opening room {code}…</p>;
-  const ready = consent && presurvey;
+  const ready = consent;
   return (
     <section aria-labelledby="join-title" className="join">
       <h1 id="join-title">Room {info.room}</h1>
       <p>{info.scenario.name}</p>
+      <p className="hint">The game records your farm, your decisions and a random code for this device. It does not ask for your name.</p>
       <label><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to take part.</label>
-      <label><input type="checkbox" checked={presurvey} onChange={e => setPresurvey(e.target.checked)} /> I have answered the pre-session questions.</label>
       {ready && (
         <>
           <h2>Choose your farm</h2>

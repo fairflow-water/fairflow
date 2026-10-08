@@ -23,6 +23,9 @@ LensId = Literal[
 ]
 
 
+HA_MM_TO_MM3 = 1e-5  # §2.2 "Area × gross seasonal depth": 1 ha × 1 mm = 10 m³ = 1e-5 Mm³ (unit conversion)
+
+
 class MissingParameter(ValueError):
     """A parameter the computation needs was not supplied by the scenario or the registry."""
 
@@ -40,10 +43,17 @@ class Scheme:
     kappa: float
     price: float
     areaHa: float
+    # ADR 0008: pumping energy per m³ relative to the most efficient pump set (η_ref / η_i), applied always
+    pumpCostFactor: float = 1.0
+    # ADR 0008: the scheme's wells stop delivering when the observed stock is at or below this level (suction limit of
+    # shallow wells); None = wells deep enough for the whole game
+    wellsFailAtOrBelow: float | None = None
 
     @staticmethod
     def from_dict(d: Mapping[str, Any]) -> Scheme:
-        return Scheme(**{k: d[k] for k in Scheme.__dataclass_fields__})
+        optional = {"pumpCostFactor", "wellsFailAtOrBelow"}
+        fields = Scheme.__dataclass_fields__
+        return Scheme(**{k: d[k] for k in fields if k not in optional}, **{k: d[k] for k in optional if k in d})
 
 
 @dataclass(frozen=True)
@@ -56,6 +66,12 @@ class Aquifer:
     maxInflowLossMm3: float
     tankResolution: float  # ADR 0004: resolution of the observed level (prices pumping, drives coupling)
     capacity: float | None = None  # ADR 0006: B_max, recharge beyond it is rejected; None = unbounded (§2.6 as written)
+    returnRecharge: float = (
+        1.0  # share of non-consumed water that recharges the shared aquifer; the rest leaves the basin (ADR 0007)
+    )
+    # ADR 0008: baseflow lost per Mm³ of storage below B₀ (capture of streamflow, Konikow & Leake 2014); None = the
+    # §2.2 rule, maxInflowLossMm3 scaled over the storage below B_low
+    baseflowLossPerMm3: float | None = None
 
 
 @dataclass(frozen=True)
@@ -63,6 +79,7 @@ class Pump:
     cap: float
     costBase: float
     costSlope: float
+    capShare: float | None = None  # ADR 0008: well capacity as a share of the scheme's demand; None = the flat cap
 
 
 @dataclass(frozen=True)
@@ -85,8 +102,10 @@ class Basin:
                 a["maxInflowLossMm3"],
                 a["tankResolution"],
                 a.get("capacity"),
+                a.get("returnRecharge", 1.0),
+                a.get("baseflowLossPerMm3"),
             ),
-            pump=Pump(d["pump"]["cap"], d["pump"]["costBase"], d["pump"]["costSlope"]),
+            pump=Pump(d["pump"]["cap"], d["pump"]["costBase"], d["pump"]["costSlope"], d["pump"].get("capShare")),
         )
 
 

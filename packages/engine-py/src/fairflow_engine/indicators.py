@@ -62,18 +62,23 @@ def efficiency(
     return realised / design
 
 
-def sustainability(schemes: Sequence[Scheme], W: Sequence[float], allocable: float, natural_recharge: float) -> float:
-    """S = Σ β_iW_i / (β* AW_t + r₀), β* the demand-weighted mean consumptive fraction (§2.5)."""
+def sustainability(
+    schemes: Sequence[Scheme], W: Sequence[float], allocable: float, natural_recharge: float, return_recharge: float = 1.0
+) -> float:
+    """S = draw / (AW_t + r₀), draw = Σ β_iW_i + (1 − ρ) Σ (1 − β_i)W_i: water consumed plus non-consumed water returned
+    to the river below the off-takes, i.e. what leaves the basin's shared stores, over the renewable water available
+    after the reserve (ADR 0007; consumption over availability as in Hoekstra et al. 2012). In this one-store basin
+    AW_t + r₀ − draw = ΔB + spill, so S > 1 exactly when aquifer storage falls (Konikow & Leake 2014)."""
     beta = np.array([s.beta for s in schemes])
-    D = np.array([s.demandMm3 for s in schemes])
-    beta_star = float((beta * D).sum() / D.sum())
-    renewable = beta_star * allocable + natural_recharge
+    renewable = allocable + natural_recharge
     if renewable <= 0:
         raise ValueError(
-            "sustainability undefined: no renewable supply (β*·AW + r₀ = 0); a scenario needs allocable water or "
+            "sustainability undefined: no renewable supply (AW + r₀ = 0); a scenario needs allocable water or "
             "natural recharge in every season (§5.2 hard checks)"
         )
-    return float((beta * np.asarray(W, dtype=float)).sum()) / renewable
+    W_ = np.asarray(W, dtype=float)
+    draw = float((beta * W_).sum() + (1 - return_recharge) * ((1 - beta) * W_).sum())
+    return draw / renewable
 
 
 def triangle(e_pj: float, F: float, S: float, r3_ramp: float) -> dict[str, float]:

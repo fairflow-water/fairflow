@@ -52,6 +52,7 @@ def setup(**over) -> GameSetup:
         goals={x["id"]: (x["privateGoal"]["kind"], x["privateGoal"]["threshold"]) for x in SCENARIO["schemes"]},
         authorityMaxMeanPumping=REGISTRY["goals.authority.maxMeanPumping"],
         bands={k: tuple(REGISTRY[f"indicators.{k}Bands"]) for k in ("equity", "efficiency", "adequacy")},
+        orchardCrop={k: SCENARIO["basin"]["orchardCrop"][k] for k in ("depthMm", "beta", "yieldTHa", "ky", "price")},
     )
     return GameSetup(**{**base, **over})
 
@@ -67,6 +68,22 @@ def nonce(i: int) -> str:
 
 def new_game(i=0, **over) -> Game:
     g = Game.create(setup(**over), f"g{i}", "room", {"appVersion": "test", "engineVersion": "test"}, clock(), nonce(i))
+    for role in [*ROLES, AUTHORITY]:
+        g.submit(role, "join", deviceHash=f"h-{role}", consentGiven=True, presurveyComplete=True)
+    return g
+
+
+def kelvara_game(i=0, **over) -> Game:
+    """A game on the shipped Kelvara scenario, loaded as the room server loads it (ADR 0007, ADR 0008)."""
+    from dataclasses import replace
+
+    from fairflow_engine.scenario import load_scenario
+
+    loaded = load_scenario(SCENARIO, REGISTRY).setup
+    assert loaded is not None
+    g = Game.create(
+        replace(loaded, **over), f"k{i}", "room", {"appVersion": "test", "engineVersion": "test"}, clock(), nonce(i)
+    )
     for role in [*ROLES, AUTHORITY]:
         g.submit(role, "join", deviceHash=f"h-{role}", consentGiven=True, presurveyComplete=True)
     return g

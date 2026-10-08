@@ -139,26 +139,39 @@ def grab(pattern: str, text: str) -> list[Num]:
 
 
 def dynamic() -> dict:
-    """§3.3 dynamic fixtures and §3.4 cross-checks, read from the blueprint wording."""
+    """§3.3 dynamic fixtures and §3.4 cross-checks (full Kelvara scenario, ADR 0007/0008), read from the wording."""
     s33, s34 = section("### 3.3 Dynamic fixtures"), section("### 3.4 Cross-checks")
-    W = grab(
-        r"W = NUM / NUM / NUM; A ≥ 1 all; ΣY = NUM; F = NUM; S = NUM, r₃ = NUM; B = NUM; cost NUM × NUM = NUM each", s33
+    p = grab(
+        r"W = NUM / NUM / NUM; A = NUM all; ΣY = NUM; F = NUM; S = NUM, r₃ = NUM; B = NUM; cost per Mm³ NUM / NUM / NUM",
+        s33,
     )
-    dep = grab(r"B = NUM, NUM, NUM; season 3 rations NUM requests to NUM \(NUM each\)", s33)
-    costs = grab(r"pump cost of NUM at B₀, NUM at NUM, NUM at NUM and NUM at NUM", s34)
-    seats = grab(r"seat multipliers price out B \(NUM\) and C \(NUM\)", s34)
+    dep = grab(r"B = NUM, NUM, NUM, NUM, NUM, NUM after each season; the paddy wells fail in season NUM", s33)
+    lost = grab(r"baseflow lost NUM \+ NUM \+ NUM \+ NUM \+ NUM = NUM Mm³", s33)
+    coop = grab(r"B stays NUM; spill NUM \(dry\), NUM \(normal\), NUM \(wet\)", s33)
+    rf = grab(r"Σ\(1 − βᵢ\)Wᵢ = NUM \+ NUM \+ NUM = NUM Mm³; the share ρ = NUM, NUM, recharges the aquifer and NUM", s33)
+    bf = grab(r"B after the season = NUM, NUM, NUM, NUM \| next inflow reduced by NUM, NUM, NUM, NUM Mm³", s33)
+    vm = grab(
+        r"Dry, utilitarian voted, no pumping \| .*?UWF NUM ranks NUM of 9; PWF₃ NUM ranks NUM of 9; EWF NUM ranks NUM of 9; "
+        r"CWF NUM ranks NUM of 9; SWF NUM ranks",
+        s33,
+    )
+    cost = grab(
+        r"Pump cost per Mm³ at an observed level B = NUM, NUM, NUM, NUM: A NUM, NUM, NUM, NUM; B NUM, NUM, NUM, NUM; "
+        r"C NUM, NUM, NUM, NUM",
+        s34,
+    )
+    marginal = grab(r"A NUM above, NUM below; B NUM above, NUM below; C NUM above, NUM below", s34)
     return {
-        "pumping": {"pumps": W[9], "W": W[0:3], "sumY": W[3], "F": W[4], "S": W[5], "r3": W[6], "B": W[7], "spend": W[10]},
-        "depletion": {"B": dep[0:3], "requests": dep[3], "rationedTotal": dep[4], "each": dep[5]},
-        "returnFlow": grab(r"Σ\(1 − βᵢ\)Wᵢ = NUM \+ NUM \+ NUM = NUM Mm³ plus r₀", s33),
-        "coupling": grab(r"\| GW–SW coupling \| B falls to NUM \| next inflow reduced by NUM Mm³", s33),
-        "equalisandum": grab(r"E\\_SE per claimant NUM; per hectare NUM \(= E\\_PJ\); per person NUM", s33),
-        "verdictMismatch": grab(
-            r"UWF NUM is the highest UWF of any lens in this season \(column-wise comparison\); PWF₃ NUM, SWF NUM", s33
-        ),
-        "capabilityPerPerson": grab(r"per-person E\\_SE is highest \(NUM\)", s34)[0],
-        "pumpCost": {"atB0": costs[0], "pairs": [(costs[i + 1], costs[i]) for i in (1, 3, 5)]},
-        "seatCostAt8": {"B": seats[0], "C": seats[1]},
+        "pumping": {"W": p[0:3], "A": p[3], "sumY": p[4], "F": p[5], "S": p[6], "r3": p[7], "B": p[8], "cost": p[9:12]},
+        "depletion": {"B": dep[0:6], "paddyWellsFail": dep[6], "baseflowLost": lost[0:5], "baseflowTotal": lost[5]},
+        "cooperative": {"B": coop[0], "spill": dict(zip(("dry", "normal", "wet"), coop[1:4], strict=True))},
+        "returnFlow": {"parts": rf[0:3], "total": rf[3], "rho": rf[4], "toAquifer": rf[5], "toRiver": rf[6]},
+        "baseflow": list(zip(bf[0:4], bf[4:8], strict=True)),
+        "equalisandum": grab(r"E\\_SE per claimant NUM; per hectare NUM; per person NUM", s33),
+        "verdictMismatch": {"UWF": vm[0], "PWF3": vm[2], "EWF": vm[4], "CWF": vm[6]},
+        "capability": grab(r"Capability with κ = 1 in the dry year: E\\_PJ = NUM, per-person E\\_SE = NUM", s34),
+        "pumpCost": {"B": cost[0:4], "A": cost[4:8], "Bscheme": cost[8:12], "C": cost[12:16]},
+        "marginalPoints": {"A": marginal[0:2], "B": marginal[2:4], "C": marginal[4:6]},
     }
 
 
@@ -171,14 +184,14 @@ def _row(label_regex: str, text: str) -> list[str]:
 def basin_v1() -> dict:
     """The default basin of §2.1–2.2, in the §3 v1 reduction ('with β = 1 and r₀ = 0'), read from the blueprint."""
     s21, s22 = section("### 2.1 State"), section("### 2.2 Parameters and grounding")
-    assert "with β = 1 and r₀ = 0" in BLUEPRINT
+    assert "β = 1, r₀ = 0, no pumping, no actions" in BLUEPRINT
     inflow = grab(r"Wet NUM / Normal NUM / Dry NUM", _row(r"Iₜ", s21)[-1])
     D = numbers(_row(r"Dᵢ,ₜ", s21)[-1])
     K = numbers(_row(r"Kᵢ,ₜ", s21)[-1])
     ky = numbers(_row(r"Yield response Kᵧ", s22)[0])
     N = numbers(_row(r"Livelihoods Nᵢ", s22)[0])
     areas = grab(
-        r"NUM ha drip orchard at .*?, NUM ha flooded paddy .*?, NUM ha sprinkler cereals", _row(r"Demands Dᵢ", s22)[1]
+        r"NUM ha drip citrus at .*?, NUM ha flooded paddy at .*?, NUM ha sprinkler wheat at", _row(r"Demands Dᵢ", s22)[1]
     )
     B0, Bres, Blow = numbers(_row(r"Aquifer B₀, B\\_res, B\\_low", s22)[0])
     pump = grab(
@@ -187,7 +200,7 @@ def basin_v1() -> dict:
     )
     coupling = grab(r"\(B\\_low − Bₜ\)/B\\_low × NUM Mm³", _row(r"Groundwater–surface coupling", s22)[0])
     reserve = grab(r"^NUM", _row(r"R", s21)[-1])[0]
-    price = grab(r"at p = NUM", BLUEPRINT)[0]
+    price = numbers(_row(r"Crop value pᵢ", s22)[0])  # ADR 0007: harvest value, wheat = 1
     kappa = grab(r"κ default NUM", BLUEPRINT)[0]
     names = ["A", "B", "C"]
     schemes = [
@@ -201,8 +214,10 @@ def basin_v1() -> dict:
             "beta": 1.0,
             "people": N[i],
             "kappa": kappa,
-            "price": price,
+            "price": price[i],
             "areaHa": areas[i],
+            "pumpCostFactor": 1.0,  # ADR 0008 fields explicit, as the mirror reads them without defaults
+            "wellsFailAtOrBelow": None,
         }
         for i, n in enumerate(names)
     ]
@@ -217,8 +232,10 @@ def basin_v1() -> dict:
             "maxInflowLossMm3": coupling[0],
             "tankResolution": registry()["basin.aquifer.tankResolution"],
             "capacity": None,  # ADR 0006: the §3 fixtures isolate one term each, so the v1 basin is unbounded
+            "returnRecharge": 1.0,  # ADR 0007: the v1 reduction sends all return flow (none, β = 1) to the aquifer
+            "baseflowLossPerMm3": None,  # ADR 0008: the §2.2 coupling rule
         },  # ADR 0004
-        "pump": {"cap": pump[0], "costBase": pump[1], "costSlope": pump[2]},
+        "pump": {"cap": pump[0], "costBase": pump[1], "costSlope": pump[2], "capShare": None},
     }
     plain = json.loads(
         json.dumps({"schemes": schemes, "basin": basin, "inflow": dict(zip(["wet", "normal", "dry"], inflow, strict=True))})

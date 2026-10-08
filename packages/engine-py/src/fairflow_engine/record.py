@@ -24,9 +24,9 @@ import numpy as np
 import scipy
 
 from .allocate import allocate
-from .aquifer import pump_cost_per_mm3
+from .aquifer import pump_cap, pump_cost_per_mm3
 from .indicators import adequacy_band, efficiency_band, equity_band
-from .model import Basin, LensId, LensParams, Scheme, Scoring, round6
+from .model import HA_MM_TO_MM3, Basin, LensId, LensParams, Scheme, Scoring, round6
 from .season import SeasonResult, resolve_season, verdict
 from .welfare import pwf_ede
 
@@ -40,7 +40,7 @@ TUTORIAL_CARD = "normal"  # R3 season 0: "normal year"
 REVIEW_PARTS = (1, 2, 3)  # §5.2 S10 "Parts 1–3 of the review form"
 REVIEW_ITEM = re.compile(r"[a-z0-9_.-]{1,40}")  # item ids come from content/review-form.json
 ONCE_PER_GAME = ("orchard", "drip")  # §4.3 Orchard "once", Drip "once"; Expand "repeatable"
-SCHEME_STATE = ("demandMm3", "capacityT", "price", "beta", "areaHa")  # what actions change (§2.2, §4.3)
+SCHEME_STATE = ("demandMm3", "capacityT", "price", "beta", "areaHa", "ky")  # what actions change (§2.2, §4.3)
 
 # §6.2 as amended by ADR 0004: during play only these are public; every figure computed on actual use is sealed
 # until the debrief (each one, with the public allocation, lets the table solve for individual pumping).
@@ -77,7 +77,13 @@ SEALED_RESULT_FIELDS = (
 def with_state(x: Scheme, v: Mapping[str, float]) -> Scheme:
     """A scheme with the parameters in force this season (the SCHEME_STATE fields)."""
     return replace(
-        x, demandMm3=v["demandMm3"], capacityT=v["capacityT"], price=v["price"], beta=v["beta"], areaHa=v["areaHa"]
+        x,
+        demandMm3=v["demandMm3"],
+        capacityT=v["capacityT"],
+        price=v["price"],
+        beta=v["beta"],
+        areaHa=v["areaHa"],
+        ky=v.get("ky", x.ky),  # records made before ky was carried
     )
 
 
@@ -106,6 +112,15 @@ class GameSetup:
     goals: Mapping[str, tuple[str, float]]  # scheme id → (private goal kind, threshold) (R15, scenario privateGoal)
     authorityMaxMeanPumping: float  # R15 "average pumping ≤ 2 Mm³/season" (registry)
     bands: Mapping[str, tuple[float, float]]  # equity, efficiency and adequacy band edges (§2.2, registry)
+    # Actions each scheme may play (scenario `actions`); a scheme not listed may play every action. An estate already on
+    # drip gains nothing physical from Drip, and an orchard from Orchard (Kelvara basin, 2026-10-08).
+    schemeActions: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    # The basin's orchard crop (scenario `basin.orchardCrop`): depthMm and beta (its gross depth under its own irrigation
+    # method), yieldTHa, ky, price. Orchard switches a scheme to it at its own area and method (ADR 0007).
+    orchardCrop: Mapping[str, float] | None = None
+
+    def actions_for(self, scheme: str) -> tuple[str, ...]:
+        return self.schemeActions.get(scheme, tuple(self.actions))
 
 
 @dataclass
@@ -338,11 +353,17 @@ class Game:
         out = {r: dict(v) for r, v in s.schemes.items()}
         for role, action in s.pendingActions.items():
             a, v = self.setup.actions[action], out[role]
-            if action == "orchard":  # D × 1.3, p × 2
-                v["demandMm3"] *= a["demandFactor"]
-                v["price"] *= a["priceFactor"]
-            elif action == "drip":  # D × 0.8 at constant K; β → 0.90
-                v["demandMm3"] *= a["demandFactor"]
+            if action == "orchard":  # ADR 0007: the scheme takes the basin's orchard crop at its own area and method
+                crop = self.setup.orchardCrop
+                if crop is None:
+                    raise Rejection("no_orchard_crop", "the scenario defines no orchard crop")
+                # the tree consumes what it consumes (depth × β of the crop's own method); the scheme's method decides
+                # how much must be diverted for that: D = area × depth × β_crop / β_scheme
+                v["demandMm3"] = v["areaHa"] * crop["depthMm"] * crop["beta"] / v["beta"] * HA_MM_TO_MM3
+                v["capacityT"] = v["areaHa"] * crop["yieldTHa"]
+                v["price"], v["ky"] = crop["price"], crop["ky"]
+            elif action == "drip":  # ADR 0007: C′ = c·β·D, D′ = C′/β_drip, β′ = β_drip, K unchanged
+                v["demandMm3"] = a["consumptionFactor"] * v["beta"] * v["demandMm3"] / a["betaAfter"]
                 v["beta"] = a["betaAfter"]
             elif action == "expand":  # area, D and K × 1.2
                 for k in ("areaHa", "demandMm3", "capacityT"):
@@ -578,17 +599,20 @@ class Game:
         points for 0..cap pump tokens, with and without each action still open to it. The preview assumes the others
         do not pump (pumping is rationed only when the stock runs short, §2.6)."""
         schemes = self._schemes(s)
-        cap = self.setup.basin.pump.cap
         for i, x in enumerate(schemes):
+            cap = pump_cap(self._basin(s), s.stock, x)  # ADR 0008: share of demand; 0 once shallow wells fail
             open_actions = [
                 a
-                for a in self.setup.actions
+                for a in self.setup.actions_for(x.id)
                 if not self._is_tutorial(s) and not (a in ONCE_PER_GAME and a in s.used.get(x.id, []))
             ]
             options = []
-            for k in range(int(cap) + 1):  # layout: whole pump tokens, 0..cap (R10)
+            levels = [float(k) for k in range(int(cap) + 1)]  # layout: whole pump tokens, 0..cap (R10)
+            if cap > levels[-1] + 1e-9:  # tolerance: a fractional cap is offered as its own last level (§7.2)
+                levels.append(cap)
+            for k in levels:
                 pumps = [0.0] * len(schemes)
-                pumps[i] = float(k)
+                pumps[i] = k
                 r = self._resolve(s, lens, floor_rule, pumps)
                 points = {"none": r["dL"][i]}
                 points.update({a: round6(r["dL"][i] - self.setup.actions[a]["cost"]) for a in open_actions})
@@ -600,7 +624,8 @@ class Game:
                 {
                     "role": x.id,
                     "cap": cap,
-                    "pumpCostPerMm3": round6(pump_cost_per_mm3(self._basin(s), s.stock, x.seat)),
+                    "pumpCostPerMm3": round6(pump_cost_per_mm3(self._basin(s), s.stock, x.seat, x.pumpCostFactor)),
+                    "wellsDry": x.wellsFailAtOrBelow is not None and cap == 0,
                     "actions": {a: self.setup.actions[a]["cost"] for a in open_actions},
                     "options": options,
                     "assumes": "the other farms do not pump",
@@ -613,10 +638,14 @@ class Game:
         self._need(s.phase == "private", "wrong_phase", s.phase)
         self._need(actor in self._scheme_roles(), "not_a_scheme", actor)
         self._need(actor not in s.committed, "already_committed", actor)
-        self._need(0 <= pumps <= self.setup.basin.pump.cap, "pump_out_of_range", f"0..{self.setup.basin.pump.cap}")
+        scheme = next(x for x in self._schemes(s) if x.id == actor)
+        cap = pump_cap(self._basin(s), s.stock, scheme)
+        self._need(0 <= pumps <= cap + 1e-9, "pump_out_of_range", f"0..{cap}")  # tolerance: caps rounded (§7.2)
         if action is not None:  # R10: at most one Action token
             self._need(not self._is_tutorial(s), "no_actions_in_tutorial", action)
             self._need(action in self.setup.actions, "unknown_action", action)
+            self._need(action in self.setup.actions_for(actor), "action_not_for_this_scheme", action)
+            self._need(action != "orchard" or self.setup.orchardCrop is not None, "no_orchard_crop", action)
             self._need(not (action in ONCE_PER_GAME and action in s.used.get(actor, [])), "action_used", action)
         self._emit(
             "action.played",

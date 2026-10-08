@@ -103,59 +103,107 @@ def test_wet_year(lens):
     near(r["eSE"]["claimant"], want["eSE"], "wet E_SE")
 
 
+# ---- §3.3 and §3.4 in the full Kelvara scenario (ADR 0007, ADR 0008), loaded as a game loads it -----------------------
+def kelvara():
+    import json
+
+    from fairflow_engine.scenario import load_scenario
+
+    scenario = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
+    return load_scenario(scenario, bp.registry()).setup
+
+
+FULL = kelvara()
+
+
+def full_season(card, pumps, stock, loss=0.0, lens="proportional"):
+    params = dict(FULL.lenses)[lens]
+    return resolve_season(FULL.schemes, FULL.basin, FULL.inflow[card] - loss, stock, lens, params, pumps, FULL.scoring)
+
+
+def caps(stock):
+    from fairflow_engine.aquifer import pump_cap
+
+    return [pump_cap(FULL.basin, stock, s) for s in FULL.schemes]
+
+
 def test_pumping():
     want = bp.dynamic()["pumping"]
-    r = season("proportional", "normal", pumps=[want["pumps"]] * 3)
+    b0 = FULL.basin.aquifer.initial
+    r = full_season("normal", caps(b0), b0)
     for i in range(3):
         near(r["W"][i], want["W"][i], f"W[{i}]")
-        assert r["A"][i] >= 1
+        near(r["A"][i], want["A"], f"A[{i}]")
+        near(r["pumpCost"][i], want["cost"][i], f"cost[{i}]")
     near(sum(r["Y"]), want["sumY"], "ΣY")
     near(r["F"]["consumed"], want["F"], "F")
     near(r["S"], want["S"], "S")
     near(r["triangle"]["r3"], want["r3"], "r3")
     near(r["stockNext"], want["B"], "B")
-    for c, p in zip(r["pumpCost"], r["P"], strict=True):
-        near(c * p, want["spend"], "pump spend")
 
 
-def test_depletion():
+def test_selfish_depletion_dries_the_paddy_wells_and_takes_baseflow():
+    """§3.3 'Selfish depletion' (ADR 0008): each scheme pumps its capacity every season; caps follow the observed level."""
     want = bp.dynamic()["depletion"]
-    stock, loss, stocks = BASIN.aquifer.initial, 0.0, []
-    for card in ("dry", "dry", "normal"):
-        r = season("proportional", card, pumps=[2, 2, 2], stock=stock, inflow=INFLOW[card] - loss)
+    stock, loss, path, lost, failed = FULL.basin.aquifer.initial, 0.0, [], [], None
+    for n, card in enumerate(("dry", "dry", "normal", "normal", "wet", "dry"), start=1):
+        c = caps(stock)
+        if c[1] == 0 and failed is None:
+            failed = n
+        r = full_season(card, c, stock, loss)
         stock, loss = r["stockNext"], r["inflowLossNext"]
-        stocks.append(stock)
-    for got, w in zip(stocks, want["B"], strict=True):
+        path.append(stock)
+        lost.append(loss)
+    for got, w in zip(path, want["B"], strict=True):
         near(got, w, "B path")
-    near(r["pumpsTotal"], want["rationedTotal"], "rationed total")
-    for p in r["P"]:
-        near(p, want["each"], "rationed each")
+    assert failed == int(want["paddyWellsFail"])
+    for got, w in zip(lost, want["baseflowLost"], strict=False):  # the loss after each of the first five seasons
+        near(got, w, "baseflow lost")
+    near(sum(lost[:5]), want["baseflowTotal"], "baseflow total")
 
 
-def test_pump_cost_and_seat_multipliers():
-    d = bp.dynamic()
-    near(pump_cost_per_mm3(BASIN, BASIN.aquifer.initial, 1), d["pumpCost"]["atB0"], "cost at B0")
-    for B, cost in d["pumpCost"]["pairs"]:
-        near(pump_cost_per_mm3(BASIN, B, 1), cost, f"cost at B={B}")
-    near(pump_cost_per_mm3(BASIN, 8, 2), d["seatCostAt8"]["B"], "seat B at 8")
-    near(pump_cost_per_mm3(BASIN, 8, 3), d["seatCostAt8"]["C"], "seat C at 8")
+def test_cooperation_keeps_the_aquifer_full_and_spilling():
+    want = bp.dynamic()["cooperative"]
+    b0 = FULL.basin.aquifer.initial
+    for card in ("dry", "normal", "wet"):
+        r = full_season(card, [0, 0, 0], b0)
+        near(r["stockNext"], want["B"], f"{card} B")
+        near(r["spill"], want["spill"][card], f"{card} spill")
 
 
-def test_return_flow_beta_set():
-    *parts, total = bp.dynamic()["returnFlow"]
-    beta = bp.beta_by_method()
-    schemes = [replace(s, beta=beta[m]) for s, m in zip(SCHEMES, ["drip", "flood", "sprinkler"], strict=True)]
-    basin = replace(BASIN, aquifer=replace(BASIN.aquifer, naturalRecharge=bp.natural_recharge()))
-    r = season("proportional", "normal", schemes=schemes, basin=basin)
-    for s, w, part in zip(schemes, r["W"], parts, strict=True):
-        near((1 - s.beta) * w, part, "return part")
-    near(r["returnFlow"], total, "return total")
-    assert r["stockNext"] == pytest.approx(BASIN.aquifer.initial + r["returnFlow"] + bp.natural_recharge())
+def test_return_flow_splits_between_aquifer_and_river():
+    want = bp.dynamic()["returnFlow"]
+    r = full_season("normal", [0, 0, 0], FULL.basin.aquifer.initial)
+    parts = [(1 - s.beta) * w for s, w in zip(FULL.schemes, r["W"], strict=True)]
+    for got, w in zip(parts, want["parts"], strict=True):
+        near(got, w, "return part")
+    near(sum(parts), want["total"], "return total")
+    assert FULL.basin.aquifer.returnRecharge == pytest.approx(float(want["rho"]))
+    near(r["returnFlow"], want["toAquifer"], "to the aquifer")
+    near(sum(parts) - r["returnFlow"], want["toRiver"], "to the river")
 
 
-def test_coupling():
-    B, cut = bp.dynamic()["coupling"]
-    near(inflow_loss_next(BASIN, B), cut, "inflow cut")
+def test_baseflow_loss():
+    for B, cut in bp.dynamic()["baseflow"]:
+        near(inflow_loss_next(FULL.basin, float(B)), cut, f"inflow cut at B={B}")
+
+
+def test_pump_cost_by_scheme_and_level():
+    d = bp.dynamic()["pumpCost"]
+    for k, B in enumerate(d["B"]):
+        for scheme, key in zip(FULL.schemes, ("A", "Bscheme", "C"), strict=True):
+            near(pump_cost_per_mm3(FULL.basin, float(B), scheme.seat, scheme.pumpCostFactor), d[key][k], f"{key} at {B}")
+
+
+def test_marginal_value_points():
+    from fairflow_engine.production import value_of
+
+    floor = FULL.scoring.survivalFloor
+    for s, key in zip(FULL.schemes, ("A", "B", "C"), strict=True):
+        above_want, below_want = bp.dynamic()["marginalPoints"][key]
+        kink, d = floor * s.demandMm3, s.demandMm3
+        near((value_of(s, d, floor) - value_of(s, kink, floor)) / (d - kink) / 100, above_want, f"{key} above")
+        near(value_of(s, kink, floor) / kink / 100, below_want, f"{key} below")
 
 
 def test_equalisandum():
@@ -167,11 +215,11 @@ def test_equalisandum():
 
 
 def test_capability_per_person_is_highest():
-    want = bp.dynamic()["capabilityPerPerson"]
+    epj, per_person = bp.dynamic()["capability"]
     cap = season("capability", "dry")
-    assert cap["ePJ"] < 0
-    near(cap["eSE"]["person"], want, "capability per-person E_SE")
-    assert all(season(lens, "dry")["eSE"]["person"] <= cap["eSE"]["person"] for lens in LENSES)
+    near(cap["ePJ"], epj, "capability E_PJ")
+    near(cap["eSE"]["person"], per_person, "capability per-person E_SE")
+    assert all(season(lens, "dry")["eSE"]["person"] <= cap["eSE"]["person"] + 1e-9 for lens in LENSES)
 
 
 def test_verdict_match():
@@ -190,12 +238,15 @@ def test_verdict_match():
 
 
 def test_verdict_mismatch_utilitarian():
-    uwf, pwf3, swf = bp.dynamic()["verdictMismatch"]
+    """§3.3: with no pumping the verdict matches the vote; the welfare columns do not favour the utilitarian lens."""
+    want = bp.dynamic()["verdictMismatch"]
     u = season("utilitarian", "dry")
-    near(u["welfare"]["UWF"], uwf, "UWF")
-    near(u["welfare"]["PWF"], pwf3, "PWF3")
-    near(u["welfare"]["SWF"], swf, "SWF")
-    assert all(season(lens, "dry")["welfare"]["UWF"] <= u["welfare"]["UWF"] for lens in LENSES)
+    near(u["welfare"]["UWF"], want["UWF"], "UWF")
+    near(u["welfare"]["PWF"], want["PWF3"], "PWF3")
+    near(u["welfare"]["EWF"], want["EWF"], "EWF")
+    near(u["welfare"]["CWF"], want["CWF"], "CWF")
+    egal = season("egalitarian", "dry")["welfare"]["UWF"]
+    assert all(season(lens, "dry")["welfare"]["UWF"] <= egal + 1e-9 for lens in LENSES)
 
 
 def test_prioritarian_limits():

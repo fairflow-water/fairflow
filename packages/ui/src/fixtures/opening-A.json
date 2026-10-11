@@ -464,6 +464,7 @@
       }
      }
     ],
+    "previewLimit": 10.0,
     "assumes": "the other farms do not pump"
    },
    "visibility": "self"

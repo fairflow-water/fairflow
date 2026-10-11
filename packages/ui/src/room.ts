@@ -28,7 +28,9 @@ export interface Allocation { lens: string; Q: number[]; adequacyBands?: Band[] 
 export interface PrivateTurn {
   role: string; cap: number; pumpCostPerMm3: number; actions: Record<string, number>;
   wellsDry?: boolean; // ADR 0008: shallow wells below their suction limit
-  options: { pumps: number; yieldT: number; points: Record<string, number> }[];
+  // review E11: levels above previewLimit (the stock the public tank level guarantees) carry no preview
+  options: { pumps: number; yieldT: number | null; points: Record<string, number> | null }[];
+  previewLimit?: number;
 }
 export interface Dials { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } }
 export interface PublicResult {

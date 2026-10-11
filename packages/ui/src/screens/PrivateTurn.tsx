@@ -60,7 +60,7 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
   useEffect(() => () => { if (undo.current) clearTimeout(undo.current); }, []);
 
   const option = turn.options[level] ?? turn.options[0];
-  const points = option ? option.points[action ?? 'none'] ?? option.points['none'] ?? 0 : 0;
+  const points = option?.points ? option.points[action ?? 'none'] ?? option.points['none'] ?? 0 : 0;
 
   function commit() {
     setPending(true);
@@ -88,7 +88,10 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
         {turn.wellsDry && <p className="notice" role="status">Your wells are dry: the water table has fallen below what your pumps can lift, so you cannot pump this season.</p>}
         {!turn.wellsDry && <p>Your wells can deliver up to {fmt(turn.cap)} Mm³ this season.</p>}
         <p>Pump cost at today's aquifer level: {fmt(turn.pumpCostPerMm3)} points per Mm³. During play the table sees only the total pumped, though others may be able to work out part of it from the total. At the debrief the facilitator may show each farm's pumping.</p>
-        {option && <p data-testid="preview">Harvest {fmt(option.yieldT, 0)} t → {signed(points)} points</p>}
+        {option && option.yieldT !== null && <p data-testid="preview">Harvest {fmt(option.yieldT, 0)} t → {signed(points)} points</p>}
+        {option && option.yieldT === null && (
+          <p data-testid="preview">Above {fmt(turn.previewLimit ?? 0)} Mm³ your wells may run short: what you get then depends on the stock and on what the others pump.</p>
+        )}
       </div>
       <div className="actions">
         <button type="button" aria-expanded={openActions} onClick={() => setOpenActions(o => !o)}>

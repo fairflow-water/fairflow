@@ -32,7 +32,9 @@ describe('S6 private turn', () => {
     render(<PrivateTurn turn={turn} last={lastMine} demand={lastMine.W} decisionS={null} onCommit={() => undefined} />);
     expect(screen.getByText(/Last season you used/).textContent).toContain(fmt(lastMine.points));
     for (const option of turn.options) {
-      expect(screen.getByTestId('preview').textContent).toContain(fmt(option.points['none']!));
+      const text = screen.getByTestId('preview').textContent ?? '';
+      if (option.points) expect(text).toContain(fmt(option.points['none']!));
+      else expect(text).toContain('may run short'); // review E11: no preview above the public limit
       if (option.pumps < turn.cap) await userEvent.click(screen.getByRole('button', { name: 'One more' }));
     }
   });
@@ -49,7 +51,7 @@ describe('S6 private turn', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Actions:/ }));
     const first = Object.keys(turn.actions)[0]!;
     await userEvent.click(screen.getByRole('radio', { name: new RegExp(first, 'i') }));
-    expect(screen.getByTestId('preview').textContent).toContain(fmt(turn.options[0]!.points[first]!));
+    expect(screen.getByTestId('preview').textContent).toContain(fmt(turn.options[0]!.points![first]!));
   });
   it('commits after the undo window, and an undo cancels', () => {
     vi.useFakeTimers();

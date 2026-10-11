@@ -24,7 +24,7 @@ import numpy as np
 import scipy
 
 from .allocate import allocate
-from .aquifer import pump_cap, pump_cost_per_mm3
+from .aquifer import observed_stock, pump_cap, pump_cost_per_mm3
 from .indicators import adequacy_band, efficiency_band, equity_band
 from .model import HA_MM_TO_MM3, Basin, LensId, LensParams, Scheme, Scoring, round6
 from .season import SeasonResult, resolve_season, verdict
@@ -598,8 +598,14 @@ class Game:
     def _open_private_turns(self, s: State, lens: LensId, floor_rule: str | None) -> None:
         """S6 (R10): each scheme sees, privately, its pump cost and the engine's preview of every choice — harvest and
         points for 0..cap pump tokens, with and without each action still open to it. The preview assumes the others
-        do not pump (pumping is rationed only when the stock runs short, §2.6)."""
+        do not pump (pumping is rationed only when the stock runs short, §2.6).
+
+        Review E11 (2026-10-11): harvest and points are previewed only up to the stock above B_res that the observed
+        level guarantees; there, with the others not pumping, nothing is rationed, so the preview depends on public
+        information only and is exact. Higher levels stay on offer (pumping is physical and uses the true stock) with
+        no preview: what they deliver depends on the stock and on what the others pump."""
         schemes = self._schemes(s)
+        limit = round6(max(0.0, observed_stock(self._basin(s), s.stock) - self.setup.basin.aquifer.reserve))
         for i, x in enumerate(schemes):
             cap = pump_cap(self._basin(s), s.stock, x)  # ADR 0008: share of demand; 0 once shallow wells fail
             open_actions = [
@@ -607,11 +613,14 @@ class Game:
                 for a in self.setup.actions_for(x.id)
                 if not self._is_tutorial(s) and not (a in ONCE_PER_GAME and a in s.used.get(x.id, []))
             ]
-            options = []
+            options: list[dict[str, Any]] = []
             levels = [float(k) for k in range(int(cap) + 1)]  # layout: whole pump tokens, 0..cap (R10)
             if cap > levels[-1] + 1e-9:  # tolerance: a fractional cap is offered as its own last level (§7.2)
                 levels.append(cap)
             for k in levels:
+                if k > limit + 1e-9:  # tolerance: water rounded to 1e-6 (§7.2); E11: no preview above the public limit
+                    options.append({"pumps": k, "yieldT": None, "points": None})
+                    continue
                 pumps = [0.0] * len(schemes)
                 pumps[i] = k
                 r = self._resolve(s, lens, floor_rule, pumps)
@@ -629,6 +638,7 @@ class Game:
                     "wellsDry": x.wellsFailAtOrBelow is not None and cap == 0,
                     "actions": {a: self.setup.actions[a]["cost"] for a in open_actions},
                     "options": options,
+                    "previewLimit": limit,
                     "assumes": "the other farms do not pump",
                 },
                 season=s.season,

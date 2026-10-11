@@ -11,9 +11,9 @@
   "pass": true
  },
  "dilemma": {
-  "profitableAboveLow": 0.9406847133757962,
+  "profitableAboveLow": 0.9405093513728611,
   "seatsPricedOutBelowLow": 0,
-  "deficitChecksBelowLow": 205,
+  "deficitChecksBelowLow": 203,
   "selfishReserveBySeason5": 0.0,
   "selfishNotBeforeSeason3": 1.0,
   "selfishBelowLowBySeason5": 0.98,
@@ -95,7 +95,7 @@
   "principled:capability": 20.0,
   "principled:sufficientarian": 20.0,
   "selfish": 14.246143259999998,
-  "mixed": 19.1579768875
+  "mixed": 19.159859625
  },
  "meanSpill": {
   "principled:utilitarian": 12.9726,

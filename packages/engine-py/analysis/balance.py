@@ -91,18 +91,23 @@ def action_of(strategy: str, opened: dict, pumps: float) -> str | None:
     farm is not already at its pump cap, so the new area can be watered from its own wells."""
     if strategy != "selfish" or "expand" not in opened["actions"]:
         return None
-    levels = [(o["pumps"], o["points"]["none"]) for o in opened["options"]]
-    i = next(j for j, (k, _) in enumerate(levels) if abs(k - pumps) < EPS)
-    pays = i > 0 and levels[i][1] > levels[i - 1][1] + EPS  # the last pump level taken still raised points
+    levels = [(o["pumps"], o["points"]["none"]) for o in opened["options"] if o["points"] is not None]
+    i = next((j for j, (k, _) in enumerate(levels) if abs(k - pumps) < EPS), len(levels) - 1)
+    pays = i > 0 and levels[i][1] > levels[i - 1][1] + EPS  # the last previewed level taken still raised points
     return "expand" if pays and pumps < opened["cap"] - EPS else None
 
 
 def pumps_of(strategy: str, opened: dict, history: list[dict]) -> float:
     if strategy.startswith("principled:"):
         return 0.0
-    if strategy == "conditional" and not (history and history[-1]["pumpsTotal"] > EPS):
-        return 0.0
-    best = max(opened["options"], key=lambda o: (o["points"]["none"], -o["pumps"]))
+    if strategy == "conditional" and not (history and history[-1]["pumpsTotalObserved"] > EPS):
+        return 0.0  # reacts to the total the table sees (ADR 0004)
+    known = [o for o in opened["options"] if o["points"] is not None]
+    best = max(known, key=lambda o: (o["points"]["none"], -o["pumps"]))
+    # review E11: above the public limit there is no preview; a selfish farm still pumping profitably at the limit
+    # asks for its full capacity and lets the physical rationing decide
+    if best is known[-1] and len(known) < len(opened["options"]) and len(known) > 1:
+        return float(opened["options"][-1]["pumps"])
     return float(best["pumps"])
 
 
@@ -139,9 +144,10 @@ def play(setup: Any, seed: int, table: Sequence[str], force_lens: str | None = N
                   and e["season"] == climate_season(g)}  # fmt: skip
         for r in roles:
             o = opened[r]
-            none = {round(x["pumps"]): x["points"]["none"] for x in o["options"]}
+            known = [x for x in o["options"] if x["points"] is not None]
+            none = {round(x["pumps"]): x["points"]["none"] for x in known}
             # a deficit season: more water would raise this farm's harvest (pumping one token raises its yield)
-            deficit = o["options"][0]["yieldT"] + EPS < max(x["yieldT"] for x in o["options"])
+            deficit = known[0]["yieldT"] + EPS < max(x["yieldT"] for x in known)
             profitable = none.get(1, none[0]) > none[0] + EPS
             profit_checks.append({"stock": stock, "role": r, "profitable": profitable, "deficit": deficit})
             k = pumps_of(strategy[r], o, history)

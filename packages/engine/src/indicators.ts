@@ -55,7 +55,8 @@ export function efficiency(s: Scheme[], W: number[], basis: 'consumed' | 'divert
 /**
  * S: what leaves the basin's shared stores (consumption plus returns to the river below the off-takes) over the renewable
  * water available after the reserve, (Σ β W + (1 − ρ) Σ (1 − β) W) / (AW + r₀)
- * (ADR 0007). Return flows are not supply: consumption already excludes them. S > 1 exactly when aquifer storage falls.
+ * (ADR 0007), the second argument being the aquifer's natural gain this season (ADR 0009). Return flows are not supply:
+ * consumption already excludes them. S > 1 exactly when aquifer storage falls.
  */
 export function sustainability(s: Scheme[], W: number[], allocable: number, naturalRecharge: number, returnRecharge = 1): number {
   const renewable = allocable + naturalRecharge;

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { allocate, type LensParams } from './allocate.js';
-import { aquiferFull, aquiferSpill, inflowLossNext, nextStock, observedStock, pumpCap, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
+import { aquiferFull, aquiferSpill, inflowLossNext, naturalGain, nextStock, observedStock, pumpCap, pumpCostPerMm3, rationPumps, returnFlow } from './aquifer.js';
 import { efficiency, equityPJ, equitySE, gini, giniCorrected, sustainability, sustainabilityBand, triangle } from './indicators.js';
 import { yieldOf } from './production.js';
 import { at, round6, type Allocation, type Basin, type LensId, type Scheme } from './types.js';
@@ -55,7 +55,7 @@ export function resolveSeason(input: SeasonInput): SeasonResult {
   const spill = aquiferSpill(basin, stock, allocation.surplusToAquifer, returns, pumpsTotal);
   const ePJ = equityPJ(s, W);
   const F = { consumed: efficiency(s, W, 'consumed', floor), diverted: efficiency(s, W, 'diverted', floor) };
-  const S = sustainability(s, W, allocable, basin.aquifer.naturalRecharge, basin.aquifer.returnRecharge);
+  const S = sustainability(s, W, allocable, naturalGain(basin, stock), basin.aquifer.returnRecharge);
   const sCapped = A.map(a => Math.max(input.scoring.welfareSupplyFloor, Math.min(a, 1)));
   const Q = allocation.Q; // ADR 0004: the in-play dials, on the public allocation only
   const r = round6;

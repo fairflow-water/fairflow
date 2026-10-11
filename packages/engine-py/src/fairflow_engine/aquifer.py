@@ -59,21 +59,34 @@ def return_flow(schemes: Sequence[Scheme], W: Sequence[float], recharge_share: f
     return recharge_share * sum((1 - s.beta) * w for s, w in zip(schemes, W, strict=True))
 
 
+def natural_gain(basin: Basin, stock: float) -> float:
+    """The aquifer's natural net gain this season. ADR 0009: with the baseflow coupling of ADR 0008, natural recharge r₀
+    is balanced at full storage by natural discharge to the river, which the climate cards already contain as baseflow
+    (Theis 1940); below B₀ the discharge falls by κ(B₀ − B), and that is what the aquifer gains and the river loses
+    (capture: Konikow & Leake 2014). So the gain is min(r₀, κ·max(0, B₀ − B)), B the observed level, equal to the river's
+    loss in the same season. Without κ, the §2.6 v1 rule: all of r₀."""
+    q = basin.aquifer
+    if q.baseflowLossPerMm3 is None:
+        return q.naturalRecharge
+    return min(q.naturalRecharge, q.baseflowLossPerMm3 * max(0.0, q.initial - observed_stock(basin, stock)))
+
+
 def _unbounded_stock(basin: Basin, stock: float, surplus: float, returns: float, pumped: float) -> float:
-    """max(B_res, B_t + surplus + r₀ + Σ(1 − β_i)W_i − ΣP_i): §2.6 before the capacity of ADR 0006."""
-    return max(basin.aquifer.reserve, stock + surplus + basin.aquifer.naturalRecharge + returns - pumped)
+    """max(B_res, B_t + surplus + natural gain + ρΣ(1 − β_i)W_i − ΣP_i): §2.6 before the capacity of ADR 0006."""
+    return max(basin.aquifer.reserve, stock + surplus + natural_gain(basin, stock) + returns - pumped)
 
 
 def next_stock(basin: Basin, stock: float, surplus: float, returns: float, pumped: float) -> float:
-    """B_{t+1} = min(B_max, max(B_res, B_t + surplus + r₀ + Σ(1 − β_i)W_i − ΣP_i)) (§2.6, ADR 0006 B_max)."""
+    """B_{t+1} = min(B_max, max(B_res, B_t + surplus + natural gain + ρΣ(1 − β_i)W_i − ΣP_i)) (§2.6, ADR 0006, 0009)."""
     unbounded = _unbounded_stock(basin, stock, surplus, returns, pumped)
     cap = basin.aquifer.capacity
     return unbounded if cap is None else min(cap, unbounded)
 
 
 def aquifer_spill(basin: Basin, stock: float, surplus: float, returns: float, pumped: float) -> float:
-    """ADR 0006: recharge a full aquifer rejects (Theis 1940). It leaves as the natural discharge the climate cards'
-    inflows already contain, so it is recorded for the debrief and never added to the river (no double counting)."""
+    """ADR 0006, ADR 0009: recharge a full aquifer rejects (Theis 1940): this season's river surplus and return flow that
+    it cannot store. It leaves in the same season as discharge to the river below the off-takes, springs and
+    evapotranspiration, so it is recorded (and reported in the debrief) but added to no scheme's inflow."""
     return _unbounded_stock(basin, stock, surplus, returns, pumped) - next_stock(basin, stock, surplus, returns, pumped)
 
 
@@ -89,6 +102,6 @@ def inflow_loss_next(basin: Basin, stock_next: float) -> float:
     rule: maxLoss·(B_low − B)/B_low while B < B_low."""
     q = basin.aquifer
     seen = observed_stock(basin, stock_next)
-    if q.baseflowLossPerMm3 is not None:
-        return q.baseflowLossPerMm3 * max(0.0, q.initial - seen)
+    if q.baseflowLossPerMm3 is not None:  # ADR 0009: discharge cannot fall below zero, so the loss is at most r₀
+        return min(q.naturalRecharge, q.baseflowLossPerMm3 * max(0.0, q.initial - seen))
     return q.maxInflowLossMm3 * max(0.0, (q.lowThreshold - seen) / q.lowThreshold)

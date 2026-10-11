@@ -6,7 +6,7 @@ Purpose
 -------
 Regenerates the blueprint's §3 worked examples ("reference vectors and
 fixtures") for the shipped scenario. It is written from the specification
-only -- blueprint §2-§4 and §9.2, ADR 0003, ADR 0006, ADR 0007 and ADR 0008
+only -- blueprint §2-§4 and §9.2, ADR 0003, ADR 0006, ADR 0007, ADR 0008 and ADR 0009
 (where the blueprint text and ADRs 0007/0008 differ, the ADRs win) -- and it
 neither reads nor imports the engine (`packages/engine-py/src`,
 `packages/engine/src`), its tests or the balance harness. The engine's tests
@@ -73,12 +73,17 @@ A9  Pump cost (ADR 0006 §1, ADR 0008 §4): c = pumpCostFactorᵢ × (costBase +
     (§2.2; the scenario multipliers are all 1). costBase and costSlope come
     from the scenario's `actions.pump`, which overrides the registry's v1
     values (2, 6).
-A10 Baseflow (ADR 0008 §6): next season's inflow falls by
-    κ·max(0, B₀ − B_obs,ₜ₊₁), κ = `gwSwCoupling.lossPerMm3BelowFull`. The
-    scenario also carries `maxInflowLossMm3` = 1; ADR 0008 does not say it
-    caps the new rule. With B ≥ B_res = 10 the loss is at most κ·10 = 1, so
-    the question is moot here; no cap is applied.
-A11 One round = one irrigation year (ADR 0008 §1): r₀ is added once per round.
+A10 Baseflow and natural gain (ADR 0008 §6, ADR 0009). With the coupling
+    (κ = `gwSwCoupling.lossPerMm3BelowFull`) r₀ is balanced at full storage
+    by natural discharge to the river, already inside the card inflows. The
+    aquifer gains G(Bₜ) = min(r₀, κ·max(0, B₀ − B_obs,ₜ)) in place of r₀, and
+    next season's inflow falls by min(r₀, κ·max(0, B₀ − B_obs,ₜ₊₁)): the river
+    loses next season exactly what the aquifer gains next season. S uses
+    AWₜ + G(Bₜ) as denominator, and AWₜ + G − ΣβW − (1−ρ)Σ(1−β)W = ΔB + spill
+    is asserted every season. The scenario's `maxInflowLossMm3` (= 1) is not
+    used; the min(r₀, ·) cap of ADR 0009 is the binding one (also 1 here).
+    Without κ (the v1 reduction) G = r₀ (= 0 there) and there is no loss.
+A11 One round = one irrigation year (ADR 0008 §1): G is added once per round.
 A12 v1 reduction (§2.6, §3): β = 1, r₀ = 0, no pumping, no actions, no
     aquifer capacity (ADR 0006 §3). Under β = 1 the return flow is 0, so ρ
     plays no part. Only single-season static tables are computed in the v1
@@ -188,7 +193,7 @@ class Basin:
     Blow: float
     r0: float
     rho: float  # ADR 0007 §4 return-flow recharge share
-    kappa_loss: float  # ADR 0008 §6 baseflow loss per Mm³ below full
+    kappa_loss: float | None  # ADR 0008 §6 / ADR 0009 κ; None = no coupling (v1 reduction)
     seat_mult: tuple
     deck: dict
     cap_share: float
@@ -249,7 +254,7 @@ def load_scenario(variant: str = "full") -> tuple[Basin, list[Scheme]]:
         assert abs(s["areaHa"] * s["depthMm"] * MM_HA_TO_MM3 - d["demandMm3"]) < 1e-6
         assert abs(s["areaHa"] * s["yieldTHa"] - d["capacityT"]) < 1e-6
     if variant == "v1":
-        basin = replace(basin, r0=0.0, Bmax=None)
+        basin = replace(basin, r0=0.0, Bmax=None, kappa_loss=None)
         schemes = [replace(s, beta=1.0) for s in schemes]
     return basin, schemes
 
@@ -476,7 +481,7 @@ def r3_of(S: float) -> float:
     return 1.0 - min(max((S - 1.0) / R3_RAMP, 0.0), 1.0)
 
 
-def indicators(basin: Basin, schemes, Q, P, AW) -> dict:
+def indicators(basin: Basin, schemes, Q, P, AW, G: float) -> dict:
     """§2.4 production, §2.5 indicators (ADR 0007 S with ρ), §2.7 welfare for one season."""
     Q = np.asarray(Q, float)
     P = np.asarray(P, float)
@@ -494,7 +499,7 @@ def indicators(basin: Basin, schemes, Q, P, AW) -> dict:
     leaving = consumed + (1 - basin.rho) * returned  # ADR 0007 §7 numerator
     F = (float((p * Y).sum()) / consumed) / (float((p * K).sum()) / float((beta * D).sum()))
     F_div = (float((p * Y).sum()) / W.sum()) / (float((p * K).sum()) / D.sum())
-    S = leaving / (AW + basin.r0)
+    S = leaving / (AW + G)  # ADR 0009: natural gain G replaces r₀
     E_PJ = one_minus_cv(A)
     r1 = min(max(E_PJ, 0.0), 1.0)
     r2 = min(max(F, 0.0), 1.0)
@@ -553,9 +558,18 @@ def pump_cost(basin: Basin, s: Scheme, B: float) -> float:
     return c
 
 
+def natural_gain(basin: Basin, B: float) -> float:
+    """ADR 0009: G(B) = min(r₀, κ·max(0, B₀ − B_obs)); without coupling (v1) G = r₀."""
+    if basin.kappa_loss is None:
+        return basin.r0
+    return min(basin.r0, basin.kappa_loss * max(0.0, basin.B0 - observed(B)))
+
+
 def baseflow_loss(basin: Basin, B_next: float) -> float:
-    """ADR 0008 §6: next season's inflow falls by κ·max(0, B₀ − B_obs) (A10)."""
-    return basin.kappa_loss * max(0.0, basin.B0 - observed(B_next))
+    """ADR 0009: next season's inflow falls by min(r₀, κ·max(0, B₀ − B_obs)) -- what the aquifer gains."""
+    if basin.kappa_loss is None:
+        return 0.0
+    return min(basin.r0, basin.kappa_loss * max(0.0, basin.B0 - observed(B_next)))
 
 
 def ration(basin: Basin, B: float, req) -> np.ndarray:
@@ -568,12 +582,13 @@ def ration(basin: Basin, B: float, req) -> np.ndarray:
 
 
 def aquifer_step(basin: Basin, B: float, AW: float, Q, P, W, betas) -> dict:
-    """B_{t+1} = min(B_max, max(B_res, B + surplus + r₀ + ρΣ(1−β)W − ΣP)); spill = excess."""
+    """B_{t+1} = min(B_max, max(B_res, B + surplus + G(B) + ρΣ(1−β)W − ΣP)); spill = excess (ADR 0009)."""
+    G = natural_gain(basin, B)
     surplus = AW - float(np.sum(Q))
     assert surplus >= -EPS, surplus
     ret_each = (1 - np.asarray(betas)) * np.asarray(W)
     ret = float(ret_each.sum())
-    unbounded = B + surplus + basin.r0 + basin.rho * ret - float(np.sum(P))
+    unbounded = B + surplus + G + basin.rho * ret - float(np.sum(P))
     floored = max(basin.Bres, unbounded)
     assert floored - unbounded <= EPS, "B_res floor bound: rationing reading A7 violated"
     B_next = floored if basin.Bmax is None else min(basin.Bmax, floored)
@@ -585,6 +600,7 @@ def aquifer_step(basin: Basin, B: float, AW: float, Q, P, W, betas) -> dict:
         ret_each=ret_each,
         recharge_ret=basin.rho * ret,
         river_ret=(1 - basin.rho) * ret,
+        G=G,
     )
 
 
@@ -622,7 +638,7 @@ CHECKS: list[dict] = []  # every computed season, for the self-check section
 
 def check_balance(case: str, basin: Basin, AW, Q, ind, B, step, P=None, caps=None, quiet=False) -> None:
     surplus_ok = abs(float(np.sum(Q)) + step["surplus"] - AW) < 1e-9
-    lhs = AW + basin.r0 - ind["consumed"] - (1 - basin.rho) * ind["returned"]  # ADR 0007 §7
+    lhs = AW + natural_gain(basin, B) - ind["consumed"] - (1 - basin.rho) * ind["returned"]  # ADR 0009
     rhs = (step["B_next"] - B) + step["spill"]
     ok_rat = True if P is None else (B - float(np.sum(P)) >= basin.Bres - 1e-9)
     ok_cap = True if caps is None else bool(np.all(np.asarray(P) <= np.asarray(caps) + 1e-9))
@@ -667,7 +683,7 @@ def run_game(
         req = caps.copy() if pump == "full" else np.zeros(len(schemes))
         P = ration(basin, B, req)
         cost = np.array([pump_cost(basin, s, B) for s in schemes])
-        ind = indicators(basin, schemes, Q, P, AW)
+        ind = indicators(basin, schemes, Q, P, AW, natural_gain(basin, B))
         step = aquifer_step(basin, B, AW, Q, P, ind["W"], [s.beta for s in schemes])
         check_balance(f"{case} r{t + 1} ({card})", basin, AW, Q, ind, B, step, P, caps, quiet)
         act = (actions or {}).get(t, {})
@@ -709,7 +725,7 @@ def static_case(basin, schemes, card, lens, gamma=PRIO_GAMMA_FIXTURE, label=""):
     AW = basin.inflow[card] - basin.reserve
     Q = allocate(lens, schemes, AW, gamma)
     P = np.zeros(len(schemes))
-    ind = indicators(basin, schemes, Q, P, AW)
+    ind = indicators(basin, schemes, Q, P, AW, natural_gain(basin, basin.B0))
     step = aquifer_step(basin, basin.B0, AW, Q, P, ind["W"], [s.beta for s in schemes])
     check_balance(label or f"{card} {lens}", basin, AW, Q, ind, basin.B0, step)
     return dict(AW=AW, **ind, **step)
@@ -851,7 +867,7 @@ def print_wet():
         f"(Σ pY = {t0(v1['value'])}), E_PJ = {f2(v1['E_PJ'])}, E_SE = {f2(v1['E_SE'])}, "
         f"F = {f2(v1['F'])}, S = {f2(v1['S'])} (v1 reduction). Full scenario: F = {f2(fs['F'])}, "
         f"S = {f2(fs['S'])}, r₃ = {f2(fs['r3'])}, score = {f2(fs['score'])}; recharge = surplus "
-        f"{f2(fs['surplus'])} + r₀ {f2(basin.r0)} + ρ·Σ(1−β)W {f2(fs['recharge_ret'])}; aquifer "
+        f"{f2(fs['surplus'])} + natural gain G {f2(fs['G'])} + ρ·Σ(1−β)W {f2(fs['recharge_ret'])}; aquifer "
         f"{f2(fs['B_next'])} after the season with spill {f2(fs['spill'])} Mm³ "
         f"(capacity {f2(basin.Bmax)}).\n"
     )
@@ -997,21 +1013,29 @@ def fixture_return_flow():
     print(
         f"Σ(1 − βᵢ)Wᵢ = {' + '.join(f2(x) for x in s['ret_each'])} = {f2(s['ret'])} Mm³; "
         f"ρ = {basin.rho:g}: to the aquifer ρ·Σ = {f2(s['recharge_ret'])}, to the river below the "
-        f"off-takes (1 − ρ)·Σ = {f2(s['river_ret'])}. Plus r₀ = {f2(basin.r0)} and surplus "
+        f"off-takes (1 − ρ)·Σ = {f2(s['river_ret'])}. Plus natural gain G = {f2(s['G'])} (full aquifer) and surplus "
         f"{f2(s['surplus'])}: B {f2(s['B'])} → {f2(s['B_next'])}, spill {f2(s['spill'])} "
         f"(unbounded balance {f2(s['B_next'] + s['spill'])}); S = {f2(s['S'])}.\n"
     )
 
 
 def fixture_baseflow():
-    print(f"#### (e) Baseflow loss next season (κ = {load_scenario()[0].kappa_loss:g} per Mm³ below full, observed level)\n")
+    print(
+        f"#### (e) Baseflow loss next season = natural gain next season (κ = "
+        f"{load_scenario()[0].kappa_loss:g} per Mm³ below full, capped at r₀, observed level; ADR 0009)\n"
+    )
     basin, _ = load_scenario("full")
     print(
         table(
-            ["B after season", "observed", "next inflow loss (Mm³)"],
-            [[f2(b), f2(observed(b)), f2(baseflow_loss(basin, b))] for b in (20, 18, 15, 12, 10)],
+            ["B after season", "observed", "next inflow loss (Mm³)", "next natural gain G (Mm³)"],
+            [
+                [f2(b), f2(observed(b)), f2(baseflow_loss(basin, b)), f2(natural_gain(basin, b))]
+                for b in (20, 18, 15, 12, 10)
+            ],
         )
     )
+    for b in np.arange(basin.Bres, basin.Bmax + 1e-9, 0.25):
+        assert abs(baseflow_loss(basin, b) - natural_gain(basin, b)) < 1e-12
     print()
 
 
@@ -1312,7 +1336,7 @@ def self_check():
         "played round: passed.\n"
     )
     print(
-        f"Every computed season: ΣQ + surplus = AW; AW + r₀ − ΣβW − (1 − ρ)Σ(1 − β)W = ΔB + spill; "
+        f"Every computed season: ΣQ + surplus = AW; AW + G − ΣβW − (1 − ρ)Σ(1 − β)W = ΔB + spill (ADR 0009); "
         f"0 ≤ Q ≤ D; B − ΣP ≥ B_res; P ≤ capacity: {n_ok}/{len(CHECKS)} pass (B_res floor never bound).\n"
     )
     rows = [
@@ -1329,7 +1353,7 @@ def self_check():
         for c in CHECKS
         if not c["case"].startswith("§3") and not c["quiet"]
     ]
-    print(table(["Case", "AW", "ΣQ", "surplus", "AW + r₀ − ΣβW − (1−ρ)Σ(1−β)W", "ΔB", "spill", ""], rows))
+    print(table(["Case", "AW", "ΣQ", "surplus", "AW + G − ΣβW − (1−ρ)Σ(1−β)W", "ΔB", "spill", ""], rows))
     print()
 
 
@@ -1383,7 +1407,7 @@ def blueprint_text():
     w("## 3. Reference vectors and fixtures")
     w("")
     w(
-        "Computed from §2 for the Kelvara basin (§2.2; ADR 0007, ADR 0008) by an independent reference "
+        "Computed from §2 for the Kelvara basin (§2.2; ADR 0007, ADR 0008, ADR 0009) by an independent reference "
         "implementation, `packages/engine-py/analysis/reference_model.py`, written from this specification "
         "without importing the engine. §3.1 and §3.2 use the v1 reduction of §2.6: **β = 1, r₀ = 0, no "
         "pumping, no actions** (and no aquifer capacity). Allocations Q, adequacies A, yields Y, E\\_PJ and "
@@ -1392,7 +1416,9 @@ def blueprint_text():
         f"the full scenario: β = {trio([s.beta for s in sf])}, r₀ = {bf.r0:g}, ρ = {bf.rho:g}, "
         f"B₀ = B\\_max = {bf.B0:g}, B\\_low = {bf.Blow:g}, B\\_res = {bf.Bres:g}, pump capacity "
         f"{bf.cap_share:g} × D, cost fᵢ({bf.cost_base:g} + {bf.cost_slope:g}·max(0, 1 − B/B₀)) per Mm³ on the "
-        f"observed level, baseflow loss {bf.kappa_loss:g}(B₀ − B), one season per year. Values are rounded only "
+        f"observed level, natural gain min(r₀, κ(B₀ − B)) replacing r₀ (κ = {bf.kappa_loss:g}; ADR 0009), "
+        "so a full aquifer gains nothing naturally and next season's river inflow falls by exactly what the "
+        "aquifer gains, one season per year. Values are rounded only "
         "for printing (two decimals, tonnes as integers). E\\_SE per claimant. "
         f"Wet year (AW = {AWw:g}): every lens gives Q = {trio(wet['Q'])}, {f2(wet['surplus'])} Mm³ to the "
         f"aquifer, A = 1, ΣY = {t0(wet['SY'])} t, E\\_PJ = {f2(wet['E_PJ'])}, E\\_SE = {f2(wet['E_SE'])}, "
@@ -1512,13 +1538,14 @@ def blueprint_text():
         f"{f2(sum(losses))} Mm³ |"
     )
     coop, _ = run_game(bf, sf, deck, case="bp cooperative", quiet=True)
-    assert all(abs(o["B_next"] - bf.B0) < EPS for o in coop)
+    assert all(abs(o["B_next"] - bf.B0) < EPS and o["G"] == 0.0 for o in coop)
     sp = {}
     for o in coop:
         sp.setdefault(o["card"], o["spill"])
     w(
         f"| Cooperative | Same deck, no pumping | B stays {f2(bf.B0)}; spill "
-        f"{', '.join(f'{f2(v)} ({k})' for k, v in sp.items())} Mm³ a season; S ≤ "
+        f"{', '.join(f'{f2(v)} ({k})' for k, v in sp.items())} Mm³ a season, flowing to the river below the "
+        f"off-takes; a full aquifer's natural gain is {t0(coop[0]['G'])}; S ≤ "
         f"{f2(max(o['S'] for o in coop))} |"
     )
     (rf,), _ = run_game(bf, sf, ["normal"], case="bp return", quiet=True)
@@ -1526,7 +1553,7 @@ def blueprint_text():
         f"| Return flow | Normal, proportional, no pumping | Σ(1 − βᵢ)Wᵢ = "
         f"{' + '.join(f2(x) for x in rf['ret_each'])} = {f2(rf['ret'])} Mm³; the share ρ = {bf.rho:g}, "
         f"{f2(rf['recharge_ret'])}, recharges the aquifer and {f2(rf['river_ret'])} returns to the river below "
-        f"the off-takes; with r₀ = {bf.r0:g} the full aquifer spills {f2(rf['spill'])} |"
+        f"the off-takes; with natural gain {t0(rf['G'])} at full storage the aquifer spills {f2(rf['spill'])} |"
     )
     bl = (18, 15, 12, 10)
     w(
@@ -1726,7 +1753,8 @@ def main():
     print(
         f"Scenario: {SCENARIO_PATH.relative_to(ROOT).as_posix()}; registry: "
         f"{REGISTRY_PATH.relative_to(ROOT).as_posix()}. v1 = β 1, r₀ 0, no capacity, no pumping, no "
-        f"actions; full = scenario β, r₀ {basin.r0:g}, ρ {basin.rho:g}, capacity {basin.Bmax:g}, "
+        f"actions; full = scenario β, natural gain min(r₀ {basin.r0:g}, κ(B₀ − B)) (ADR 0009), "
+        f"ρ {basin.rho:g}, capacity {basin.Bmax:g}, "
         f"B_low {basin.Blow:g}, B_res {basin.Bres:g}, pump capShare {basin.cap_share:g}, cost "
         f"factor × ({basin.cost_base:g} + {basin.cost_slope:g}·max(0, 1 − B/B₀)), baseflow κ "
         f"{basin.kappa_loss:g}, tank resolution {TANK_RES:g}. Prioritarian rows use γ = "

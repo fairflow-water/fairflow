@@ -65,10 +65,11 @@ def efficiency(
 def sustainability(
     schemes: Sequence[Scheme], W: Sequence[float], allocable: float, natural_recharge: float, return_recharge: float = 1.0
 ) -> float:
-    """S = draw / (AW_t + r₀), draw = Σ β_iW_i + (1 − ρ) Σ (1 − β_i)W_i: water consumed plus non-consumed water returned
+    """S = draw / (AW_t + G), draw = Σ β_iW_i + (1 − ρ) Σ (1 − β_i)W_i: water consumed plus non-consumed water returned
     to the river below the off-takes, i.e. what leaves the basin's shared stores, over the renewable water available
-    after the reserve (ADR 0007; consumption over availability as in Hoekstra et al. 2012). In this one-store basin
-    AW_t + r₀ − draw = ΔB + spill, so S > 1 exactly when aquifer storage falls (Konikow & Leake 2014)."""
+    after the reserve: the allocable river plus the aquifer's natural gain G this season (ADR 0007, ADR 0009; G = r₀
+    in the v1 rule). Consumption over availability as in Hoekstra et al. (2012). In this one-store basin
+    AW_t + G − draw = ΔB + spill, so S > 1 exactly when aquifer storage falls (Konikow & Leake 2014)."""
     beta = np.array([s.beta for s in schemes])
     renewable = allocable + natural_recharge
     if renewable <= 0:

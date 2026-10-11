@@ -12,6 +12,7 @@ from .aquifer import (
     aquifer_full,
     aquifer_spill,
     inflow_loss_next,
+    natural_gain,
     next_stock,
     observed_stock,
     pump_cap,
@@ -145,7 +146,7 @@ def resolve_season(
     stock_next = next_stock(basin, stock, alloc.surplusToAquifer, returns, pumped)
     spill = aquifer_spill(basin, stock, alloc.surplusToAquifer, returns, pumped)
     e_pj = equity_pj(schemes, W)
-    S = sustainability(schemes, W, allocable, basin.aquifer.naturalRecharge, basin.aquifer.returnRecharge)
+    S = sustainability(schemes, W, allocable, natural_gain(basin, stock), basin.aquifer.returnRecharge)
     s_capped = [max(scoring.welfareSupplyFloor, min(a, 1.0)) for a in A]
     tri = triangle(e_pj, efficiency(schemes, W, "consumed", floor), S, scoring.r3Ramp)
     wf = welfare(schemes, A, scoring.welfareGamma, floor, scoring.welfareSupplyFloor)

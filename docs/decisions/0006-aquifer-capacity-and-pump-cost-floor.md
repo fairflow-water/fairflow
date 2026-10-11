@@ -35,15 +35,15 @@ The first real-browser game (2026-10-07) exposed two linked gaps in blueprint v3
    - Recharge refills it up to B₀ and no further. This is also the shallowest level at which the blueprint calibrates the pump cost, so with the default the cost formula is only ever used where it was calibrated.
    - A scenario may set `basin.aquifer.capacity` above `initial`, to start part-full. When omitted, the loader uses `initial`. A capacity below `initial`, or at or below `lowThreshold`, is refused at load.
    - The engine accepts no capacity (unbounded) only to reproduce the blueprint §3 fixtures, which isolate one term each. No shipped scenario uses that.
-4. **Where the spill goes.** The spill leaves the basin as natural discharge. It is **not** added to the river.
-   - The climate cards' inflows are absolute values calibrated on a basin with a healthy aquifer (§2.2). They already contain the normal baseflow, which is why the GW–SW coupling only subtracts while B < B_low. Adding the spill back would count it twice.
-   - Routing part of the spill to the next season's inflow is a calibration question for the balance harness, not a v1.0 default.
+4. **Where the spill goes** (corrected by ADR 0009). The spill is rejected recharge (Theis 1940): water a full aquifer cannot store. It leaves the aquifer in the same season as discharge to the river below the schemes' off-takes, springs and evapotranspiration. It is recorded and reported in the debrief, and added to no scheme's inflow.
+   - The climate cards' inflows describe the river beside a full aquifer, so they already contain its natural discharge; ADR 0009 balances natural recharge against that discharge, so the spill is this season's surplus and return flow, not the cards' baseflow a second time.
+   - It reaches the river only below every off-take, so no scheme can divert it this season, and one round is one irrigation year with no storage lag, so none of it is carried into the next season. Routing a lagged share to the next inflow remains a calibration question for the balance harness.
 5. **Disclosure (ADR 0004).**
    - The spill is computed on actual use (return flows depend on each farm's pumping), so it is **sealed** until the debrief, like `stockNext`.
    - The table sees `aquiferFull`: whether the observed level has reached the observed capacity. That follows from the observed level the table already sees, so it discloses nothing new.
    - ADR 0004's leakage measurements sampled stock between B_low and B₀, which this decision does not change. At the capacity, the observed level stops moving, which can only reveal less.
    - Measured (`analysis/privacy_leakage_capacity.md`, same seed and seasons as ADR 0004): for the implemented display at normal stock, outsider identified 9 % (8–11) against 10 % (9–12) before, outsider knows whether pumped 17 % (15–19) against 18 % (16–21), insider identified 41 % (38–43) against 41 % (39–44), insider knows whether pumped 66 % (63–68) against 68 % (65–70). Low stock is unchanged, as expected. No figure rises.
-6. **Debrief value.** "Holding back filled the aquifer; beyond full, the water left the basin" is the water-budget myth enacted, and the spill gives the debrief its number.
+6. **Debrief value.** "Holding back filled the aquifer; beyond full, the water flowed past the off-takes to the river downstream. Pumping it would have taken it from the river downstream, not from nowhere" — capture, enacted, and the spill gives the debrief its number (ADR 0009).
 
 ## Consequences
 

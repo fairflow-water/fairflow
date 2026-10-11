@@ -49,11 +49,21 @@ export function rationPumps(basin: Basin, stock: number, requests: number[], cap
 export const returnFlow = (schemes: Scheme[], W: number[], rechargeShare = 1): number =>
   rechargeShare * W.reduce((t, w, i) => t + (1 - at(schemes, i).beta) * w, 0);
 
-/** §2.6 before the capacity of ADR 0006: max(B_res, B_t + surplus + r₀ + return flows − Σ P). */
-const unboundedStock = (basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number =>
-  Math.max(basin.aquifer.reserve, stock + surplus + basin.aquifer.naturalRecharge + returns - pumped);
+/**
+ * ADR 0009 — the aquifer's natural net gain: with the baseflow coupling, min(r₀, κ·max(0, B₀ − B)) on the observed level,
+ * equal to the baseflow the river loses this season (capture); without it, the §2.6 v1 rule, all of r₀.
+ */
+export function naturalGain(basin: Basin, stock: number): number {
+  const q = basin.aquifer;
+  if (q.baseflowLossPerMm3 === null) return q.naturalRecharge;
+  return Math.min(q.naturalRecharge, q.baseflowLossPerMm3 * Math.max(0, q.initial - observedStock(basin, stock)));
+}
 
-/** §2.6 with ADR 0006 — B_{t+1} = min(B_max, max(B_res, B_t + surplus + r₀ + return flows − Σ P)). */
+/** §2.6 before the capacity of ADR 0006: max(B_res, B_t + surplus + natural gain + return flows − Σ P). */
+const unboundedStock = (basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number =>
+  Math.max(basin.aquifer.reserve, stock + surplus + naturalGain(basin, stock) + returns - pumped);
+
+/** §2.6 with ADR 0006, ADR 0009 — B_{t+1} = min(B_max, max(B_res, B_t + surplus + natural gain + return flows − Σ P)). */
 export function nextStock(basin: Basin, stock: number, surplus: number, returns: number, pumped: number): number {
   const unbounded = unboundedStock(basin, stock, surplus, returns, pumped);
   const cap = basin.aquifer.capacity;
@@ -77,6 +87,6 @@ export function aquiferFull(basin: Basin, stock: number): boolean {
 export function inflowLossNext(basin: Basin, stockNext: number): number {
   const q = basin.aquifer;
   const seen = observedStock(basin, stockNext);
-  if (q.baseflowLossPerMm3 !== null) return q.baseflowLossPerMm3 * Math.max(0, q.initial - seen);
+  if (q.baseflowLossPerMm3 !== null) return Math.min(q.naturalRecharge, q.baseflowLossPerMm3 * Math.max(0, q.initial - seen)); // ADR 0009: ≤ r₀
   return q.maxInflowLossMm3 * Math.max(0, (q.lowThreshold - seen) / q.lowThreshold);
 }

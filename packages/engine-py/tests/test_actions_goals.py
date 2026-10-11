@@ -142,7 +142,7 @@ def test_band_words_and_brief_are_public():
     assert all(set(e["payload"]["public"]["bands"]) == {"ePJ", "eSE", "F"} for e in pub)
     assert all("adequacyBands" in e["payload"] for e in project(g.events, "public") if e["type"] == "allocation.issued")
     brief = next(e for e in project(g.events, "public") if e["type"] == "game.ended")["payload"]["brief"]
-    assert brief["heaviestPumping"]["pumpsTotal"] == max(e["payload"]["public"]["pumpsTotal"] for e in pub)
+    assert brief["heaviestPumping"]["pumpsTotalObserved"] == max(e["payload"]["public"]["pumpsTotalObserved"] for e in pub)
     assert brief["lensChanges"] == 0
     assert not any(e["type"] == "goal.result" for e in project(g.events, "public"))
     assert audit(g.setup, g.events) == []

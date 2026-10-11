@@ -86,7 +86,8 @@ describe('S7 reveal', () => {
   it('shows total pumping, the coarse tank and the sustainability band word first', () => {
     render(<Reveal result={result} mine={null} season={1} />);
     const text = screen.getByRole('region').textContent ?? '';
-    expect(text).toContain(fmt(result.pumpsTotal));
+    expect(text).toContain(`about ${fmt(result.pumpsTotalObserved)} Mm³`); // ADR 0004: to the tank's resolution
+    expect(Number.isInteger(result.pumpsTotalObserved)).toBe(true);
     expect(text).toContain(fmt(result.observedStockNext));
     expect(text).toContain(result.sustainabilityBand);
   });

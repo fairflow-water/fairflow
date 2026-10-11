@@ -46,7 +46,7 @@ SCHEME_STATE = ("demandMm3", "capacityT", "price", "beta", "areaHa", "ky")  # wh
 # until the debrief (each one, with the public allocation, lets the table solve for individual pumping).
 PUBLIC_RESULT_FIELDS = (
     "allocable",
-    "pumpsTotal",
+    "pumpsTotalObserved",  # ADR 0004 (amended 2026-10-11): to the tank's resolution; the exact total is sealed
     "observedStockNext",
     "aquiferFull",
     "inflowLossNext",
@@ -54,6 +54,7 @@ PUBLIC_RESULT_FIELDS = (
     "sustainabilityBand",
 )
 SEALED_RESULT_FIELDS = (
+    "pumpsTotal",
     "pumpCost",
     "P",
     "W",
@@ -750,26 +751,27 @@ class Game:
         season and how often it changed, whether a floor vote was held."""
         resolved = [e for e in self.events if e["type"] == "season.resolved"]
         lenses = [e["payload"]["lens"] for e in self.events if e["type"] == "lens.chosen" and e["season"] > 0]
-        heaviest = max(resolved, key=lambda e: e["payload"]["public"]["pumpsTotal"], default=None)
+        heaviest = max(resolved, key=lambda e: e["payload"]["public"]["pumpsTotalObserved"], default=None)
         return {
             "heaviestPumping": None
             if heaviest is None
-            else {"season": heaviest["season"], "pumpsTotal": heaviest["payload"]["public"]["pumpsTotal"]},
+            else {"season": heaviest["season"], "pumpsTotalObserved": heaviest["payload"]["public"]["pumpsTotalObserved"]},
             "lensBySeason": lenses,
             "lensChanges": sum(a != b for a, b in pairwise(lenses)),
             "floorVotes": sum(e["type"] == "lens.floorRule" for e in self.events),
         }
 
     def _goals(self) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        """R15 private goals, judged within each scheme: the Authority's from public totals; each farm's from its own
-        sealed results (it sees only its own, as a self event)."""
+        """R15 private goals, judged within each scheme: the Authority's from the exact totals, published as the mean of
+        the observed totals (ADR 0004); each farm's from its own sealed results (it sees only its own, as a self event)."""
         resolved = [e for e in self.events if e["type"] == "season.resolved"]
         climates = {e["season"]: e["payload"] for e in self.events if e["type"] == "season.climate"}
-        totals = [e["payload"]["public"]["pumpsTotal"] for e in resolved]
+        totals = [e["payload"]["sealed"]["pumpsTotal"] for e in resolved]
+        shown = [e["payload"]["public"]["pumpsTotalObserved"] for e in resolved]
         mean = sum(totals) / len(totals) if totals else 0.0
         authority = {
             "maxMeanPumping": self.setup.authorityMaxMeanPumping,
-            "meanPumping": round6(mean),
+            "meanPumping": round6(sum(shown) / len(shown)) if shown else 0.0,  # of the observed totals (ADR 0004)
             "met": mean <= self.setup.authorityMaxMeanPumping,
         }
         farms = []

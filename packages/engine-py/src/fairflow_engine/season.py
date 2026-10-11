@@ -15,6 +15,7 @@ from .aquifer import (
     natural_gain,
     next_stock,
     observed_stock,
+    observed_total,
     pump_cap,
     pump_cost_per_mm3,
     ration_pumps,
@@ -82,6 +83,7 @@ class SeasonResult(TypedDict):
     Y: list[float]
     dL: list[float]
     pumpsTotal: float
+    pumpsTotalObserved: float  # ADR 0004: to the tank's resolution
     returnFlow: float
     stockNext: float
     spill: float
@@ -166,6 +168,7 @@ def resolve_season(
         "Y": [r(x) for x in Y],
         "dL": [r(x) for x in dL],
         "pumpsTotal": r(pumped),
+        "pumpsTotalObserved": r(observed_total(basin, pumped)),  # ADR 0004: what the table sees
         "returnFlow": r(returns),
         "stockNext": r(stock_next),
         "spill": r(spill),

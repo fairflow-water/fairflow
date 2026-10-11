@@ -298,7 +298,7 @@ Full Kelvara scenario; proportional lens unless stated; one season is one year.
 
 ### 4.5 Information
 
-- **R17.** Public: climate, AW, Qᵢ, dials, gauge, triangle, aquifer stock, total pumping, votes and proposals. Not public during play: Wᵢ, Aᵢ, Yᵢ, ΔLᵢ, Pᵢ (W − Q reveals pumping); each player sees their own privately at the start of their next turn; the map colours by Qᵢ/Dᵢ until the debrief. **\[v3\]** "Public" means every surface: screens, the shared display, any export made before the debrief, and every message a relay sees in clear.
+- **R17.** Public: climate, AW, Qᵢ, the as-allocated dials and gauge, the sustainability band word, the aquifer stock and the total pumping — each to the tank's resolution (ADR 0004) — votes and proposals. When only two farms can pump (the paddy wells dry), each can infer the other's pumping from the total and its own; that exposure is stated, not hidden. Not public during play: Wᵢ, Aᵢ, Yᵢ, ΔLᵢ, Pᵢ (W − Q reveals pumping); each player sees their own privately at the start of their next turn; the map colours by Qᵢ/Dᵢ until the debrief. **\[v3\]** "Public" means every surface: screens, the shared display, any export made before the debrief, and every message a relay sees in clear.
 - **R18.** Private until the debrief: who pumped how much, Steal, untriggered offers. \[M3\] Monitoring makes the season's pumps public.
 - **R19.** The debrief reveals everything **after the facilitator has spoken the safety norm** (§5.3); a table may opt to keep per-player pumping sealed and discuss totals only, recorded as `debrief.opened {perPlayer: false}`. Exports carry roles, never names.
 

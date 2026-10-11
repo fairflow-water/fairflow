@@ -491,7 +491,7 @@
    "payload": {
     "public": {
      "allocable": 10.0,
-     "pumpsTotal": 1.0,
+     "pumpsTotalObserved": 1.0,
      "observedStockNext": 20.0,
      "aquiferFull": true,
      "inflowLossNext": 0.0,
@@ -814,7 +814,7 @@
    "payload": {
     "public": {
      "allocable": 15.0,
-     "pumpsTotal": 1.0,
+     "pumpsTotalObserved": 1.0,
      "observedStockNext": 20.0,
      "aquiferFull": true,
      "inflowLossNext": 0.0,
@@ -1137,7 +1137,7 @@
    "payload": {
     "public": {
      "allocable": 15.0,
-     "pumpsTotal": 1.0,
+     "pumpsTotalObserved": 1.0,
      "observedStockNext": 20.0,
      "aquiferFull": true,
      "inflowLossNext": 0.0,
@@ -1460,7 +1460,7 @@
    "payload": {
     "public": {
      "allocable": 10.0,
-     "pumpsTotal": 1.0,
+     "pumpsTotalObserved": 1.0,
      "observedStockNext": 20.0,
      "aquiferFull": true,
      "inflowLossNext": 0.0,
@@ -1783,7 +1783,7 @@
    "payload": {
     "public": {
      "allocable": 15.0,
-     "pumpsTotal": 1.0,
+     "pumpsTotalObserved": 1.0,
      "observedStockNext": 20.0,
      "aquiferFull": true,
      "inflowLossNext": 0.0,
@@ -1844,7 +1844,7 @@
     "brief": {
      "heaviestPumping": {
       "season": 1,
-      "pumpsTotal": 1.0
+      "pumpsTotalObserved": 1.0
      },
      "lensBySeason": [
       "proportional",

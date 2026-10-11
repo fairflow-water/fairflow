@@ -32,7 +32,8 @@ export interface PrivateTurn {
 }
 export interface Dials { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } }
 export interface PublicResult {
-  allocable: number; pumpsTotal: number; observedStockNext: number; aquiferFull?: boolean; inflowLossNext: number; asAllocated: Dials;
+  allocable: number; pumpsTotalObserved: number; // ADR 0004: to the tank's resolution
+  observedStockNext: number; aquiferFull?: boolean; inflowLossNext: number; asAllocated: Dials;
   sustainabilityBand: Band; bands?: { ePJ: Band; eSE: Band; F: Band };
 }
 /** This farm's own results for a season (the `self` part of season.resolved). */
@@ -40,7 +41,7 @@ export interface PublicResult {
 export interface MyResult { pumpCost: number; P: number; W: number; A: number; Y: number; dL: number; points: number; L: number; cropFailure: boolean }
 /** Everything computed on actual use (ADR 0004): readable only after a per-player debrief (R19). */
 export interface Sealed {
-  roles: string[]; pumpsBy: Record<string, number>; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[]; points: number[]; L: number[];
+  roles: string[]; pumpsBy: Record<string, number>; pumpsTotal: number; P: number[]; W: number[]; A: number[]; Y: number[]; dL: number[]; points: number[]; L: number[];
   ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number }; S: number;
   triangle: { r1: number; r2: number; r3: number; area: number; score: number };
   verdict: { voted: string; satisfied: string; pumpingGap: number };
@@ -58,7 +59,7 @@ export interface DebriefWelfare {
 }
 export interface GameEnd {
   T: number; truncated: boolean; seasonsPlayed: number; collectiveScore: number; cropFailureFlag: boolean;
-  brief?: { heaviestPumping: { season: number; pumpsTotal: number } | null; lensBySeason: string[]; lensChanges: number; floorVotes: number };
+  brief?: { heaviestPumping: { season: number; pumpsTotalObserved: number } | null; lensBySeason: string[]; lensChanges: number; floorVotes: number };
   authorityGoal?: { maxMeanPumping: number; meanPumping: number; met: boolean };
 }
 export interface GoalResult { role: string; kind: string; threshold: number; value: number; met: boolean }

@@ -16,6 +16,14 @@ def observed_stock(basin: Basin, stock: float) -> float:
     return math.floor(round6(stock / res)) * res
 
 
+def observed_total(basin: Basin, total: float) -> float:
+    """ADR 0004 (amended 2026-10-11): the table's total pumping as shown, to the nearest tankResolution (half up), the
+    resolution of the tank it is drawn from. With fractional well capacities the exact total is a fingerprint of who
+    pumped at capacity; at the tank's resolution it is not."""
+    res = basin.aquifer.tankResolution
+    return math.floor(round6(total / res) + 0.5) * res  # rounding: half up to the nearest tank step
+
+
 def pump_cost_per_mm3(basin: Basin, stock: float, seat: int, factor: float = 1.0) -> float:
     """c = factor·(costBase + costSlope·max(0, 1 − B/B₀)) per Mm³, × the seat multiplier once B < B_low (§2.2), with B
     the observed level (ADR 0004). ADR 0006: never below costBase·factor. ADR 0008: the cost is lift energy, linear in

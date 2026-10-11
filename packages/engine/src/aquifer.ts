@@ -5,6 +5,12 @@
 
 import { at, round6, type Basin, type Scheme } from './types.js';
 
+/** ADR 0004 (amended): the table's total pumping as shown, to the nearest tankResolution (half up). */
+export function observedTotal(basin: Basin, total: number): number {
+  const res = basin.aquifer.tankResolution;
+  return Math.floor(round6(total / res) + 0.5) * res; // rounding: half up to the nearest tank step
+}
+
 /** ADR 0004: the level players see — the last full step of `tankResolution` below the true stock. */
 export function observedStock(basin: Basin, stock: number): number {
   const res = basin.aquifer.tankResolution;

@@ -113,7 +113,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
             ))}
           </div>
           <p data-testid="verdict">The table chose <strong>{lensName(sealed.verdict.voted)}</strong>.<br />
-            The water as used came closest to <strong>{lensName(sealed.verdict.satisfied)}</strong> ({fmt(r.public.pumpsTotal)} Mm³ pumped).</p>
+            The water as used came closest to <strong>{lensName(sealed.verdict.satisfied)}</strong> ({fmt(sealed.pumpsTotal)} Mm³ pumped).</p>
           <p data-testid="f-line">Water productivity as used: {fmt(sealed.F[basis])} of design, per m³ {basis}.
             <button type="button" aria-pressed={basis === 'diverted'} onClick={() => setBasis(b => (b === 'consumed' ? 'diverted' : 'consumed'))}>
               Per m³ {basis === 'consumed' ? 'diverted' : 'consumed'}
@@ -136,7 +136,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
       ) : (
         <>
           <Needles pj={null} se={null} ghostPj={alloc.ePJ} ghostSe={alloc.eSE[unit]} />
-          <p>As allocated: fair shares of need {fmt(alloc.ePJ)}, equal amounts per farm {fmt(alloc.eSE.claimant)}. The table pumped {fmt(r.public.pumpsTotal)} Mm³.</p>
+          <p>As allocated: fair shares of need {fmt(alloc.ePJ)}, equal amounts per farm {fmt(alloc.eSE.claimant)}. The table pumped about {fmt(r.public.pumpsTotalObserved)} Mm³.</p>
           <p className="hint" data-testid="sealed-note">Each farm's pumping was kept private for this debrief. Values on the water as used stay sealed as well: together with the public allocation they would show who pumped.</p>
         </>
       )}

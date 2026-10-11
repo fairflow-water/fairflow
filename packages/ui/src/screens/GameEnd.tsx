@@ -44,7 +44,7 @@ export function GameEnd({ end, goal, role, lenses, debriefOpened, onIntent }: {
         <aside aria-label="Debrief brief (facilitator)">
           <h3>Debrief brief</h3>
           <ul>
-            <li>Heaviest pumping: {end.brief.heaviestPumping ? `season ${end.brief.heaviestPumping.season}, ${end.brief.heaviestPumping.pumpsTotal} Mm³` : 'none'}.</li>
+            <li>Heaviest pumping: {end.brief.heaviestPumping ? `season ${end.brief.heaviestPumping.season}, about ${end.brief.heaviestPumping.pumpsTotalObserved} Mm³` : 'none'}.</li>
             <li>Lens by season: {lensRuns(end.brief.lensBySeason, name)} ({end.brief.lensChanges} changes).</li>
             <li>Floor votes held: {end.brief.floorVotes}.</li>
           </ul>

@@ -31,7 +31,7 @@ SCENARIO = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json"
 DEFAULT_LENS = SCENARIO["defaultLens"]
 REGISTRY = bp.registry()
 ROLES = [s.id for s in SCHEMES]
-SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L"}
+SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L", "pumpsTotal"}
 
 
 def setup(**over) -> GameSetup:
@@ -154,7 +154,10 @@ def test_privacy_projection_before_debrief():
             # the pinned public fields: the engine's, plus the band words of the as-allocated dials (computed from public Q)
             assert set(e["payload"]["public"]) == {*PUBLIC_RESULT_FIELDS, "bands"} and "sealed" not in e["payload"]
     assert not any(e["type"] == "action.played" for e in public)
-    assert all("pumpsTotal" in e["payload"]["public"] for e in public if e["type"] == "season.resolved")
+    # ADR 0004 (amended): the table sees the total to the tank's resolution; the exact total is sealed
+    for e in (e for e in public if e["type"] == "season.resolved"):
+        assert "pumpsTotalObserved" in e["payload"]["public"] and "pumpsTotal" not in e["payload"]["public"]
+        assert float(e["payload"]["public"]["pumpsTotalObserved"]).is_integer()
     mine = project(g.events, "A")
     assert all(e["payload"]["self"]["P"] == e["payload"]["self"]["P"] for e in mine if e["type"] == "season.resolved")
     assert all(e["actor"] == "A" for e in mine if e["type"] == "action.played")
@@ -279,7 +282,7 @@ def test_tampering_is_detected():
     g = play_game(new_game(), pumps={"B": BASIN.pump.cap})
     forged = copy.deepcopy(g.events)
     resolved = next(e for e in forged if e["type"] == "season.resolved")
-    resolved["payload"]["public"]["pumpsTotal"] += 1
+    resolved["payload"]["public"]["pumpsTotalObserved"] += 1
     assert audit(g.setup, forged)
     forged = copy.deepcopy(g.events)
     end = next(e for e in forged if e["type"] == "game.ended")

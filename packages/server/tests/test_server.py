@@ -18,7 +18,7 @@ from fairflow_server.app import create_app
 from fairflow_server.settings import Settings
 
 ORIGIN = "https://play.fairflow.example"  # test input
-SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L", "stockNext", "returnFlow"}
+SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L", "stockNext", "returnFlow", "pumpsTotal"}
 
 
 def keys_in(obj: Any) -> set[str]:

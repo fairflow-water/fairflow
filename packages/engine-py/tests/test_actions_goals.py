@@ -146,3 +146,18 @@ def test_band_words_and_brief_are_public():
     assert brief["lensChanges"] == 0
     assert not any(e["type"] == "goal.result" for e in project(g.events, "public"))
     assert audit(g.setup, g.events) == []
+
+
+@pytest.mark.parametrize(("lens", "flagged"), [("sufficientarian", set()), ("utilitarian", {"B", "C"})])
+def test_below_the_survival_floor_two_years_running(lens, flagged):
+    """§2.4, ADR 0010: two dry years under the sufficientarian lens give B and C exactly their floor, which is survival;
+    the utilitarian lens gives C nothing and B 0.42 of its need (§3.1) in both, which raises the flag for both.
+    Inflows are test inputs (every card dry)."""
+    g = kelvara_game(gameLength=(5, 5), inflow={card: g_dry for card in ("wet", "normal", "dry")})
+    for _ in range(2):
+        season(g, lens=lens)
+    sealed = resolved(g, 2)
+    assert {r for r, f in zip(sealed["roles"], sealed["cropFailure"], strict=True) if f} == flagged
+
+
+g_dry = kelvara_game().setup.inflow["dry"]

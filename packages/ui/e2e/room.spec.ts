@@ -93,7 +93,7 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   // S9 on every device after a per-player debrief: the farm sheet, the welfare slider, the verdict
   for (const page of [display, facilitator, ...phones]) {
     await expect(page.getByRole('heading', { name: 'Debrief' })).toBeVisible();
-    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByRole('table', { name: /Each farm/ })).toBeVisible();
     await expect(page.getByRole('slider')).toBeVisible();
   }
   await expect(display.getByTestId('verdict')).toContainText('The table chose');

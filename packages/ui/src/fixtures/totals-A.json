@@ -2040,6 +2040,14 @@
         0.510974,
         0.5
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998554,
+        "eSE.claimant": 0.857031,
+        "eSE.hectare": 0.973138,
+        "eSE.person": 0.765954
+       }
       }
      },
      {
@@ -2160,6 +2168,14 @@
         0.531225,
         0.5
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998701,
+        "eSE.claimant": 0.81971,
+        "eSE.hectare": 0.973281,
+        "eSE.person": 0.784934
+       }
       }
      },
      {
@@ -2280,6 +2296,14 @@
         0.531225,
         0.5
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998701,
+        "eSE.claimant": 0.81971,
+        "eSE.hectare": 0.973281,
+        "eSE.person": 0.784934
+       }
       }
      },
      {
@@ -2400,6 +2424,14 @@
         0.488998,
         0.488998
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.996418,
+        "eSE.claimant": 0.817836,
+        "eSE.hectare": 0.971056,
+        "eSE.person": 0.783139
+       }
       }
      },
      {
@@ -2520,6 +2552,14 @@
         0.531225,
         0.5
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998701,
+        "eSE.claimant": 0.81971,
+        "eSE.hectare": 0.973281,
+        "eSE.person": 0.784934
+       }
       }
      }
     ]

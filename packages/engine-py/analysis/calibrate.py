@@ -53,7 +53,7 @@ def main(argv: list[str]) -> None:
         r = report(c, games)
         passed = {k: v["pass"] for k, v in r.items() if isinstance(v, dict) and "pass" in v}
         rows.append({"overrides": c, "passed": passed, "score": sum(passed.values()), "dilemma": r["dilemma"],
-                     "goals": r["goalsAttainable"]["rates"], "crop": r["cropFailureMixed"]["share"],
+                     "goals": r["goalsAttainable"]["rates"], "crop": r["cropFailure"]["mixedShare"],
                      "coop": r["cooperationRewarded"]["share"]})  # fmt: skip
         print(json.dumps(rows[-1], ensure_ascii=False), flush=True)
     best = max(rows, key=lambda x: x["score"])

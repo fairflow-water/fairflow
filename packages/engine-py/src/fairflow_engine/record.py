@@ -34,7 +34,7 @@ Visibility = Literal["public", "self", "sealed", "mixed"]
 Event = dict[str, Any]  # one Season Record entry (§6.2)
 AUTHORITY = "authority"
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
-CROP_FAILURE_RUN = 2  # §2.4 "A ≤ 0.5 in two consecutive seasons is crop failure"
+CROP_FAILURE_RUN = 2  # §2.4 "A < 0.5 in two consecutive seasons" (ADR 0010: below the survival floor two years running)
 TUTORIAL_LENSES = ("proportional", "utilitarian")  # R3 season 0: "two lenses (proportional, utilitarian)"
 TUTORIAL_CARD = "normal"  # R3 season 0: "normal year"
 REVIEW_PARTS = (1, 2, 3)  # §5.2 S10 "Parts 1–3 of the review form"
@@ -682,7 +682,8 @@ class Game:
             self._resolve_tutorial(s, roles, r)
             return
         floor = self.setup.scoring.survivalFloor
-        low_run = [s.lowRun[role] + 1 if a <= floor else 0 for role, a in zip(roles, r["A"], strict=True)]
+        # ADR 0010: strictly below the floor; reaching it is survival (the sufficientarian lens and R15 give exactly it)
+        low_run = [s.lowRun[role] + 1 if a < floor else 0 for role, a in zip(roles, r["A"], strict=True)]
         failed = [s.cropFailure[role] or run >= CROP_FAILURE_RUN for role, run in zip(roles, low_run, strict=True)]
         # §2.4 ΔL = pY/100 − c_p P − c_action: the engine's dL holds the first two terms; the action cost is charged here
         L = [round6(s.livelihood[role] + d - action_cost[role]) for role, d in zip(roles, r["dL"], strict=True)]
@@ -867,6 +868,17 @@ def slider_gammas(start: float) -> tuple[list[float | None], int]:
     return gammas, ts.index(start / (1 + start))
 
 
+SCOREBOARD_NOTIONS = ("ePJ", "eSE.claimant", "eSE.hectare", "eSE.person")  # §2.5 equity measures (ADR 0010)
+
+
+def _scoreboard(e_pj: float, e_se: Mapping[str, float], r2: float, r3: float) -> dict[str, float]:
+    """ADR 0010: the collective score (r₁r₂r₃)^(1/3) of §2.5 with r₁ taken from each equity measure in turn, so the table
+    sees each yardstick crown the lens it embodies (proportional for E_PJ, strict egalitarian for E_SE per claimant,
+    capability for E_SE per person). r₁ is clipped to [0, 1] as §2.5 requires before any composite."""
+    values = {"ePJ": e_pj, **{f"eSE.{u}": e_se[u] for u in ("claimant", "hectare", "person")}}
+    return {k: round6(float(np.cbrt(float(np.clip(values[k], 0, 1)) * r2 * r3))) for k in SCOREBOARD_NOTIONS}
+
+
 def debrief_welfare(setup: GameSetup, events: Sequence[Event]) -> dict[str, Any]:
     """S9's welfare slider (ADR 0003): for each season and slider position, the equally-distributed equivalent of PWF_γ
     for every enabled lens's allocation (public, from season.climate) and, only when the table opened per-player
@@ -895,8 +907,17 @@ def debrief_welfare(setup: GameSetup, events: Sequence[Event]) -> dict[str, Any]
         chosen = issued.get(e["season"])
         if chosen is not None and chosen["lens"] in entry["lenses"]:
             entry["lenses"][chosen["lens"]] = row([q / d for q, d in zip(chosen["Q"], demand, strict=True)])
+        # ADR 0010: the collective score under each equity measure. As allocated, r₂ is the allocation's efficiency
+        # and r₃ = 1, because an allocation alone never takes S above 1 (§2.5); as used, the season's own r₂ and r₃.
+        alloc = e["payload"]["public"]["asAllocated"]
+        entry["scoreboard"] = {
+            "allocated": _scoreboard(alloc["ePJ"], alloc["eSE"], float(np.clip(alloc["F"]["consumed"], 0, 1)), 1.0)
+        }
         if opened["perPlayer"]:
-            entry["used"] = row(e["payload"]["sealed"]["A"])
+            sealed = e["payload"]["sealed"]
+            entry["used"] = row(sealed["A"])
+            tri = sealed["triangle"]
+            entry["scoreboard"]["used"] = _scoreboard(sealed["ePJ"], sealed["eSE"], tri["r2"], tri["r3"])
         seasons.append(entry)
     return {"gammas": gammas, "start": start, "seasons": seasons}
 

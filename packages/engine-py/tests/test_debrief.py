@@ -107,3 +107,19 @@ def test_review_waits_for_the_end_of_the_game():
     with pytest.raises(Rejection) as e:
         g.submit("A", "review_answer", part=1, item="like.1", value="x")
     assert e.value.code in ("wrong_phase",)
+
+
+@pytest.mark.parametrize("per_player", [True, False])
+def test_scoreboard_under_each_equity_measure(per_player):
+    """ADR 0010: the collective score with r₁ from each equity measure; as allocated always, as used only after a
+    per-player debrief (ADR 0004: as-used values would reveal pumping)."""
+    g = finished(per_player)
+    payload = next(e["payload"] for e in project(g.events, "public") if e["type"] == "debrief.welfare")
+    resolved = [e["payload"] for e in g.events if e["type"] == "season.resolved"]
+    for entry, season in zip(payload["seasons"], resolved, strict=True):
+        alloc = season["public"]["asAllocated"]
+        r2 = min(max(alloc["F"]["consumed"], 0), 1)
+        want = np.cbrt(min(max(alloc["eSE"]["person"], 0), 1) * r2)
+        assert entry["scoreboard"]["allocated"]["eSE.person"] == pytest.approx(want, abs=1e-6)
+        assert set(entry["scoreboard"]) == ({"allocated", "used"} if per_player else {"allocated"})
+    assert audit(g.setup, g.events) == []

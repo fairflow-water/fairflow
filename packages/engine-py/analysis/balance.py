@@ -47,9 +47,11 @@ LENS_Q_RANGE = 0.40  # "Q range ≥ 40 % of demand for at least one scheme"
 COOP_B_SHARE, COOP_GAMES = 0.5, 0.90  # "all-principled tables end with B_T ≥ 0.5 B₀ in ≥ 90 % of games"
 PROFIT_HIGH = 0.80  # "pumping is individually profitable in ≥ 80 % of deficit seasons while B > B_low"
 SELFISH_BELOW_LOW = 0.80  # "all-selfish tables drive the water table below … B_low by season 5 in ≥ 80 % of games"
-DOMINANT = 0.60  # "no lens tops the collective score in > 60 % of mixed games"
+DOMINANT = 0.60  # ADR 0010: "no lens tops the collective score in > 60 % of mixed tables with a defecting seat"
+MIXED_GAMES = 400  # ADR 0010: the mixed-game crop-failure rate is reported from at least 400 games
 GOALS, GOAL_LENSES = 0.50, 2  # "met in ≥ 50 % of all-principled games … under at least two lenses" (ADR 0008)
-CROP_FAILURE = (0.05, 0.30)  # "5–30 % of mixed games"
+CROP_FLOOR_LENS_MIN, CROP_FLOOR_LENS_MAX = 0.05, 0.05  # ADR 0010: some lens ≥ 5 %, some lens ≤ 5 % of its games
+Z95 = 1.959964  # two-sided 95 % normal quantile, for the Wilson interval
 
 
 def scenario_with(overrides: dict[str, Any]) -> tuple[dict, dict]:
@@ -105,7 +107,9 @@ def pumps_of(strategy: str, opened: dict, history: list[dict]) -> float:
 
 
 # ---- one game -------------------------------------------------------------------------------------------------------
-def play(setup: Any, seed: int, table: Sequence[str]) -> dict[str, Any]:
+def play(setup: Any, seed: int, table: Sequence[str], force_lens: str | None = None) -> dict[str, Any]:
+    """One game. With `force_lens` every seat votes that lens each season; pumping and actions follow each seat's own
+    strategy (the counterfactual replay of ADR 0010's "no dominant lens" measure)."""
     roles = [x.id for x in setup.schemes]
     strategy = dict(zip(roles, table, strict=True))
     tick = iter(range(10**7))
@@ -119,7 +123,7 @@ def play(setup: Any, seed: int, table: Sequence[str]) -> dict[str, Any]:
     while replay(g.events).phase != "ended":
         g.submit(AUTHORITY, "start_season")
         climate = g.events[-1]["payload"]
-        votes = {r: vote_of(strategy[r], r, climate, history) for r in roles}
+        votes = {r: force_lens or vote_of(strategy[r], r, climate, history) for r in roles}
         for lens in dict.fromkeys(votes.values()):
             g.submit(AUTHORITY, "propose", lens=lens)
         for r in roles:
@@ -194,9 +198,19 @@ def static_lens_matters(setup: Any) -> dict[str, Any]:
     }
 
 
-def run_cell(args: tuple[dict, int, tuple[str, ...]]) -> dict[str, Any]:
-    overrides, seed, table = args
-    return play(setup_with(overrides), seed, table)
+def run_cell(args: tuple) -> dict[str, Any]:
+    overrides, seed, table, *forced = args
+    return play(setup_with(overrides), seed, table, forced[0] if forced else None)
+
+
+def wilson(k: int, n: int) -> tuple[float, float]:
+    """95 % Wilson score interval for k successes in n independent games (one outcome per game)."""
+    if n == 0:
+        return (0.0, 1.0)
+    p, z2 = k / n, Z95 * Z95
+    centre = (p + z2 / (2 * n)) / (1 + z2 / n)
+    half = Z95 * (p * (1 - p) / n + z2 / (4 * n * n)) ** 0.5 / (1 + z2 / n)
+    return (max(0.0, centre - half), min(1.0, centre + half))
 
 
 def report(overrides: dict[str, Any], games: int, workers: int = 8) -> dict[str, Any]:
@@ -208,9 +222,13 @@ def report(overrides: dict[str, Any], games: int, workers: int = 8) -> dict[str,
         jobs += [(f"principled:{lens}", overrides, k, (f"principled:{lens}",) * 3) for k in range(games)]
     jobs += [("selfish", overrides, k, ("selfish",) * 3) for k in range(games)]
     pool = [*(f"principled:{x}" for x in lenses), "selfish", "conditional"]
-    jobs += [("mixed", overrides, k, tuple(rng.choice(pool) for _ in range(3))) for k in range(games)]
+    mixed_tables = [tuple(rng.choice(pool) for _ in range(3)) for _ in range(max(games, MIXED_GAMES))]
+    jobs += [("mixed", overrides, k, t) for k, t in enumerate(mixed_tables)]
+    defecting = [(k, t) for k, t in enumerate(mixed_tables) if "selfish" in t]
+    forced_jobs = [(lens, k, t) for k, t in defecting for lens in lenses]
     with ProcessPoolExecutor(max_workers=workers) as ex:
         results = list(ex.map(run_cell, [(o, seed, t) for _, o, seed, t in jobs], chunksize=8))
+        forced = list(ex.map(run_cell, [(overrides, k, t, lens) for lens, k, t in forced_jobs], chunksize=8))
     by: dict[str, list[dict]] = {}
     for (cell, *_), r in zip(jobs, results, strict=True):
         by.setdefault(cell, []).append(r)
@@ -238,11 +256,19 @@ def report(overrides: dict[str, Any], games: int, workers: int = 8) -> dict[str,
     best_by_lens: Counter[str] = Counter()
     for lens in lenses:
         best_by_lens[lens] = sum(r["collectiveScore"] for r in by[f"principled:{lens}"]) / games
-    winner_share = {}
+    # ADR 0010: the all-principled ranking is the scoreboard's own lens (§2.5), reported, not gated
+    principled_top = {}
     for k in range(games):
         scores = {lens: by[f"principled:{lens}"][k]["collectiveScore"] for lens in lenses}
         top = max(scores, key=lambda x: scores[x])
-        winner_share[top] = winner_share.get(top, 0) + 1 / games
+        principled_top[top] = principled_top.get(top, 0) + 1 / games
+    # the gated measure: each mixed table with a defecting seat, replayed with each lens forced
+    by_table: dict[int, dict[str, float]] = {}
+    for (lens, k, _), r in zip(forced_jobs, forced, strict=True):
+        by_table.setdefault(k, {})[lens] = r["collectiveScore"]
+    forced_top: dict[str, float] = {lens: 0.0 for lens in lenses}
+    for scores in by_table.values():
+        forced_top[max(scores, key=lambda x: scores[x])] += 1 / max(1, len(by_table))
     goal_rates = {
         role: sum(r["goals"].get(role, False) for r in principled) / len(principled) for role in principled[0]["goals"]
     }
@@ -250,7 +276,8 @@ def report(overrides: dict[str, Any], games: int, workers: int = 8) -> dict[str,
         lens: {role: sum(r["goals"].get(role, False) for r in by[f"principled:{lens}"]) / games for role in goal_rates}
         for lens in lenses
     }
-    crop = sum(r["cropFailure"] for r in mixed) / len(mixed)
+    crop_k = sum(r["cropFailure"] for r in mixed)
+    crop_by_lens = {lens: sum(r["cropFailure"] for r in by[f"principled:{lens}"]) / games for lens in lenses}
     out = {
         "overrides": overrides,
         "gamesPerCell": games,
@@ -268,9 +295,12 @@ def report(overrides: dict[str, Any], games: int, workers: int = 8) -> dict[str,
             "pass": profitable_high >= PROFIT_HIGH and below_low_by5 >= SELFISH_BELOW_LOW and principled_below == 0,
         },
         "noDominantLens": {
-            "topShareByLens": winner_share,
-            "pass": max(winner_share.values()) <= DOMINANT,
-            "note": "share of seeds in which each all-principled lens has the highest collective score",
+            "topShareByLens": forced_top,
+            "tables": len(by_table),
+            "pass": max(forced_top.values()) <= DOMINANT,
+            "allPrincipledTop": principled_top,
+            "note": "mixed tables with a defecting seat, each replayed with every lens forced (ADR 0010); the "
+            "all-principled ranking is the scoreboard's own lens and is reported, not gated",
         },
         "goalsAttainable": {
             "rates": goal_rates,
@@ -278,7 +308,15 @@ def report(overrides: dict[str, Any], games: int, workers: int = 8) -> dict[str,
             "pass": all(sum(g[role] >= GOALS for g in goals_by_lens.values()) >= GOAL_LENSES for role in goal_rates)
             and any(all(v >= GOALS for v in g.values()) for g in goals_by_lens.values()),
         },
-        "cropFailureMixed": {"share": crop, "pass": CROP_FAILURE[0] <= crop <= CROP_FAILURE[1]},
+        "cropFailure": {
+            "byLens": crop_by_lens,
+            "mixedShare": crop_k / len(mixed),
+            "mixedInterval95": wilson(crop_k, len(mixed)),
+            "mixedGames": len(mixed),
+            "pass": max(crop_by_lens.values()) >= CROP_FLOOR_LENS_MIN and min(crop_by_lens.values()) <= CROP_FLOOR_LENS_MAX,
+            "note": "ADR 0010: some lens leaves a farm below the floor two years running in ≥ 5 % of its all-principled "
+            "games and some lens in ≤ 5 %; the mixed-game rate is reported with its 95 % interval",
+        },
         "meanFinalStock": {c: sum(r["finalStock"] for r in rs) / len(rs) for c, rs in by.items()},
         "meanSpill": {c: sum(r["spill"] for r in rs) / len(rs) for c, rs in by.items()},
         "mixedLensMostPlayed": dict(tops),

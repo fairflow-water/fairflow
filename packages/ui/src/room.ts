@@ -50,7 +50,11 @@ export interface SeasonResult { season: number; public: PublicResult; mine: MyRe
 /** S9 γ slider (ADR 0003): the engine's equally-distributed equivalent per slider position, per lens and season. */
 export interface DebriefWelfare {
   gammas: (number | null)[]; start: number;
-  seasons: { season: number; lenses: Record<string, number[]>; used?: number[] }[];
+  seasons: {
+    season: number; lenses: Record<string, number[]>; used?: number[];
+    // ADR 0010: the collective score with r₁ from each equity measure; 'used' only after a per-player debrief
+    scoreboard?: { allocated: Record<string, number>; used?: Record<string, number> };
+  }[];
 }
 export interface GameEnd {
   T: number; truncated: boolean; seasonsPlayed: number; collectiveScore: number; cropFailureFlag: boolean;

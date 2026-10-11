@@ -47,9 +47,9 @@ describe('S9 debrief, per-player results opened', () => {
     expect(screen.getByTestId('f-line').textContent).toContain(fmt(sealed.F.diverted));
     expect(screen.getByTestId('season-score').textContent).toBe(score);
   });
-  it('lists each farm\'s pumping because the table agreed', () => {
+  it('lists each farm\'s pumping after the facilitator opened per-player results', () => {
     render(<Season view={open} scenario={scenario} role="display" onIntent={() => undefined} />);
-    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    const rows = within(screen.getByRole('table', { name: /Each farm/ })).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(sealed.roles.length);
     sealed.roles.forEach((role, i) => expect(rows[i]!.textContent).toContain(fmt(sealed.pumpsBy[role]!)));
   });
@@ -67,13 +67,26 @@ describe('S9 debrief, per-player results opened', () => {
   });
 });
 
+describe('S9 debrief, the scoreboard under each idea of equity (ADR 0010)', () => {
+  it('shows as allocated and as used after a per-player debrief', () => {
+    render(<Season view={open} scenario={scenario} role="display" onIntent={() => undefined} />);
+    const board = screen.getByTestId('scoreboard');
+    expect(within(board).getByText('As allocated')).toBeTruthy();
+    expect(within(board).getByText('As used')).toBeTruthy();
+  });
+});
+
 describe('S9 debrief, totals only', () => {
   it('keeps every as-used value and every farm figure sealed', () => {
     render(<Season view={totals} scenario={scenario} role="display" onIntent={() => undefined} />);
     expect(totals.results.every(r => r.sealed === null)).toBe(true);
     expect(screen.getByTestId('sealed-note')).toBeTruthy();
-    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('table', { name: /Each farm/ })).toBeNull();
     expect(screen.queryByTestId('used-pj')).toBeNull();
+    // ADR 0010: the scoreboard is shown on the public allocation only; no as-used column without per-player results
+    const board = screen.getByTestId('scoreboard');
+    expect(within(board).queryByText('As used')).toBeNull();
+    expect(within(board).getAllByRole('row')).toHaveLength(5);
     expect(screen.queryByTestId('rank-used')).toBeNull();
     expect(JSON.stringify(totalsPublic.events)).not.toContain('pumpsBy');
   });

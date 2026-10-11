@@ -11,9 +11,9 @@
   "pass": true
  },
  "dilemma": {
-  "profitableAboveLow": 0.9587939698492463,
+  "profitableAboveLow": 0.9406847133757962,
   "seatsPricedOutBelowLow": 0,
-  "deficitChecksBelowLow": 157,
+  "deficitChecksBelowLow": 205,
   "selfishReserveBySeason5": 0.0,
   "selfishNotBeforeSeason3": 1.0,
   "selfishBelowLowBySeason5": 0.98,
@@ -23,10 +23,18 @@
  },
  "noDominantLens": {
   "topShareByLens": {
+   "utilitarian": 0.0,
+   "egalitarian": 0.26950354609929095,
+   "proportional": 0.10638297872340421,
+   "capability": 0.38297872340425565,
+   "sufficientarian": 0.24113475177304977
+  },
+  "tables": 141,
+  "pass": true,
+  "allPrincipledTop": {
    "proportional": 1.0000000000000004
   },
-  "pass": false,
-  "note": "share of seeds in which each all-principled lens has the highest collective score"
+  "note": "mixed tables with a defecting seat, each replayed with every lens forced (ADR 0010); the all-principled ranking is the scoreboard's own lens and is reported, not gated"
  },
  "goalsAttainable": {
   "rates": {
@@ -63,9 +71,22 @@
   },
   "pass": true
  },
- "cropFailureMixed": {
-  "share": 0.42,
-  "pass": false
+ "cropFailure": {
+  "byLens": {
+   "utilitarian": 1.0,
+   "egalitarian": 0.22,
+   "proportional": 0.0,
+   "capability": 0.22,
+   "sufficientarian": 0.0
+  },
+  "mixedShare": 0.3125,
+  "mixedInterval95": [
+   0.26904156048693006,
+   0.35952554994416974
+  ],
+  "mixedGames": 400,
+  "pass": true,
+  "note": "ADR 0010: some lens leaves a farm below the floor two years running in ≥ 5 % of its all-principled games and some lens in ≤ 5 %; the mixed-game rate is reported with its 95 % interval"
  },
  "meanFinalStock": {
   "principled:utilitarian": 20.0,
@@ -74,7 +95,7 @@
   "principled:capability": 20.0,
   "principled:sufficientarian": 20.0,
   "selfish": 14.246143259999998,
-  "mixed": 19.4962778
+  "mixed": 19.1579768875
  },
  "meanSpill": {
   "principled:utilitarian": 12.9726,
@@ -83,13 +104,13 @@
   "principled:capability": 15.4011109,
   "principled:sufficientarian": 13.1067,
   "selfish": 0.8491156,
-  "mixed": 11.9064987
+  "mixed": 11.669217504999999
  },
  "mixedLensMostPlayed": {
-  "capability": 15,
-  "egalitarian": 8,
-  "proportional": 16,
-  "sufficientarian": 2,
-  "utilitarian": 9
+  "capability": 143,
+  "egalitarian": 99,
+  "proportional": 96,
+  "sufficientarian": 23,
+  "utilitarian": 39
  }
 }

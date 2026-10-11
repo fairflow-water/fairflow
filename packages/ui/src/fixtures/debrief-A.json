@@ -3347,6 +3347,20 @@
         0.5
        ]
       },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998554,
+        "eSE.claimant": 0.857031,
+        "eSE.hectare": 0.973138,
+        "eSE.person": 0.765954
+       },
+       "used": {
+        "ePJ": 0.955393,
+        "eSE.claimant": 0.862025,
+        "eSE.hectare": 0.936908,
+        "eSE.person": 0.712164
+       }
+      },
       "used": [
        0.589526,
        0.589279,
@@ -3489,6 +3503,20 @@
         0.531225,
         0.5
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998701,
+        "eSE.claimant": 0.81971,
+        "eSE.hectare": 0.973281,
+        "eSE.person": 0.784934
+       },
+       "used": {
+        "ePJ": 0.966968,
+        "eSE.claimant": 0.835478,
+        "eSE.hectare": 0.948089,
+        "eSE.person": 0.745841
+       }
       },
       "used": [
        0.786829,
@@ -3633,6 +3661,20 @@
         0.5
        ]
       },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998701,
+        "eSE.claimant": 0.81971,
+        "eSE.hectare": 0.973281,
+        "eSE.person": 0.784934
+       },
+       "used": {
+        "ePJ": 0.966968,
+        "eSE.claimant": 0.835478,
+        "eSE.hectare": 0.948089,
+        "eSE.person": 0.745841
+       }
+      },
       "used": [
        0.786829,
        0.786643,
@@ -3776,6 +3818,20 @@
         0.488998
        ]
       },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.996418,
+        "eSE.claimant": 0.817836,
+        "eSE.hectare": 0.971056,
+        "eSE.person": 0.783139
+       },
+       "used": {
+        "ePJ": 0.951309,
+        "eSE.claimant": 0.838797,
+        "eSE.hectare": 0.932886,
+        "eSE.person": 0.725257
+       }
+      },
       "used": [
        0.542331,
        0.542063,
@@ -3918,6 +3974,20 @@
         0.531225,
         0.5
        ]
+      },
+      "scoreboard": {
+       "allocated": {
+        "ePJ": 0.998701,
+        "eSE.claimant": 0.81971,
+        "eSE.hectare": 0.973281,
+        "eSE.person": 0.784934
+       },
+       "used": {
+        "ePJ": 0.966968,
+        "eSE.claimant": 0.835478,
+        "eSE.hectare": 0.948089,
+        "eSE.person": 0.745841
+       }
       },
       "used": [
        0.786829,

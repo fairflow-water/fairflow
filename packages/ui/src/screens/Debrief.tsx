@@ -53,6 +53,14 @@ function Triangle({ r1, r2, r3 }: { r1: number; r2: number; r3: number }) {
   );
 }
 
+// ADR 0010: the equity measures of §2.5 the scoreboard is shown under, with the lens each one embodies
+const SCOREBOARD: [string, string][] = [
+  ['ePJ', 'Same share of need (the game’s own score)'],
+  ['eSE.claimant', 'Same amount for each farm'],
+  ['eSE.hectare', 'Same amount per hectare'],
+  ['eSE.person', 'Same amount per person'],
+];
+
 export function Debrief({ view, scenario, events }: { view: RoomView; scenario: PublicScenario; events: readonly RecordEvent[] }) {
   const results = view.results;
   const [k, setK] = useState(results.length - 1);
@@ -149,6 +157,19 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
             ))}
           </ol>
         </div>
+      )}
+
+      {welfare?.scoreboard && (
+        <table className="scoreboard" data-testid="scoreboard">
+          <caption>The season score under each idea of equity: each yardstick favours the lens built on it</caption>
+          <thead><tr><th scope="col">Equity measured as</th><th scope="col">As allocated</th>{welfare.scoreboard.used && <th scope="col">As used</th>}</tr></thead>
+          <tbody>
+            {SCOREBOARD.map(([key, label]) => (
+              <tr key={key}><th scope="row">{label}</th><td>{fmt(welfare.scoreboard!.allocated[key] ?? 0)}</td>
+                {welfare.scoreboard!.used && <td>{fmt(welfare.scoreboard!.used[key] ?? 0)}</td>}</tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
       <button type="button" onClick={exportRecord}>Export the record (roles, never names)</button>

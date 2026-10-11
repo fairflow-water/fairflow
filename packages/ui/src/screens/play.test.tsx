@@ -158,6 +158,11 @@ describe('S8 game end', () => {
     await userEvent.click(screen.getByRole('button', { name: /totals only/ }));
     expect(onIntent).toHaveBeenLastCalledWith({ intent: 'open_debrief', perPlayer: false });
   });
+  it('names the flag for what it is: below the survival floor, not a failed crop (ADR 0010)', () => {
+    render(<GameEnd end={{ ...endPub.ended!, cropFailureFlag: true }} goal={null} role="display" lenses={scenario.lenses} debriefOpened={false} onIntent={() => undefined} />);
+    expect(screen.getByText(/below the survival floor two years running/)).toBeTruthy();
+    expect(screen.queryByText(/crop failed/)).toBeNull();
+  });
 });
 
 describe('debrief brief', () => {

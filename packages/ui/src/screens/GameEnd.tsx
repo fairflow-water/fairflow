@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 //
-// S8 — game end (blueprint §5.2): the revealed length (and a time-box badge), the collective score with the crop-failure
+// S8 — game end (blueprint §5.2): the revealed length (and a time-box badge), the collective score with the survival-floor
 // flag, goals met or missed (each farm sees only its own), and for the facilitator the engine's three-line brief and
 // the way into the debrief: the safety norm first, then "reveal who pumped?" (R19, §5.3).
 import type { GameEnd as End, GoalResult, PublicLens } from '../room';
@@ -33,7 +33,7 @@ export function GameEnd({ end, goal, role, lenses, debriefOpened, onIntent }: {
   return (
     <section aria-labelledby="end-title" className="end">
       <h2 id="end-title">The game lasted {end.seasonsPlayed} seasons{end.truncated ? ' (time-boxed)' : ''}.</h2>
-      <p>Collective score: <strong data-testid="score">{pct(end.collectiveScore)}</strong>{end.cropFailureFlag ? ' · a crop failed' : ''}</p>
+      <p>Collective score: <strong data-testid="score">{pct(end.collectiveScore)}</strong>{end.cropFailureFlag ? ' · an irrigation scheme was below the survival floor two years running' : ''}</p>
       {end.authorityGoal && (
         <p>Authority's goal (the table's total pumping, averaged over seasons, at most {end.authorityGoal.maxMeanPumping} Mm³ a season): {end.authorityGoal.met ? 'met' : 'missed'}.</p>
       )}

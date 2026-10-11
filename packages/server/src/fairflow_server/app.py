@@ -113,6 +113,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "freeRoles": room.free_roles(),
             "phase": room.game.state.phase,
             "scenario": room.public_scenario(),
+            "researchEnabled": room.game.state.researchEnabled,  # ADR 0011: whether S2 asks the research question
+            "infoSheetVersion": registry.sheet_version,
         }
 
     @app.post("/rooms/{code}/join")
@@ -125,7 +127,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         async with locks.setdefault(room.code, asyncio.Lock()):
             before = len(room.game.events)
             try:
-                token = registry.join(code, body.role, body.deviceHash, body.consentGiven, body.presurveyComplete)
+                token = registry.join(
+                    code,
+                    body.role,
+                    body.deviceHash,
+                    body.participationAcknowledged,
+                    body.researchConsent,
+                    body.infoSheetVersion,
+                    body.presurveyComplete,
+                )
             except Rejection as e:
                 raise http_error(e) from None
             log.info("joined room=%s role=%s", room.code, body.role)

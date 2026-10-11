@@ -43,8 +43,11 @@ describe('api', () => {
     vi.stubGlobal('fetch', fetchMock);
     expect((await createRoom('default-basin')).room).toBe('ABCDE');
     expect((await roomInfo('ABCDE')).freeRoles).toEqual(['A']);
-    expect(await joinRoom('ABCDE', 'A', 'h'.repeat(64))).toBe('t');
-    await expect(joinRoom('ABCDE', 'A', 'h'.repeat(64))).rejects.toThrow('role_unavailable');
+    const consent = { infoSheetVersion: 'v', researchConsent: null };
+    expect(await joinRoom('ABCDE', 'A', 'h'.repeat(64), consent)).toBe('t');
+    expect(JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body))).toMatchObject(
+      { participationAcknowledged: true, researchConsent: null, infoSheetVersion: 'v' });
+    await expect(joinRoom('ABCDE', 'A', 'h'.repeat(64), consent)).rejects.toThrow('role_unavailable');
   });
   it('hashes a device identifier and survives unavailable storage', async () => {
     expect(await deviceHash()).toMatch(/^[0-9a-f]{64}$/);
@@ -55,6 +58,15 @@ describe('api', () => {
     expect(tokenStore.get('ABCDE')).toBeNull();
     expect(() => tokenStore.set('ABCDE', 'x')).not.toThrow();
     vi.restoreAllMocks();
+  });
+  it('leaving clears the role token and the review drafts for the room (ADR 0011)', () => {
+    tokenStore.set('ABCDE', 'tok');
+    localStorage.setItem('fairflow.review.ABCDE.A', '{"like.1":"x"}');
+    localStorage.setItem('fairflow:OTHER', 'keep');
+    tokenStore.leave('ABCDE', 'A');
+    expect(tokenStore.get('ABCDE')).toBeNull();
+    expect(localStorage.getItem('fairflow.review.ABCDE.A')).toBeNull();
+    expect(localStorage.getItem('fairflow:OTHER')).toBe('keep');
   });
   it('sends the token as the first message, never in the URL', () => {
     const messages: unknown[] = [];

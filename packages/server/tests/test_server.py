@@ -15,10 +15,23 @@ from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from fairflow_server.app import create_app
-from fairflow_server.settings import Settings
+from fairflow_server.settings import REPO, Settings
 
 ORIGIN = "https://play.fairflow.example"  # test input
+SHEET = json.loads((REPO / "content" / "information-sheet.json").read_text(encoding="utf-8"))["version"]
 SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L", "stockNext", "returnFlow", "pumpsTotal"}
+
+
+def join_body(role: str, device: str, research: bool | None = None, sheet: str = SHEET) -> dict[str, Any]:
+    """ADR 0011: part 1, the research answer (null when not asked) and the information-sheet version read."""
+    return {
+        "role": role,
+        "deviceHash": device,
+        "participationAcknowledged": True,
+        "researchConsent": research,
+        "infoSheetVersion": sheet,
+        "presurveyComplete": True,
+    }
 
 
 def keys_in(obj: Any) -> set[str]:
@@ -45,7 +58,7 @@ def open_room(client: TestClient) -> dict[str, str]:
     for role in client.get(f"/rooms/{room['room']}").json()["freeRoles"]:
         j = client.post(
             f"/rooms/{room['room']}/join",
-            json={"role": role, "deviceHash": f"hash-{role}-0123", "consentGiven": True, "presurveyComplete": True},
+            json=join_body(role, f"hash-{role}-0123"),
         )
         assert j.status_code == 200
         tokens[role] = j.json()["token"]
@@ -181,7 +194,7 @@ def test_rest_errors(client: TestClient) -> None:
     info = open_room(client)
     again = client.post(
         f"/rooms/{info['room']}/join",
-        json={"role": "A", "deviceHash": "hash-A-again", "consentGiven": True, "presurveyComplete": True},
+        json=join_body("A", "hash-A-again"),
     )
     assert again.status_code == 409
     assert client.post("/rooms", json={"scenario": "default-basin", "admin": True}).status_code == 422
@@ -218,9 +231,39 @@ def test_the_lobby_hears_each_join(client: TestClient) -> None:
         facilitator = connect(client, stack, room["room"], room["facilitatorToken"])
         r = client.post(
             f"/rooms/{room['room']}/join",
-            json={"role": "A", "deviceHash": "hash-A-lobby", "consentGiven": True, "presurveyComplete": True},
+            json=join_body("A", "hash-A-lobby"),
         )
         assert r.status_code == 200
         msg = facilitator.receive_json()
         assert msg["type"] == "events"
         assert [(e["type"], e["payload"]["role"]) for e in msg["events"]] == [("player.joined", "A")]
+
+
+def test_course_only_by_default_and_the_research_answer_stays_on_the_server() -> None:
+    """ADR 0011: no research question unless the deployment enables it; when enabled every farm must answer, the
+    answer is in no message to any client, and a join must name the information-sheet version the server serves."""
+    assert Settings.from_env({}).research_enabled is False
+    assert Settings.from_env({"FAIRFLOW_RESEARCH_ENABLED": "1"}).research_enabled is True
+    with TestClient(create_app(Settings(allowed_origins=(ORIGIN,)))) as course:
+        room = course.post("/rooms", json={"scenario": "default-basin"}).json()["room"]
+        assert course.get(f"/rooms/{room}").json()["researchEnabled"] is False
+        assert course.post(f"/rooms/{room}/join", json=join_body("A", "hash-A-course", True)).status_code == 409
+    with TestClient(create_app(Settings(allowed_origins=(ORIGIN,), research_enabled=True))) as research:
+        room = research.post("/rooms", json={"scenario": "default-basin"}).json()
+        code = room["room"]
+        assert research.get(f"/rooms/{code}").json()["researchEnabled"] is True
+        assert research.post(f"/rooms/{code}/join", json=join_body("A", "hash-A-research")).status_code == 409
+        stale = join_body("A", "hash-A-research", True, sheet="an-older-sheet")
+        assert research.post(f"/rooms/{code}/join", json=stale).json()["detail"]["code"] == "stale_information_sheet"
+        tokens = {}
+        for role, answer in (("A", True), ("B", False), ("C", True)):
+            j = research.post(f"/rooms/{code}/join", json=join_body(role, f"hash-{role}-research", answer))
+            assert j.status_code == 200
+            tokens[role] = j.json()["token"]
+        with ExitStack() as stack:
+            for token in [room["facilitatorToken"], room["displayToken"], *tokens.values()]:
+                ws = stack.enter_context(research.websocket_connect(f"/rooms/{code}/ws", headers={"origin": ORIGIN}))
+                ws.send_text(json.dumps({"token": token}))
+                assert ws.receive_json()["type"] == "welcome"
+                sync = ws.receive_json()
+                assert "researchConsent" not in keys_in(sync) and "research.consent" not in json.dumps(sync)

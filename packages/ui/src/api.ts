@@ -7,7 +7,10 @@
 
 import type { PublicScenario, ServerMessage } from './room';
 
-export interface RoomInfo { room: string; freeRoles: string[]; phase: string; scenario: PublicScenario }
+export interface RoomInfo {
+  room: string; freeRoles: string[]; phase: string; scenario: PublicScenario;
+  researchEnabled?: boolean; infoSheetVersion?: string; // ADR 0011
+}
 export interface CreatedRoom { room: string; facilitatorToken: string; displayToken: string; joinPath: string }
 
 async function json<T>(response: Response): Promise<T> {
@@ -24,10 +27,13 @@ export const createRoom = async (scenario: string): Promise<CreatedRoom> =>
 
 export const roomInfo = async (code: string): Promise<RoomInfo> => json<RoomInfo>(await fetch(`/rooms/${encodeURIComponent(code)}`));
 
-export async function joinRoom(code: string, role: string, deviceHash: string): Promise<string> {
+/** ADR 0011: part 1 (taking part), the research answer (null when not asked) and the information-sheet version read. */
+export interface Consent { infoSheetVersion: string; researchConsent: boolean | null }
+
+export async function joinRoom(code: string, role: string, deviceHash: string, consent: Consent): Promise<string> {
   const r = await json<{ token: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ role, deviceHash, consentGiven: true, presurveyComplete: false }),
+    body: JSON.stringify({ role, deviceHash, participationAcknowledged: true, ...consent, presurveyComplete: false }),
   }));
   return r.token;
 }
@@ -45,6 +51,13 @@ export const tokenStore = {
   },
   set(room: string, token: string): void {
     try { localStorage.setItem(`fairflow:${room}`, token); } catch { /* storage unavailable: the session still works */ }
+  },
+  /** ADR 0011: leaving clears this device's role token and its review drafts for the room. */
+  leave(room: string, role: string): void {
+    try {
+      localStorage.removeItem(`fairflow:${room}`);
+      localStorage.removeItem(`fairflow.review.${room}.${role}`);
+    } catch { /* storage unavailable: nothing was kept */ }
   },
 };
 

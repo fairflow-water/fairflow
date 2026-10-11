@@ -22,6 +22,7 @@ from fairflow_engine.scenario import load_scenario  # noqa: E402
 
 OUT = bp.ROOT / "packages" / "ui" / "src" / "fixtures"
 NONCE = "f" * 32  # fixture input: a fixed nonce so the file is reproducible
+SHEET = json.loads((bp.ROOT / "content" / "information-sheet.json").read_text(encoding="utf-8"))["version"]  # ADR 0011
 
 
 def main() -> None:
@@ -31,7 +32,15 @@ def main() -> None:
     tick = iter(range(10**6))
     g = Game.create(setup, "FIXTR", "room", {"appVersion": "fixture"}, lambda: f"2026-10-07T09:00:{next(tick):02d}Z", NONCE)
     for role in [*(s.id for s in setup.schemes), AUTHORITY]:
-        g.submit(role, "join", deviceHash=f"fixture-{role}", consentGiven=True, presurveyComplete=True)
+        g.submit(
+            role,
+            "join",
+            deviceHash=f"fixture-{role}",
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=SHEET,
+            presurveyComplete=True,
+        )
     g.submit(AUTHORITY, "start_season")
     g.submit(AUTHORITY, "propose", lens="proportional")
     g.submit(AUTHORITY, "propose", lens="utilitarian")
@@ -72,7 +81,15 @@ def main() -> None:
     stamp = lambda: f"2026-10-07T08:00:{next(tick):02d}Z"  # noqa: E731
     practice = Game.create(setup, "FIXTP", "room", {"appVersion": "fixture"}, stamp, NONCE)
     for role in [*(s.id for s in setup.schemes), AUTHORITY]:
-        practice.submit(role, "join", deviceHash=f"fixture-{role}", consentGiven=True, presurveyComplete=True)
+        practice.submit(
+            role,
+            "join",
+            deviceHash=f"fixture-{role}",
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=SHEET,
+            presurveyComplete=True,
+        )
     practice.submit(AUTHORITY, "start_tutorial")
     practice.submit(AUTHORITY, "propose", lens="utilitarian")
     practice.submit(AUTHORITY, "close_vote")

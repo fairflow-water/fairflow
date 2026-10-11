@@ -132,7 +132,8 @@
      "fairflowEngine": "1.0.0.dev0",
      "numpy": "2.5.3",
      "scipy": "1.18.1"
-    }
+    },
+    "researchEnabled": false
    },
    "visibility": "public"
   },
@@ -145,7 +146,8 @@
    "payload": {
     "role": "A",
     "deviceId": "fixture-A",
-    "consentGiven": true,
+    "participationAcknowledged": true,
+    "infoSheetVersion": "draft-2026-10-12",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -159,7 +161,8 @@
    "payload": {
     "role": "B",
     "deviceId": "fixture-B",
-    "consentGiven": true,
+    "participationAcknowledged": true,
+    "infoSheetVersion": "draft-2026-10-12",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -173,7 +176,8 @@
    "payload": {
     "role": "C",
     "deviceId": "fixture-C",
-    "consentGiven": true,
+    "participationAcknowledged": true,
+    "infoSheetVersion": "draft-2026-10-12",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -187,7 +191,8 @@
    "payload": {
     "role": "authority",
     "deviceId": "fixture-authority",
-    "consentGiven": true,
+    "participationAcknowledged": true,
+    "infoSheetVersion": "draft-2026-10-12",
     "presurveyComplete": true
    },
    "visibility": "public"

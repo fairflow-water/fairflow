@@ -33,7 +33,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: `uv run uvicorn fairflow_server.app:create_app --factory --port ${SERVER_PORT}`,
+      command: `uv run uvicorn fairflow_server.app:create_app --factory --no-access-log --port ${SERVER_PORT}`,
       cwd: '../server',
       url: `${SERVER}/openapi.json`,
       env: { ...inherited, FAIRFLOW_ALLOWED_ORIGINS: CLIENT },

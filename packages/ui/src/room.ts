@@ -93,13 +93,15 @@ export interface RoomView {
   tutorial: boolean; // the open season is the practice round (R3 season 0)
   tutorialResult: SeasonResult | null; // its reveal; never part of `results`
   seated: string[]; // roles that have joined, in join order (the lobby shows who is still missing)
+  researchEnabled: boolean; // ADR 0011: the room asks the research question (off = course-only)
+  joinedOn: Record<string, string>; // each role's join date (YYYY-MM-DD), for the withdrawal note
 }
 
 export const emptyView = (): RoomView => ({
   phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
-  tutorial: false, tutorialResult: null, seated: [],
+  tutorial: false, tutorialResult: null, seated: [], researchEnabled: false, joinedOn: {},
 });
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -111,18 +113,21 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
     const p = e.payload;
     switch (e.type) {
       case 'game.created':
-        v = { ...v, aquifer: typeof p['aquiferInitial'] === 'number' ? p['aquiferInitial'] : null };
+        v = { ...v, aquifer: typeof p['aquiferInitial'] === 'number' ? p['aquiferInitial'] : null, researchEnabled: p['researchEnabled'] === true };
         break;
       case 'season.climate':
         v = {
           ...emptyView(), phase: 'vote', season: e.season, climate: p as unknown as Climate,
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
-          tutorial: p['tutorial'] === true, seated: v.seated,
+          tutorial: p['tutorial'] === true, seated: v.seated, researchEnabled: v.researchEnabled, joinedOn: v.joinedOn,
         };
         break;
       case 'player.joined':
-        v = { ...v, seated: v.seated.includes(str(p['role'])) ? v.seated : [...v.seated, str(p['role'])] };
+        v = {
+          ...v, seated: v.seated.includes(str(p['role'])) ? v.seated : [...v.seated, str(p['role'])],
+          joinedOn: { ...v.joinedOn, [str(p['role'])]: e.t.slice(0, 10) },
+        };
         break;
       case 'allocation.issued':
         v = { ...v, allocation: p as unknown as Allocation };

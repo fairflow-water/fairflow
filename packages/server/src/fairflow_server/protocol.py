@@ -106,10 +106,13 @@ INTENT: TypeAdapter[Intent] = TypeAdapter(Intent)
 
 
 class JoinRequest(BaseModel):
-    """POST /rooms/{code}/join. deviceHash is a client-side salted hash, never a device identifier (blueprint §6.2)."""
+    """POST /rooms/{code}/join. deviceHash is a client-side salted hash, never a device identifier (blueprint §6.2).
+    ADR 0011: part 1 (taking part), the research answer (null when not asked) and the information-sheet version read."""
 
     model_config = ConfigDict(extra="forbid", strict=True)
     role: str
     deviceHash: Annotated[str, Field(min_length=8, max_length=128)]
-    consentGiven: bool
+    participationAcknowledged: bool
+    researchConsent: bool | None
+    infoSheetVersion: Annotated[str, Field(min_length=1, max_length=64)]
     presurveyComplete: bool

@@ -66,17 +66,39 @@ describe('S4 lens vote', () => {
   });
 });
 
-describe('S2 join', () => {
-  it('shows no role until consent is given, and asks for no name', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ room: 'ABCDE', freeRoles: ['A', 'B'], phase: 'lobby', scenario }))));
+describe('S2 join (ADR 0011)', () => {
+  const room = { room: 'ABCDE', freeRoles: ['A', 'B'], phase: 'lobby', scenario };
+  it('course-only: shows no farm until part 1 is given, asks no research question and no name', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...room, researchEnabled: false }))));
     render(<Join code="ABCDE" onJoined={() => undefined} />);
     await screen.findByText(scenario.name);
     expect(screen.queryByText('Choose your farm')).toBeNull();
     expect(screen.getAllByRole('checkbox')).toHaveLength(1); // no pre-session checkbox until the survey exists (D6)
+    expect(screen.queryAllByRole('radio')).toHaveLength(0);
+    expect(screen.queryByText(/your choice|If you say yes|Changing your mind/)).toBeNull(); // the research sections
     expect(screen.queryByRole('textbox')).toBeNull();
-    await userEvent.click(screen.getByRole('checkbox', { name: /agree to take part/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
     expect(screen.getByText('Choose your farm')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    vi.unstubAllGlobals();
+  });
+  it('research enabled: a yes or no is needed, nothing is pre-selected, and the answer is sent', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...room, researchEnabled: true })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: 't', role: 'A' })));
+    vi.stubGlobal('fetch', fetchMock);
+    const onJoined = vi.fn();
+    render(<Join code="ABCDE" onJoined={onJoined} />);
+    await screen.findByText(scenario.name);
+    const [yes, no] = screen.getAllByRole('radio') as HTMLInputElement[];
+    expect(yes!.checked || no!.checked).toBe(false);
+    await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
+    expect(screen.queryByText('Choose your farm')).toBeNull();
+    await userEvent.click(screen.getByRole('radio', { name: 'No' }));
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await vi.waitFor(() => expect(onJoined).toHaveBeenCalledWith('t'));
+    const body = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body)) as Record<string, unknown>;
+    expect(body).toMatchObject({ role: 'A', participationAcknowledged: true, researchConsent: false });
     vi.unstubAllGlobals();
   });
 });

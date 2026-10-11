@@ -8,6 +8,7 @@ import debriefA from '../fixtures/debrief-A.json';
 import debriefPublic from '../fixtures/debrief-public.json';
 import totalsPublic from '../fixtures/totals-public.json';
 import { viewOf, type PublicScenario, type RecordEvent } from '../room';
+import { AfterGame } from './AfterGame';
 import { needleAngle } from './Reveal';
 import { Season } from './Season';
 
@@ -109,5 +110,26 @@ describe('S10 review', () => {
   it('is not offered to the projector or the facilitator', () => {
     render(<Season view={open} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.queryByRole('tab', { name: 'Review form' })).toBeNull();
+  });
+});
+
+describe('after the game (ADR 0011)', () => {
+  it('a farm can leave: its token and review drafts are cleared after a confirmation', async () => {
+    render(<Season view={mineA} scenario={scenario} role="A" onIntent={() => undefined} code="FIXTR" />);
+    localStorage.setItem('fairflow:FIXTR', 'tok');
+    localStorage.setItem('fairflow.review.FIXTR.A', '{}');
+    expect(screen.queryByTestId('withdrawal')).toBeNull(); // course-only fixture: no withdrawal note
+    await userEvent.click(screen.getByRole('button', { name: 'Leave this game' }));
+    expect(localStorage.getItem('fairflow:FIXTR')).toBe('tok');
+    await userEvent.click(screen.getByRole('button', { name: 'Leave now' }));
+    expect(localStorage.getItem('fairflow:FIXTR')).toBeNull();
+    expect(localStorage.getItem('fairflow.review.FIXTR.A')).toBeNull();
+  });
+  it('shows what is needed to withdraw while research is enabled, and nothing for the projector', () => {
+    render(<AfterGame code="FIXTR" role="A" farm="Upper Citrus Estate" joinedOn="2026-10-12" research />);
+    expect(screen.getByTestId('withdrawal').textContent).toContain('Room FIXTR, Upper Citrus Estate, joined 2026-10-12');
+    cleanup();
+    render(<Season view={open} scenario={scenario} role="display" onIntent={() => undefined} />);
+    expect(screen.queryByRole('button', { name: 'Leave this game' })).toBeNull();
   });
 });

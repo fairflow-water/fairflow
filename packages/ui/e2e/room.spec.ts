@@ -32,7 +32,7 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   for (let i = 0; i < 3; i++) {
     const phone = await newPage(browser, PHONE);
     await phone.goto(`/join/${code}`);
-    await phone.getByRole('checkbox', { name: /agree to take part/ }).check();
+    await phone.getByRole('checkbox', { name: /will take part/ }).check();
     await phone.getByRole('list').getByRole('button').first().click();
     await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();
     phones.push(phone);

@@ -1,0 +1,48 @@
+{
+  "$comment": "CC BY 4.0 (see REUSE.toml). Information for players, shown on the join screen (S2) before anyone chooses a farm (ADR 0011). DRAFT: every [BRACKETED] item is for the maintainer and the institute to fill; until they are filled and ethics approval is given, run with research disabled. Change 'version' whenever the text changes: each join records the version the player saw. Sections marked research: true are shown only when research is enabled.",
+  "version": "draft-2026-10-12",
+  "status": "draft with placeholders",
+  "title": "Fairflow: information for players",
+  "summary": "Playing is part of your course. The game records your farm and your moves, never your name.",
+  "summaryResearch": "Separately, you choose whether your table's record may be used for research. Nobody at the table, and not the facilitator, sees your answer.",
+  "sections": [
+    {
+      "heading": "What this is",
+      "research": false,
+      "text": "Fairflow is a water-sharing game played in [COURSE NAME]. Playing is part of the course."
+    },
+    {
+      "heading": "Research",
+      "research": true,
+      "text": "Separately, [RESEARCHER NAME(S)] at IHE Delft study how players share water and what they learn. Helping the research is your choice."
+    },
+    {
+      "heading": "What the game records",
+      "research": false,
+      "text": "Your farm, votes, pumping, predictions and other moves, when you made each one, and anything you type in the review. It does not ask your name; please do not type names or personal details. [IF THE SERVER OR A PROXY IN FRONT OF IT LOGS IP ADDRESSES: The server's technical log also notes your phone's internet (IP) address, kept for (PERIOD).]"
+    },
+    {
+      "heading": "Who sees what",
+      "research": false,
+      "text": "Your table sees shared results; at the debrief it may see each farm's pumping. Only you see your review answers. The facilitator knows who sat at which farm."
+    },
+    {
+      "heading": "If you say yes to research",
+      "research": true,
+      "text": "Your table's record is kept without names and used for research and publications. Typed answers are checked and anything identifying is removed. If anyone at your table says no, that table's record is not used. Nobody at the table, and not the facilitator, sees your choice, and it does not affect your grade."
+    },
+    {
+      "heading": "Changing your mind",
+      "research": true,
+      "text": "Write to [CONTACT E-MAIL] with your room code, farm and date before [DATE WHEN THE LINK IS REMOVED]. After that, the record cannot be traced to you."
+    },
+    {
+      "heading": "Data protection",
+      "research": false,
+      "text": "Controller: [LEGAL NAME OF CONTROLLER]. Legal basis: [LEGAL BASIS]. Kept on [WHERE] for [RETENTION PERIOD]. Your rights and the data protection officer: [DPO CONTACT; PRIVACY STATEMENT LINK]. You may complain to the Autoriteit Persoonsgegevens. [ETHICS APPROVAL: REFERENCE, IF RESEARCH IS ENABLED]."
+    }
+  ],
+  "part1": "I have read the information and I will take part in the game.",
+  "part2": "May your table's game record, without your name, be used for research?",
+  "withdrawal": "Keep this if you want to withdraw from the research later."
+}

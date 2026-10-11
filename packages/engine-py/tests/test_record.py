@@ -30,6 +30,7 @@ T_MIN, T_MAX = bp.grab(r"Uniform\{NUM, NUM\}", SECTION)
 SCENARIO = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
 DEFAULT_LENS = SCENARIO["defaultLens"]
 REGISTRY = bp.registry()
+SHEET = "test-sheet"  # test input: the information-sheet version a join records (ADR 0011)
 ROLES = [s.id for s in SCHEMES]
 SEALED_KEYS = {"W", "A", "Y", "dL", "P", "pumpsBy", "pumpCost", "L", "pumpsTotal"}
 
@@ -69,7 +70,15 @@ def nonce(i: int) -> str:
 def new_game(i=0, **over) -> Game:
     g = Game.create(setup(**over), f"g{i}", "room", {"appVersion": "test", "engineVersion": "test"}, clock(), nonce(i))
     for role in [*ROLES, AUTHORITY]:
-        g.submit(role, "join", deviceHash=f"h-{role}", consentGiven=True, presurveyComplete=True)
+        g.submit(
+            role,
+            "join",
+            deviceHash=f"h-{role}",
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=SHEET,
+            presurveyComplete=True,
+        )
     return g
 
 
@@ -85,7 +94,15 @@ def kelvara_game(i=0, **over) -> Game:
         replace(loaded, **over), f"k{i}", "room", {"appVersion": "test", "engineVersion": "test"}, clock(), nonce(i)
     )
     for role in [*ROLES, AUTHORITY]:
-        g.submit(role, "join", deviceHash=f"h-{role}", consentGiven=True, presurveyComplete=True)
+        g.submit(
+            role,
+            "join",
+            deviceHash=f"h-{role}",
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=SHEET,
+            presurveyComplete=True,
+        )
     return g
 
 

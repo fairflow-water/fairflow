@@ -30,7 +30,7 @@ from .model import HA_MM_TO_MM3, Basin, LensId, LensParams, Scheme, Scoring, rou
 from .season import SeasonResult, resolve_season, verdict
 from .welfare import pwf_ede
 
-Visibility = Literal["public", "self", "sealed", "mixed"]
+Visibility = Literal["public", "self", "sealed", "mixed", "server"]  # server: never projected to anyone (ADR 0011)
 Event = dict[str, Any]  # one Season Record entry (§6.2)
 AUTHORITY = "authority"
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
@@ -187,11 +187,12 @@ class State:
     climate: dict[str, Any] | None = None
     committed: set[str] = field(default_factory=set)
     livelihood: dict[str, float] = field(default_factory=dict)
-    lowRun: dict[str, int] = field(default_factory=dict)  # consecutive seasons at A ≤ survival floor
+    lowRun: dict[str, int] = field(default_factory=dict)  # consecutive seasons at A < survival floor (ADR 0010)
     cropFailure: dict[str, bool] = field(default_factory=dict)
     scores: list[float] = field(default_factory=list)
     timeboxed: bool = False
     debrief: dict[str, Any] | None = None
+    researchEnabled: bool = False  # ADR 0011: off = course-only
     schemes: dict[str, dict[str, float]] = field(default_factory=dict)  # parameters in force this season (public)
     pendingActions: dict[str, str] = field(default_factory=dict)  # played this season, in force from the next
     used: dict[str, list[str]] = field(default_factory=dict)  # every action each scheme has played
@@ -208,6 +209,7 @@ def apply_event(state: State, event: Event) -> State:
         s.cropFailure = {r: False for r in p["schemeRoles"]}
         s.schemes = {v["id"]: {k: v[k] for k in SCHEME_STATE} for v in p["schemes"]}
         s.used = {r: [] for r in p["schemeRoles"]}
+        s.researchEnabled = p.get("researchEnabled", False)  # absent in records made before ADR 0011
     elif kind == "player.joined":
         s.players[p["role"]] = p
     elif kind == "season.climate":
@@ -277,6 +279,7 @@ class Game:
         versions: dict[str, str],
         clock: Callable[[], str],
         nonce: str | None = None,
+        researchEnabled: bool = False,
     ) -> Game:
         nonce = nonce or _secrets.token_hex(16)  # layout: 128-bit secret nonce
         sec = draw_secrets(setup, nonce)
@@ -300,6 +303,7 @@ class Game:
                 "defaultLens": setup.defaultLens,
                 "floorRules": list(setup.floorRules),
                 "runtime": runtime_versions(),
+                "researchEnabled": researchEnabled,
             },
         )
         return game
@@ -377,17 +381,44 @@ class Game:
             raise Rejection("wrong_phase", "no lens has been chosen this season")
         return s.lens
 
-    def _on_join(self, s: State, actor: str, deviceHash: str, consentGiven: bool, presurveyComplete: bool) -> None:
-        """R2, R3: a role is taken once; consent and pre-survey are recorded before the role is shown."""
+    def _on_join(
+        self,
+        s: State,
+        actor: str,
+        deviceHash: str,
+        participationAcknowledged: bool,
+        researchConsent: bool | None,
+        infoSheetVersion: str,
+        presurveyComplete: bool,
+    ) -> None:
+        """R2, R3, ADR 0011: a role is taken once, after part 1 (the information read, taking part) and, while research
+        is enabled, a farm's yes or no to research. The research answer goes to a `server` event that no projection
+        returns; it is written for every farm whatever the answer, so its presence says nothing. The Authority (the
+        facilitator) is not a research participant and gives no research answer."""
         self._need(s.phase == "lobby", "wrong_phase", "players join before season 1")
         self._need(actor in [*self._scheme_roles(), AUTHORITY], "unknown_role", actor)
         self._need(actor not in s.players, "role_taken", actor)
+        self._need(participationAcknowledged is True, "not_acknowledged", "part 1 is required to take part")
+        self._need(isinstance(infoSheetVersion, str) and bool(infoSheetVersion), "bad_input", "infoSheetVersion")
+        asked = s.researchEnabled and actor != AUTHORITY
+        if asked:
+            self._need(isinstance(researchConsent, bool), "research_answer_needed", "answer yes or no to research")
+        else:
+            self._need(researchConsent is None, "research_not_asked", "no research answer is taken here")
         self._emit(
             "player.joined",
             actor,
             "public",
-            {"role": actor, "deviceId": deviceHash, "consentGiven": consentGiven, "presurveyComplete": presurveyComplete},
+            {
+                "role": actor,
+                "deviceId": deviceHash,
+                "participationAcknowledged": True,
+                "infoSheetVersion": infoSheetVersion,
+                "presurveyComplete": presurveyComplete,
+            },
         )
+        if asked:
+            self._emit("research.consent", actor, "server", {"role": actor, "researchConsent": researchConsent})
 
     def _on_start_tutorial(self, s: State, actor: str) -> None:
         """R3: season 0, a facilitated practice round before season 1: a normal year, two lenses (proportional,
@@ -939,11 +970,13 @@ def project(events: Sequence[Event], viewer: str) -> list[Event]:
     """The events a viewer may see: 'public' (shared screen, exports before the debrief, relay broadcasts) or a role.
     A role sees public fields plus its own self/sealed entries. Sealed fields open to everyone only when the debrief is
     opened with perPlayer = true; a totals-only debrief opens no per-scheme figure (each of W, A, Y, ΔL, L reveals
-    pumping, R17; ADR 0004)."""
+    pumping, R17; ADR 0004). A `server` event (a farm's research answer, ADR 0011) is returned to no viewer."""
     opened = next((e["payload"] for e in events if e["type"] == "debrief.opened"), None)
     out: list[Event] = []
     for e in events:
         vis = e["visibility"]
+        if vis == "server":
+            continue
         if vis == "public":
             out.append(e)
         elif e["type"] == "review.answer":  # S10: written answers stay with their author, whatever the debrief

@@ -8,6 +8,7 @@ import type { PublicScenario, RecordEvent, RoomView } from '../room';
 import { Debrief } from './Debrief';
 import { Climate } from './Climate';
 import { FloorVote } from './FloorVote';
+import { AfterGame } from './AfterGame';
 import { GameEnd } from './GameEnd';
 import { LensVote } from './LensVote';
 import { PrivateTurn } from './PrivateTurn';
@@ -20,6 +21,10 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
 }) {
   const isPlayer = scenario.schemes.some(s => s.id === role);
   const [tab, setTab] = useState<'debrief' | 'review'>('debrief');
+  const leaving = isPlayer && (
+    <AfterGame code={code} role={role} farm={scenario.schemes.find(s => s.id === role)?.name ?? role}
+      joinedOn={view.joinedOn[role]} research={view.researchEnabled} />
+  );
   if (view.phase === 'lobby') {
     const missing = scenario.schemes.filter(x => !view.seated.includes(x.id));
     return role === 'authority'
@@ -52,12 +57,18 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
         {isPlayer && tab === 'review'
           ? <Review storageKey={`fairflow.review.${code}.${role}`} saved={view.review} onIntent={onIntent} />
           : <Debrief view={view} scenario={scenario} events={events} />}
+        {leaving}
       </>
     );
   }
   if (view.phase === 'ended' && view.ended) {
-    return <GameEnd end={view.ended} goal={view.myGoal} role={role} lenses={scenario.lenses}
-      debriefOpened={view.debriefOpened} onIntent={onIntent} />;
+    return (
+      <>
+        <GameEnd end={view.ended} goal={view.myGoal} role={role} lenses={scenario.lenses}
+          debriefOpened={view.debriefOpened} onIntent={onIntent} />
+        {leaving}
+      </>
+    );
   }
   if (!view.climate) return null;
   const last = view.tutorial ? view.tutorialResult : view.results[view.results.length - 1] ?? null;

@@ -82,7 +82,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
   const steps = (view.debriefWelfare?.gammas.length ?? 1) - 1;
 
   function exportRecord() {
-    const blob = new Blob([JSON.stringify({ exportedBy: 'fairflow', events }, null, 1)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ exportedBy: 'fairflow', scope: 'what this screen may see (its projection of the record)', events }, null, 1)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'fairflow-season-record.json';
@@ -172,7 +172,7 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
         </table>
       )}
 
-      <button type="button" onClick={exportRecord}>Export the record (roles, never names)</button>
+      <button type="button" onClick={exportRecord}>Save this screen’s view of the record (roles, never names)</button>
     </section>
   );
 }

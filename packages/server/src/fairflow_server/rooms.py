@@ -64,6 +64,7 @@ class RoomRegistry:
         self.settings = settings
         self.rooms: dict[str, Room] = {}
         self.registry = load_registry(settings)
+        self.sheet_version: str = json.loads(settings.information_sheet.read_text(encoding="utf-8"))["version"]
 
     def _code(self) -> str:
         while True:
@@ -82,19 +83,50 @@ class RoomRegistry:
         if load.setup is None:
             raise Rejection("invalid_scenario", "; ".join(load.errors))
         code = self._code()
-        room = Room(code, Game.create(load.setup, code, "room", {"appVersion": server_version}, _now), scenario)
+        game = Game.create(
+            load.setup, code, "room", {"appVersion": server_version}, _now, researchEnabled=self.settings.research_enabled
+        )
+        room = Room(code, game, scenario)
         facilitator, display = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
-        room.game.submit(AUTHORITY, "join", deviceHash="facilitator", consentGiven=True, presurveyComplete=True)
+        room.game.submit(
+            AUTHORITY,
+            "join",
+            deviceHash="facilitator",
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=self.sheet_version,
+            presurveyComplete=True,
+        )
         room.tokens[facilitator], room.tokens[display] = AUTHORITY, DISPLAY
         self.rooms[code] = room
         return room, facilitator, display
 
-    def join(self, code: str, role: str, device_hash: str, consent: bool, presurvey: bool) -> str:
-        """R2–R3: a free scheme role, recorded with consent and pre-survey status. Returns the role's token."""
+    def join(
+        self,
+        code: str,
+        role: str,
+        device_hash: str,
+        acknowledged: bool,
+        research: bool | None,
+        sheet: str,
+        presurvey: bool,
+    ) -> str:
+        """R2–R3, ADR 0011: a free scheme role, recorded with part 1, the research answer (kept in a server-only
+        event), the sheet version read and pre-survey status. Returns the role's token."""
         room = self.get(code)
         if role not in room.free_roles():
             raise Rejection("role_unavailable", role)
-        room.game.submit(role, "join", deviceHash=device_hash, consentGiven=consent, presurveyComplete=presurvey)
+        if sheet != self.sheet_version:
+            raise Rejection("stale_information_sheet", "reload the page to read the current information")
+        room.game.submit(
+            role,
+            "join",
+            deviceHash=device_hash,
+            participationAcknowledged=acknowledged,
+            researchConsent=research,
+            infoSheetVersion=sheet,
+            presurveyComplete=presurvey,
+        )
         token = secrets.token_urlsafe(32)
         room.tokens[token] = role
         return token

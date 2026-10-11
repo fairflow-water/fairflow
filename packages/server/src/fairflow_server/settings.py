@@ -26,10 +26,19 @@ class Settings:
     room_code_length: int = 5
     room_code_alphabet: str = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
     scenarios_dir: Path = field(default_factory=lambda: REPO / "packages" / "scenarios")
+    # ADR 0011: the information sheet shown at join; a join must name the version this server serves.
+    information_sheet: Path = field(default_factory=lambda: REPO / "content" / "information-sheet.json")
+    # ADR 0011: course-only (no research question) unless the deployment enables research, which it should do only
+    # once the sheet's placeholders are filled and ethics approval is given.
+    research_enabled: bool = False
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] = os.environ) -> Settings:
         """Deployment configuration: FAIRFLOW_ALLOWED_ORIGINS is a comma-separated list of browser origins (e.g. the
-        site's own https origin; http://localhost:5173 for development). Unset means no browser may connect."""
+        site's own https origin; http://localhost:5173 for development). Unset means no browser may connect.
+        FAIRFLOW_RESEARCH_ENABLED=1 asks every farm the research question (ADR 0011); anything else is course-only."""
         raw = environ.get("FAIRFLOW_ALLOWED_ORIGINS", "")
-        return cls(allowed_origins=tuple(o.strip() for o in raw.split(",") if o.strip()))
+        return cls(
+            allowed_origins=tuple(o.strip() for o in raw.split(",") if o.strip()),
+            research_enabled=environ.get("FAIRFLOW_RESEARCH_ENABLED", "") == "1",
+        )

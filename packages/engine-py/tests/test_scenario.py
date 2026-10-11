@@ -11,6 +11,7 @@ from fairflow_engine.scenario import hard_checks, worst_case_allocable
 
 DEFAULT = json.loads((ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
 REG = registry()
+SHEET = "test-sheet"  # test input: the information-sheet version a join records (ADR 0011)
 
 
 def broken(**changes):
@@ -128,7 +129,15 @@ def test_a_loaded_scenario_plays_and_audits():
     tick = iter(range(10**6))
     g = Game.create(setup, "loaded", "room", {"appVersion": "test"}, lambda: f"t{next(tick)}", "a" * 32)
     for role in [*(s.id for s in setup.schemes), AUTHORITY]:
-        g.submit(role, "join", deviceHash=role, consentGiven=True, presurveyComplete=True)
+        g.submit(
+            role,
+            "join",
+            deviceHash=role,
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=SHEET,
+            presurveyComplete=True,
+        )
     while replay(g.events).phase != "ended":
         g.submit(AUTHORITY, "start_season")
         g.submit(AUTHORITY, "close_vote")  # timer expiry: the default lens, then the previous one (R8)

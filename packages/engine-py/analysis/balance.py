@@ -39,6 +39,7 @@ from fairflow_engine.scenario import load_scenario  # noqa: E402
 
 SCENARIO = ROOT / "packages" / "scenarios" / "default-basin.json"
 REGISTRY = ROOT / "packages" / "scenarios" / "parameters.json"
+SHEET = "balance-harness"  # the information-sheet version a join records (ADR 0011); no player reads it here
 EPS = 1e-6  # tolerance: the engine rounds water to 1e-6 Mm³ (§7.2)
 
 # §9.2 thresholds, as printed in the blueprint table
@@ -122,7 +123,15 @@ def play(setup: Any, seed: int, table: Sequence[str], force_lens: str | None = N
     g = Game.create(setup, f"b{seed}", "balance", {"appVersion": "balance", "engineVersion": "balance"},
                     lambda: f"2026-10-08T00:00:{next(tick):07d}Z", nonce)  # fmt: skip
     for r in [*roles, AUTHORITY]:
-        g.submit(r, "join", deviceHash=f"balance-{r}", consentGiven=True, presurveyComplete=False)
+        g.submit(
+            r,
+            "join",
+            deviceHash=f"balance-{r}",
+            participationAcknowledged=True,
+            researchConsent=None,
+            infoSheetVersion=SHEET,
+            presurveyComplete=False,
+        )
     history: list[dict] = []
     profit_checks: list[dict] = []
     while replay(g.events).phase != "ended":

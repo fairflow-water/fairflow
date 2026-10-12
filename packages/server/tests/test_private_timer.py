@@ -6,7 +6,9 @@ gives the phone the server's time."""
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import time
 from collections.abc import Iterator
 from contextlib import ExitStack
@@ -176,3 +178,51 @@ def test_the_welcome_gives_the_server_time(client: TestClient, clock: Clock) -> 
         ws.send_text(json.dumps({"token": info["authority"]}))
         welcome = ws.receive_json()
     assert welcome["type"] == "welcome" and welcome["serverTime"] == round(clock.t * MS)
+
+
+def test_the_timer_waits_for_the_room_lock(client: TestClient, clock: Clock) -> None:
+    """A commit being applied holds the room's lock; a deadline passing meanwhile must wait for it, then find the season
+    complete and do nothing."""
+    info = open_room(client)
+    roles = roles_of(info)
+    with ExitStack() as stack:
+        sockets = {w: connect(client, stack, info["room"], info[w]) for w in ["authority", "display", *roles]}
+        open_private_turn(sockets, roles)
+        for r in roles[:-1]:
+            commit(sockets, r)
+        lock: asyncio.Lock = client.app.state.locks[info["room"]]  # type: ignore[attr-defined]
+        client.portal.call(lock.acquire)  # type: ignore[union-attr]
+        try:
+            clock.t = opened(client, info["room"]) + DECISION_S + GRACE_S
+            time.sleep(2 * TIMER_TICK_S)  # test input: the timer is due and must be waiting on the lock
+            assert phase(client, info["room"]) == "private"
+            room = client.app.state.registry.get(info["room"])  # type: ignore[attr-defined]
+            room.game.submit(roles[-1], "commit", pumps=0.0)  # the last commit, applied under the lock
+        finally:
+            client.portal.call(lock.release)  # type: ignore[union-attr]
+        time.sleep(2 * TIMER_TICK_S)  # test input: the timer runs after the lock is released
+    plays = [e["payload"] for e in record(client, info["room"]) if e["type"] == "action.played"]
+    assert [p.get("timeoutBy") for p in plays] == [None] * len(roles)
+
+
+def test_a_timer_left_from_the_last_season_does_nothing(
+    client: TestClient, clock: Clock, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Season 1's timer wakes during season 2's private turn: it must stand down, not submit for season 1."""
+    info = open_room(client)
+    roles = roles_of(info)
+    with ExitStack() as stack:
+        sockets = {w: connect(client, stack, info["room"], info[w]) for w in ["authority", "display", *roles]}
+        open_private_turn(sockets, roles)
+        first = opened(client, info["room"])
+        for r in roles:
+            commit(sockets, r)
+        open_private_turn(sockets, roles)
+        second = opened(client, info["room"])
+        assert second > first
+        with caplog.at_level(logging.INFO, logger="fairflow.server"):
+            clock.t = (first + second) / 2 + DECISION_S + GRACE_S  # season 1's deadline has passed, season 2's not
+            time.sleep(2 * TIMER_TICK_S)  # test input: two ticks for the old timer to wake
+        assert phase(client, info["room"]) == "private"
+    assert not [r for r in caplog.records if "timeout_private" in r.getMessage() or "timer refused" in r.getMessage()]
+    assert not any(e["payload"].get("timeoutBy") for e in record(client, info["room"]) if e["type"] == "action.played")

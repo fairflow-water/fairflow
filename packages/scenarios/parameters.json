@@ -60,6 +60,9 @@
       "sourceFile": "docs/decisions/0004-in-play-disclosure.md", "quote": "| Tank resolution | 1 Mm³ (admin-settable per scenario) |",
       "role": "resolution of the observed aquifer level, which players see and which prices pumping and drives the GW–SW coupling (ADR 0004)" },
     { "key": "basin.aquifer.seatCostMultipliers", "default": [1.0, 1.5, 2.0], "unit": "× cost by seat", "section": "§2.2", "quote": "× seat multiplier 1.0 / 1.5 / 2.0",
-      "role": "position-dependent pump cost once B < B_low" }
+      "role": "position-dependent pump cost once B < B_low" },
+    { "key": "session.privateTurnGraceS", "default": 10, "unit": "s", "section": "ADR 0013",
+      "sourceFile": "docs/decisions/0013-server-timed-private-turn.md", "quote": "| Server grace after the private-turn deadline | 10 s (maintainer convention, 2026-10-12) |",
+      "role": "how long after a phone's private-turn deadline the server commits the untouched default for a scheme that has not committed (ADR 0013); a timing convention, not a model parameter" }
   ]
 }

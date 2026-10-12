@@ -251,7 +251,8 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0009 | Capture-consistent river–aquifer balance; where the spill goes |
 | 0010 | Strict survival floor; the collective score keeps its declared lens; debrief scoreboard per equity measure; two §9.2 criteria restated |
 | 0011 | Two-part consent; research answer in a `server` event; course-only by default |
-| 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (proposed, draft PR) |
+| 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (merged, PR #8) |
+| 0013 | The server times the private turn; untouched default (0 pumps, no action); `byTimeout` and `timeoutBy` withheld until a per-player debrief |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 

@@ -134,6 +134,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
     app = FastAPI(title="Fairflow room server", version=SERVER_VERSION, lifespan=lifespan)
     app.state.registry = registry
     app.state.sweep = sweep
+    app.state.locks = locks  # tests hold a room's lock to see that the private-turn timer waits for it
     app.add_middleware(
         CORSMiddleware, allow_origins=list(settings.allowed_origins), allow_methods=["GET", "POST"], allow_headers=["*"]
     )

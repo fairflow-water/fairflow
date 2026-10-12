@@ -13,7 +13,10 @@ Agents are balance stereotypes, not calibrated humans (§9.2):
 The Authority proposes every voted lens, breaks ties by the first proposal and lets a floor vote time out ("whatever
 works", ADR 0003).
 
-    uv run python analysis/balance.py [games-per-cell] [--set path=value ...]
+    uv run python analysis/balance.py [games-per-cell] [--set path=value ...] [--check]
+
+`--check` (CI, on every merge to main) also exits with status 1 and names each §9.2 criterion that fails; it never
+changes what is measured.
 
 `--set` overrides a scenario value (dotted path, e.g. basin.aquifer.capacity=24) or a registry default
 (registry:actions.pump.cap=3) for calibration runs; overrides are printed with the report.
@@ -346,7 +349,13 @@ def main(argv: Sequence[str]) -> None:
         if a == "--set":
             path, value = argv[i + 1].split("=", 1)
             overrides[path] = json.loads(value)
-    print(json.dumps(report(overrides, games), indent=1, ensure_ascii=False))
+    out = report(overrides, games)
+    print(json.dumps(out, indent=1, ensure_ascii=False))
+    if "--check" in argv:
+        failed = [name for name, v in out.items() if isinstance(v, dict) and v.get("pass") is False]
+        if failed:
+            print(f"balance criteria failed at {games} games per cell: {', '.join(failed)}", file=sys.stderr)
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

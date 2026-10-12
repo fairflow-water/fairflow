@@ -109,6 +109,9 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
     async def sweep() -> None:
         for code in registry.sweep():
             locks.pop(code, None)
+            timer = timers.pop(code, None)
+            if timer is not None:
+                timer.cancel()
             for conn in connections.pop(code, []):
                 with suppress(RuntimeError, WebSocketDisconnect):
                     await conn.socket.close(code=POLICY_VIOLATION)  # the client shows the room as gone
@@ -120,6 +123,8 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        for room in list(registry.rooms.values()):
+            arm(room)  # a room restored mid private turn: its deadline comes from the record (fires at once if past)
         task = asyncio.create_task(sweeper())
         try:
             yield
@@ -242,6 +247,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
             before = len(room.game.events)
             try:
                 room.game.submit(ENGINE, "timeout_private", season=season)
+                registry.record(room, before)  # on disk before anyone is told, like every accepted intent (ADR 0012)
             except Rejection as r:
                 log.warning("timer refused room=%s code=%s", room.code, r.code)
                 return

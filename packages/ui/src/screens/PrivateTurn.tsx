@@ -5,6 +5,10 @@
 // the action tokens collapsed to one line, and the engine's preview of harvest and points for the current choice.
 // The countdown runs from the scenario's decision time and commits the current choice when it ends; a commit can be
 // undone for 3 s. Every number comes from the engine's private.opened and season.resolved events.
+// A commit is final on this phone once sent, but it counts only when the server records it: if it could not be sent
+// (no connection), or the connection died with it, the turn stays open and the same choice is sent again after the
+// server's next full sync, which every reconnection brings. A sync that still shows this turn open means the server
+// holds no commit from this phone (once it does, this screen is replaced).
 import { useEffect, useRef, useState } from 'react';
 import type { MyResult, PrivateTurn as Turn } from '../room';
 
@@ -22,10 +26,13 @@ export interface PrivateTurnProps {
   last: MyResult | null;
   demand: number | null;
   decisionS: number | null;
-  onCommit: (pumps: number, action: string | null) => void;
+  /** Returns false when the commit could not be sent (no connection). */
+  onCommit: (pumps: number, action: string | null) => boolean;
+  /** Counts the server's full syncs; a new one while this turn is open re-sends a commit made here. */
+  resync?: number | undefined;
 }
 
-export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: PrivateTurnProps) {
+export function PrivateTurn({ turn, last, demand, decisionS, onCommit, resync }: PrivateTurnProps) {
   const [level, setLevel] = useState(0); // index into the engine's offered pump levels (ADR 0008: the last may be fractional)
   const pumps = turn.options[level]?.pumps ?? 0;
   const [action, setAction] = useState<string | null>(null);
@@ -35,13 +42,20 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
   const choice = useRef({ pumps, action });
   choice.current = { pumps, action };
   const undo = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sent = useRef(false);
+  const made = useRef<{ pumps: number; action: string | null } | null>(null); // the commit made on this phone
+  const [delivery, setDelivery] = useState<'none' | 'sent' | 'waiting'>('none');
 
   const send = (p: number, a: string | null) => {
-    if (sent.current) return;
-    sent.current = true;
-    onCommit(p, a);
+    if (made.current) return;
+    made.current = { pumps: p, action: a };
+    setPending(true);
+    setDelivery(onCommit(p, a) ? 'sent' : 'waiting');
   };
+
+  useEffect(() => {
+    if (!made.current) return;
+    setDelivery(onCommit(made.current.pumps, made.current.action) ? 'sent' : 'waiting');
+  }, [resync]);
 
   useEffect(() => {
     if (decisionS === null) return undefined;
@@ -110,9 +124,13 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit }: Private
           </fieldset>
         )}
       </div>
-      {pending
+      {delivery === 'waiting' && (
+        <div className="toast" role="status">Not connected. Your turn is kept and will be sent when the connection is back.</div>
+      )}
+      {delivery === 'sent' && <div className="toast" role="status">Sending your turn…</div>}
+      {delivery === 'none' && (pending
         ? <div className="toast" role="status">Committing… <button type="button" onClick={cancel}>Undo</button></div>
-        : <button type="button" className="cta" onClick={commit}>Commit my turn</button>}
+        : <button type="button" className="cta" onClick={commit}>Commit my turn</button>)}
     </section>
   );
 }

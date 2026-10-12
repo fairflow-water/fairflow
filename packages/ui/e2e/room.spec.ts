@@ -131,3 +131,66 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   await phones[1]!.getByRole('tab', { name: 'Review form' }).click();
   await expect(phones[1]!.getByRole('button', { name: 'Saved' })).toHaveCount(0);
 });
+
+test('a commit made while the connection drops is kept and sent again after reconnecting', async ({ browser }) => {
+  const facilitator = await newPage(browser);
+  await facilitator.goto('/');
+  await facilitator.getByRole('button', { name: 'Open a room' }).click();
+  const heading = await facilitator.getByRole('heading', { level: 1, name: /^Room / }).textContent();
+  const code = (heading ?? '').replace('Room ', '').trim();
+  const display = await newPage(browser);
+  await display.goto((await facilitator.getByRole('link', { name: 'Open the projector view' }).getAttribute('href')) ?? '');
+
+  // The first phone's socket can be cut, and its next commit can be lost together with the connection.
+  const link = { down: false, loseCommit: false, cut: () => Promise.resolve() };
+  const phones: Page[] = [];
+  for (let i = 0; i < 3; i++) {
+    const phone = await newPage(browser, PHONE);
+    if (i === 0) {
+      await phone.routeWebSocket(/\/rooms\/[^/]+\/ws$/, async ws => {
+        if (link.down) { await ws.close({ code: 1001, reason: 'no network' }); return; }
+        const server = ws.connectToServer();
+        link.cut = async () => { await ws.close({ code: 1001, reason: 'no network' }); await server.close(); };
+        ws.onMessage(message => {
+          if (link.loseCommit && String(message).includes('"intent":"commit"')) { link.loseCommit = false; void link.cut(); return; }
+          server.send(message);
+        });
+      });
+    }
+    await phone.goto(`/join/${code}`);
+    await phone.getByRole('checkbox', { name: /will take part/ }).check();
+    await phone.getByRole('list').getByRole('button').first().click();
+    await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();
+    phones.push(phone);
+  }
+  const [cutPhone, ...others] = phones;
+
+  // Practice round: the commit leaves the phone, but the connection dies before it reaches the server.
+  await facilitator.getByRole('button', { name: 'Start the practice round' }).click();
+  await facilitator.getByTestId('lens-utilitarian').getByRole('button', { name: 'Propose' }).click();
+  for (const phone of phones) await phone.getByTestId('lens-utilitarian').getByRole('button', { name: 'Vote' }).click();
+  for (const phone of phones) await expect(phone.getByTestId('lens-utilitarian').getByRole('button', { name: 'Your vote' })).toBeVisible();
+  await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+  for (const phone of others) await phone.getByRole('button', { name: 'Commit my turn' }).click();
+  link.loseCommit = true;
+  await cutPhone!.getByRole('button', { name: 'Commit my turn' }).click();
+  await expect(display.getByRole('heading', { name: /Practice round: what happened/ })).toBeVisible();
+
+  // Season 1: the connection is already gone when the undo window ends, so the commit cannot be sent at all.
+  await facilitator.getByRole('button', { name: 'Open season 1', exact: true }).click();
+  await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
+  for (const phone of phones) await phone.getByTestId('lens-proportional').getByRole('button', { name: 'Vote' }).click();
+  for (const phone of phones) await expect(phone.getByTestId('lens-proportional').getByRole('button', { name: 'Your vote' })).toBeVisible();
+  await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+  for (const phone of others) await phone.getByRole('button', { name: 'Commit my turn' }).click();
+  await expect(cutPhone!.getByRole('heading', { name: 'Your turn' })).toBeVisible();
+  await cutPhone!.getByRole('button', { name: 'Commit my turn' }).click();
+  link.down = true;
+  await link.cut();
+  await expect(cutPhone!.getByText('Not connected. Your turn is kept and will be sent when the connection is back.')).toBeVisible();
+  await expect(cutPhone!.getByRole('heading', { name: 'Your turn' })).toBeVisible();
+  await expect(display.getByText(/Private turns/)).toBeVisible(); // the season waits for the missing commit
+  link.down = false;
+  await expect(display.getByRole('heading', { name: 'Season 1: what happened' })).toBeVisible();
+  await expect(cutPhone!.getByLabel(/Your scheme/)).toBeVisible();
+});

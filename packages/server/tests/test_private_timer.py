@@ -10,6 +10,7 @@ import json
 import time
 from collections.abc import Iterator
 from contextlib import ExitStack
+from datetime import datetime
 from typing import Any
 
 import pytest
@@ -28,13 +29,20 @@ WAIT_S = 10 * TIMER_TICK_S  # test input: how long the test waits for a timer th
 
 
 class Clock:
-    """Wall time plus an offset the test moves forward."""
+    """A clock that moves only when the test sets it, so a slow run never lets a deadline pass by itself. The record's
+    event times stay on the wall clock; tests set this clock relative to them (`opened`)."""
 
     def __init__(self) -> None:
-        self.offset = 0.0
+        self.t = time.time()
 
     def __call__(self) -> float:
-        return time.time() + self.offset
+        return self.t
+
+
+def opened(client: TestClient, room: str) -> float:
+    """The record time of the open private turn's private.opened (the start of the deadline, ADR 0013)."""
+    event = next(e for e in reversed(record(client, room)) if e["type"] == "private.opened")
+    return datetime.fromisoformat(event["t"]).timestamp()
 
 
 @pytest.fixture
@@ -95,10 +103,11 @@ def test_a_phone_that_is_gone_is_committed_for_at_the_deadline(client: TestClien
         sockets.pop(roles[-1]).close()  # the last scheme's phone is gone before its private turn
         for r in roles[:-1]:
             commit(sockets, r)
-        clock.offset = DECISION_S - 1  # test input: just before the phone's deadline nothing happens
+        start = opened(client, info["room"])
+        clock.t = start + DECISION_S + 1  # test input: past the phone's deadline, inside the grace: nothing happens
         time.sleep(2 * TIMER_TICK_S)  # test input: two ticks of the timer
         assert phase(client, info["room"]) == "private"
-        clock.offset = DECISION_S + GRACE_S
+        clock.t = start + DECISION_S + GRACE_S
         assert wait_for_phase(client, info["room"], ("reveal", "ended")) in ("reveal", "ended")
         for who, ws in sockets.items():
             msg = ws.receive_json()
@@ -120,7 +129,7 @@ def test_a_phone_that_commits_in_time_is_never_overridden(client: TestClient, cl
         for r in roles[1:]:
             commit(sockets, r)
         assert phase(client, info["room"]) in ("reveal", "ended")
-        clock.offset = DECISION_S + GRACE_S + WAIT_S
+        clock.t += DECISION_S + GRACE_S + WAIT_S
         time.sleep(2 * TIMER_TICK_S)  # test input: the season's timer wakes and must do nothing
     plays = [e["payload"] for e in record(client, info["room"]) if e["type"] == "action.played"]
     assert [p.get("timeoutBy") for p in plays] == ["phone"] + [None] * (len(roles) - 1)
@@ -138,7 +147,7 @@ def test_the_next_season_gets_its_own_timer(client: TestClient, clock: Clock) ->
         open_private_turn(sockets, roles)
         time.sleep(2 * TIMER_TICK_S)  # test input: the first season's timer is still asleep and must not act
         assert phase(client, info["room"]) == "private"
-        clock.offset = DECISION_S + GRACE_S + TIMER_TICK_S
+        clock.t = opened(client, info["room"]) + DECISION_S + GRACE_S  # past both seasons' deadlines
         assert wait_for_phase(client, info["room"], ("reveal", "ended")) in ("reveal", "ended")
     plays = [e for e in record(client, info["room"]) if e["type"] == "action.played"]
     assert {e["season"] for e in plays if e["payload"].get("timeoutBy") == "server"} == {2}
@@ -162,10 +171,8 @@ def test_no_client_can_send_the_server_intent(client: TestClient) -> None:
 
 def test_the_welcome_gives_the_server_time(client: TestClient, clock: Clock) -> None:
     info = open_room(client)
-    clock.offset = DECISION_S  # test input: a server clock ahead of the phone's
+    clock.t += DECISION_S  # test input: a server clock ahead of the phone's
     with client.websocket_connect(f"/rooms/{info['room']}/ws", headers={"origin": ORIGIN}) as ws:
-        sent = time.time()
         ws.send_text(json.dumps({"token": info["authority"]}))
         welcome = ws.receive_json()
-    assert welcome["type"] == "welcome"
-    assert abs(welcome["serverTime"] / MS - (sent + DECISION_S)) < TIMER_TICK_S  # tolerance: the test's own run time
+    assert welcome["type"] == "welcome" and welcome["serverTime"] == round(clock.t * MS)

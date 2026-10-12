@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from collections.abc import Iterator
 from contextlib import ExitStack
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
@@ -35,6 +37,13 @@ def join_body(role: str, device: str, research: bool | None = None, sheet: str =
     }
 
 
+def app(settings: Settings) -> FastAPI:
+    """The server on a clock that stands still, so the private-turn timer (ADR 0013) never fires in these tests, however
+    slowly they run; tests/test_private_timer.py moves the clock itself."""
+    start = time.time()
+    return create_app(settings, now=lambda: start)
+
+
 def keys_in(obj: Any) -> set[str]:
     if isinstance(obj, dict):
         return set(obj) | set().union(*(keys_in(v) for v in obj.values()))
@@ -47,7 +56,7 @@ def keys_in(obj: Any) -> set[str]:
 def client() -> Iterator[TestClient]:
     # One TestClient context = one event loop shared by every socket, as in a real uvicorn process. Without the context
     # each WebSocket gets its own loop and cross-socket broadcasts deadlock in the harness (not in the server).
-    with TestClient(create_app(Settings(allowed_origins=(ORIGIN,)))) as c:
+    with TestClient(app(Settings(allowed_origins=(ORIGIN,)))) as c:
         yield c
 
 
@@ -165,7 +174,7 @@ def test_the_display_is_read_only(client: TestClient) -> None:
 
 
 def test_oversized_messages_close_the_connection() -> None:
-    with TestClient(create_app(Settings(allowed_origins=(ORIGIN,), max_message_bytes=256))) as client, ExitStack() as stack:
+    with TestClient(app(Settings(allowed_origins=(ORIGIN,), max_message_bytes=256))) as client, ExitStack() as stack:
         info = open_room(client)
         ws = connect(client, stack, info["room"], info["authority"])
         ws.send_text(json.dumps({"intent": "propose", "lens": "x" * 1000}))
@@ -176,7 +185,7 @@ def test_oversized_messages_close_the_connection() -> None:
 
 def test_rate_limit() -> None:
     with (
-        TestClient(create_app(Settings(allowed_origins=(ORIGIN,), rate_burst=3, rate_per_second=0.001))) as client,
+        TestClient(app(Settings(allowed_origins=(ORIGIN,), rate_burst=3, rate_per_second=0.001))) as client,
         ExitStack() as stack,
     ):
         info = open_room(client)
@@ -245,11 +254,11 @@ def test_course_only_by_default_and_the_research_answer_stays_on_the_server() ->
     answer is in no message to any client, and a join must name the information-sheet version the server serves."""
     assert Settings.from_env({}).research_enabled is False
     assert Settings.from_env({"FAIRFLOW_RESEARCH_ENABLED": "1"}).research_enabled is True
-    with TestClient(create_app(Settings(allowed_origins=(ORIGIN,)))) as course:
+    with TestClient(app(Settings(allowed_origins=(ORIGIN,)))) as course:
         room = course.post("/rooms", json={"scenario": "default-basin"}).json()["room"]
         assert course.get(f"/rooms/{room}").json()["researchEnabled"] is False
         assert course.post(f"/rooms/{room}/join", json=join_body("A", "hash-A-course", True)).status_code == 409
-    with TestClient(create_app(Settings(allowed_origins=(ORIGIN,), research_enabled=True))) as research:
+    with TestClient(app(Settings(allowed_origins=(ORIGIN,), research_enabled=True))) as research:
         room = research.post("/rooms", json={"scenario": "default-basin"}).json()
         code = room["room"]
         assert research.get(f"/rooms/{code}").json()["researchEnabled"] is True

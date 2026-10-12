@@ -61,10 +61,28 @@ export const tokenStore = {
   },
 };
 
+const HOSTED = 'fairflow.hosted'; // the rooms this browser opened as facilitator, with their tokens
+
+/** ADR 0012: the facilitator's tokens are kept on the facilitator's device, so a reloaded page, or a game continued on a
+ * later day within the server's retention period, can take the room up again. */
+export const hostStore = {
+  list(): CreatedRoom[] {
+    try { return JSON.parse(localStorage.getItem(HOSTED) ?? '[]') as CreatedRoom[]; } catch { return []; }
+  },
+  add(room: CreatedRoom): void {
+    try { localStorage.setItem(HOSTED, JSON.stringify([room, ...hostStore.list().filter(r => r.room !== room.room)])); }
+    catch { /* storage unavailable: the room works until this page is closed */ }
+  },
+  remove(code: string): void {
+    try { localStorage.setItem(HOSTED, JSON.stringify(hostStore.list().filter(r => r.room !== code))); }
+    catch { /* storage unavailable: nothing was kept */ }
+  },
+};
+
 export interface RoomSocket { send(intent: Record<string, unknown>): boolean; close(): void }
 
-/** Connection state for the screen: open; lost and retrying; or refused for good (unknown room or token, e.g. after a
- * server restart, since rooms are held in memory). */
+/** Connection state for the screen: open; lost and retrying; or refused for good (unknown room or token: the room was
+ * deleted after the server's retention period, or the server keeps rooms in memory only and restarted; ADR 0012). */
 export type LinkStatus = 'open' | 'reconnecting' | 'gone';
 
 const POLICY_VIOLATION = 1008; // RFC 6455 close code the server uses for a bad token, origin or room: do not retry

@@ -5,7 +5,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { connect, createRoom, deviceHash, joinRoom, roomInfo, tokenStore } from './api';
+import { connect, createRoom, deviceHash, hostStore, joinRoom, roomInfo, tokenStore } from './api';
 import { App } from './App';
 import opening from './fixtures/opening-public.json';
 import { viewOf, type PublicScenario, type RecordEvent } from './room';
@@ -148,6 +148,22 @@ describe('pages', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
     expect(await screen.findByRole('heading', { name: 'Room ABCDE' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Open the projector view' }).getAttribute('href')).toBe('/display/ABCDE#d');
+    expect(hostStore.list().map(r => r.room)).toEqual(['ABCDE']);
+  });
+  it('a reloaded facilitator page continues a room it opened, and forgets one the server no longer has (ADR 0012)', async () => {
+    hostStore.add({ room: 'GONE2', facilitatorToken: 'g', displayToken: 'gd', joinPath: '/join/GONE2' });
+    hostStore.add({ room: 'ABCDE', facilitatorToken: 'f', displayToken: 'd', joinPath: '/join/ABCDE' });
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => (url.includes('GONE2')
+      ? new Response(JSON.stringify({ detail: { code: 'unknown_room' } }), { status: 404 })
+      : ok({ room: 'ABCDE', freeRoles: [], phase: 'vote', scenario }))));
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Continue room GONE2' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Continue room GONE2' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Continue room ABCDE' }));
+    expect(await screen.findByRole('heading', { name: 'Room ABCDE' })).toBeTruthy();
+    act(() => (FakeSocket.last as FakeSocket).emit('open'));
+    expect((FakeSocket.last as FakeSocket).sent[0]).toBe(JSON.stringify({ token: 'f' }));
   });
   it('the projector page connects with the token from the URL fragment', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ok({ room: 'ABCDE', freeRoles: [], phase: 'lobby', scenario })));

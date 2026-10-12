@@ -6,6 +6,7 @@ message to a client other than the acting role contains W, A, Y, ΔL or P"), and
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Iterator
 from contextlib import ExitStack
 from typing import Any
@@ -240,7 +241,7 @@ def test_the_lobby_hears_each_join(client: TestClient) -> None:
 
 
 def test_course_only_by_default_and_the_research_answer_stays_on_the_server() -> None:
-    """ADR 0011: no research question unless the deployment enables it; when enabled every farm must answer, the
+    """ADR 0011: no research question unless the deployment enables it; when enabled every scheme must answer, the
     answer is in no message to any client, and a join must name the information-sheet version the server serves."""
     assert Settings.from_env({}).research_enabled is False
     assert Settings.from_env({"FAIRFLOW_RESEARCH_ENABLED": "1"}).research_enabled is True
@@ -267,3 +268,12 @@ def test_course_only_by_default_and_the_research_answer_stays_on_the_server() ->
                 assert ws.receive_json()["type"] == "welcome"
                 sync = ws.receive_json()
                 assert "researchConsent" not in keys_in(sync) and "research.consent" not in json.dumps(sync)
+
+
+def test_uvicorn_handshake_lines_carry_no_client_address(caplog: pytest.LogCaptureFixture) -> None:
+    """ADR 0012: uvicorn logs each WebSocket handshake with the client's address even with --no-access-log; the server
+    blanks it, so no player's IP address reaches the log."""
+    create_app(Settings(allowed_origins=(ORIGIN,)))
+    with caplog.at_level("INFO", logger="uvicorn.error"):
+        logging.getLogger("uvicorn.error").info('%s - "WebSocket %s" [accepted]', "203.0.113.7:51234", "/rooms/X/ws")
+    assert "203.0.113.7" not in caplog.text and '- - "WebSocket /rooms/X/ws" [accepted]' in caplog.text

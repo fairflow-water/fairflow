@@ -8,7 +8,11 @@ Security choices (OWASP API Security Top 10 2023; OWASP WebSocket Security Cheat
 - the Origin header is checked against an allowlist on every handshake (cross-site WebSocket hijacking);
 - every message is size-capped, rate-limited per connection (API4) and validated strictly (unknown fields rejected);
 - each connection receives only its own role's projection: sealed data never leave the server before the debrief;
-- logs carry room, role and intent type only — no device hashes, tokens or free text.
+- logs carry room, role and intent type only — no device hashes, tokens or free text — and no client IP address:
+  uvicorn logs each WebSocket handshake with the client's address even with --no-access-log, so that address is
+  blanked here (`NoClientAddress`), whatever the log level (ADR 0012);
+- with a store (ADR 0012), each accepted intent is on disk before it is broadcast, and a room is deleted
+  `room_ttl_hours` after its last event, its connections closed.
 """
 
 from __future__ import annotations
@@ -17,6 +21,8 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -33,6 +39,7 @@ log = logging.getLogger("fairflow.server")
 SERVER_VERSION = "1.0.0.dev0"
 POLICY_VIOLATION = 1008  # RFC 6455 close codes (layout)
 MESSAGE_TOO_BIG = 1009
+SWEEP_EVERY_S = 600.0  # layout: how often expired rooms are looked for; `get` refuses an expired room at once anyway
 
 
 class CreateRoom(BaseModel):
@@ -69,23 +76,62 @@ class Connection:
     last_seq: int = 0
 
 
+class NoClientAddress(logging.Filter):
+    """Blank the client address uvicorn puts first in its WebSocket handshake lines ('%s - "WebSocket %s" …')."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.msg, str) and record.msg.startswith('%s - "WebSocket') and isinstance(record.args, tuple):
+            record.args = ("-", *record.args[1:])
+        return True
+
+
 def _viewer(role: str) -> str:
     return "public" if role == DISPLAY else role
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, now: Callable[[], float] = time.time) -> FastAPI:
+    """`now` is the wall clock the room TTL is measured on (a test passes its own)."""
     settings = settings or Settings.from_env()
-    registry = RoomRegistry(settings)
+    uvicorn_log = logging.getLogger("uvicorn.error")
+    if not any(isinstance(f, NoClientAddress) for f in uvicorn_log.filters):
+        uvicorn_log.addFilter(NoClientAddress())
+    registry = RoomRegistry(settings, now)
     connections: dict[str, list[Connection]] = {}
     locks: dict[str, asyncio.Lock] = {}
-    app = FastAPI(title="Fairflow room server", version=SERVER_VERSION)
+
+    async def sweep() -> None:
+        for code in registry.sweep():
+            locks.pop(code, None)
+            for conn in connections.pop(code, []):
+                with suppress(RuntimeError, WebSocketDisconnect):
+                    await conn.socket.close(code=POLICY_VIOLATION)  # the client shows the room as gone
+
+    async def sweeper() -> None:
+        while True:
+            await sweep()
+            await asyncio.sleep(SWEEP_EVERY_S)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        task = asyncio.create_task(sweeper())
+        try:
+            yield
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+            if registry.store is not None:
+                registry.store.close()
+
+    app = FastAPI(title="Fairflow room server", version=SERVER_VERSION, lifespan=lifespan)
     app.state.registry = registry
+    app.state.sweep = sweep
     app.add_middleware(
         CORSMiddleware, allow_origins=list(settings.allowed_origins), allow_methods=["GET", "POST"], allow_headers=["*"]
     )
 
     def http_error(e: Rejection) -> HTTPException:
-        status = 404 if e.code in ("unknown_room", "unknown_scenario") else 409
+        status = 404 if e.code in ("unknown_room", "unknown_scenario") else 503 if e.code == "storage_failed" else 409
         return HTTPException(status_code=status, detail={"code": e.code, "message": str(e)})
 
     @app.post("/rooms")
@@ -176,7 +222,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await websocket.close(code=MESSAGE_TOO_BIG)
                 return
             auth = json.loads(first)
-            role = room.tokens.get(auth.get("token", "")) if isinstance(auth, dict) else None
+            token = auth.get("token") if isinstance(auth, dict) else None
+            role = room.role_of(token) if isinstance(token, str) else None
         except (Rejection, json.JSONDecodeError):
             role = None
         if role is None:
@@ -210,6 +257,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     before = len(room.game.events)
                     try:
                         room.game.submit(role, intent.intent, **intent.args())
+                        registry.record(room, before)
                     except Rejection as r:
                         log.info("rejected room=%s role=%s intent=%s code=%s", room.code, role, intent.intent, r.code)
                         await websocket.send_json({"type": "rejected", "code": r.code, "message": str(r)})

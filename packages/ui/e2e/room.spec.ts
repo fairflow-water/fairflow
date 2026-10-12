@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 //
 // A whole game in real browsers (ADR 0005): a facilitator opens a room, a projector and three phones join (each in its
-// own browser context, so each holds only its own token); the table plays to the end, opens the debrief and one farm
+// own browser context, so each holds only its own token); the table plays to the end, opens the debrief and one scheme
 // answers the review form.
 // It checks the wiring and what each device may see (ADR 0004), not model numbers, which the engine tests own.
 import { expect, test, type Browser, type Page } from '@playwright/test';
@@ -83,7 +83,7 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
       await facilitator.getByRole('button', { name: 'Close the vote' }).click();
     }
 
-    // S6 on every phone; the first farm borrows one unit, and the projector never shows a private turn
+    // S6 on every phone; the first scheme borrows one unit, and the projector never shows a private turn
     for (const [i, phone] of phones.entries()) {
       await expect(phone.getByRole('heading', { name: 'Your turn' })).toBeVisible();
       if (i === 0) await phone.getByRole('button', { name: 'One more' }).click();
@@ -97,16 +97,16 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
     await expect(next.or(ended)).toBeVisible();
     if (await ended.isVisible()) break;
 
-    // S7: the table sees the totals, each farm its own result, the projector no farm's
+    // S7: the table sees the totals, each scheme its own result, the projector no scheme's
     await expect(display.getByRole('heading', { name: `Season ${season}: what happened` })).toBeVisible();
     await expect(display.getByText(/The table pumped/)).toBeVisible();
-    await expect(display.getByLabel(/Your farm/)).toHaveCount(0);
-    for (const phone of phones) await expect(phone.getByLabel(/Your farm/)).toBeVisible();
+    await expect(display.getByLabel(/Your scheme/)).toHaveCount(0);
+    for (const phone of phones) await expect(phone.getByLabel(/Your scheme/)).toBeVisible();
     open = next;
     expect(season).toBeLessThan(20);
   }
 
-  // S8: each farm sees its own goal; the projector none; the facilitator the brief, then opens the debrief
+  // S8: each scheme sees its own goal; the projector none; the facilitator the brief, then opens the debrief
   for (const phone of phones) await expect(phone.getByText(/Your goal/)).toBeVisible();
   await expect(display.getByText(/The game lasted/)).toBeVisible();
   await expect(display.getByText(/Your goal/)).toHaveCount(0);
@@ -114,18 +114,18 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   await expect(facilitator.getByText(/we debrief the rules, not the person/)).toBeVisible();
   await facilitator.getByRole('button', { name: /reveal who pumped/ }).click();
 
-  // S9 on every device after a per-player debrief: the farm sheet, the welfare slider, the verdict
+  // S9 on every device after a per-player debrief: the scheme sheet, the welfare slider, the verdict
   for (const page of [display, facilitator, ...phones]) {
     await expect(page.getByRole('heading', { name: 'Debrief' })).toBeVisible();
-    await expect(page.getByRole('table', { name: /Each farm/ })).toBeVisible();
+    await expect(page.getByRole('table', { name: /Each scheme/ })).toBeVisible();
     await expect(page.getByRole('slider')).toBeVisible();
   }
   await expect(display.getByTestId('verdict')).toContainText('The table chose');
 
-  // S10: a farm saves an answer; nobody else receives it
+  // S10: a scheme saves an answer; nobody else receives it
   const reviewer = phones[0]!;
   await reviewer.getByRole('tab', { name: 'Review form' }).click();
-  await reviewer.getByRole('textbox').first().fill('We argued about the tail-end farm.');
+  await reviewer.getByRole('textbox').first().fill('We argued about the tail-end scheme.');
   await reviewer.getByRole('button', { name: 'Save' }).first().click();
   await expect(reviewer.getByRole('button', { name: 'Saved' })).toHaveCount(1);
   await phones[1]!.getByRole('tab', { name: 'Review form' }).click();

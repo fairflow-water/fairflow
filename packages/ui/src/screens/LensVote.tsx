@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 //
-// S4 — lens vote (blueprint §5.2). Each row shows the engine's preview for this season: one bar per farm, filled to its
+// S4 — lens vote (blueprint §5.2). Each row shows the engine's preview for this season: one bar per scheme, filled to its
 // share of need (acceptance: bar lengths equal the shares to 1 %). The academic name is a small subtitle (§5.1).
 import { tally, type PublicScenario, type RoomView } from '../room';
 

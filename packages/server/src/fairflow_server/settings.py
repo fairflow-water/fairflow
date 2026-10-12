@@ -36,7 +36,7 @@ class Settings:
     def from_env(cls, environ: Mapping[str, str] = os.environ) -> Settings:
         """Deployment configuration: FAIRFLOW_ALLOWED_ORIGINS is a comma-separated list of browser origins (e.g. the
         site's own https origin; http://localhost:5173 for development). Unset means no browser may connect.
-        FAIRFLOW_RESEARCH_ENABLED=1 asks every farm the research question (ADR 0011); anything else is course-only."""
+        FAIRFLOW_RESEARCH_ENABLED=1 asks every scheme the research question (ADR 0011); anything else is course-only."""
         raw = environ.get("FAIRFLOW_ALLOWED_ORIGINS", "")
         return cls(
             allowed_origins=tuple(o.strip() for o in raw.split(",") if o.strip()),

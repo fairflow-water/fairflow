@@ -48,9 +48,9 @@ describe('S9 debrief, per-player results opened', () => {
     expect(screen.getByTestId('f-line').textContent).toContain(fmt(sealed.F.diverted));
     expect(screen.getByTestId('season-score').textContent).toBe(score);
   });
-  it('lists each farm\'s pumping after the facilitator opened per-player results', () => {
+  it('lists each scheme\'s pumping after the facilitator opened per-player results', () => {
     render(<Season view={open} scenario={scenario} role="display" onIntent={() => undefined} />);
-    const rows = within(screen.getByRole('table', { name: /Each farm/ })).getAllByRole('row').slice(1);
+    const rows = within(screen.getByRole('table', { name: /Each scheme/ })).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(sealed.roles.length);
     sealed.roles.forEach((role, i) => expect(rows[i]!.textContent).toContain(fmt(sealed.pumpsBy[role]!)));
   });
@@ -78,11 +78,11 @@ describe('S9 debrief, the scoreboard under each idea of equity (ADR 0010)', () =
 });
 
 describe('S9 debrief, totals only', () => {
-  it('keeps every as-used value and every farm figure sealed', () => {
+  it('keeps every as-used value and every scheme figure sealed', () => {
     render(<Season view={totals} scenario={scenario} role="display" onIntent={() => undefined} />);
     expect(totals.results.every(r => r.sealed === null)).toBe(true);
     expect(screen.getByTestId('sealed-note')).toBeTruthy();
-    expect(screen.queryByRole('table', { name: /Each farm/ })).toBeNull();
+    expect(screen.queryByRole('table', { name: /Each scheme/ })).toBeNull();
     expect(screen.queryByTestId('used-pj')).toBeNull();
     // ADR 0010: the scoreboard is shown on the public allocation only; no as-used column without per-player results
     const board = screen.getByTestId('scoreboard');
@@ -114,7 +114,7 @@ describe('S10 review', () => {
 });
 
 describe('after the game (ADR 0011)', () => {
-  it('a farm can leave: its token and review drafts are cleared after a confirmation', async () => {
+  it('a scheme can leave: its token and review drafts are cleared after a confirmation', async () => {
     render(<Season view={mineA} scenario={scenario} role="A" onIntent={() => undefined} code="FIXTR" />);
     localStorage.setItem('fairflow:FIXTR', 'tok');
     localStorage.setItem('fairflow.review.FIXTR.A', '{}');
@@ -126,7 +126,7 @@ describe('after the game (ADR 0011)', () => {
     expect(localStorage.getItem('fairflow.review.FIXTR.A')).toBeNull();
   });
   it('shows what is needed to withdraw while research is enabled, and nothing for the projector', () => {
-    render(<AfterGame code="FIXTR" role="A" farm="Upper Citrus Estate" joinedOn="2026-10-12" research />);
+    render(<AfterGame code="FIXTR" role="A" scheme="Upper Citrus Estate" joinedOn="2026-10-12" research />);
     expect(screen.getByTestId('withdrawal').textContent).toContain('Room FIXTR, Upper Citrus Estate, joined 2026-10-12');
     cleanup();
     render(<Season view={open} scenario={scenario} role="display" onIntent={() => undefined} />);

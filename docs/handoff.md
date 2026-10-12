@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 Model values in section 4 are quoted as of commit c79475e; the parameter registry and decision records are authoritative.
 
-State on 2026-10-12 at commit `c79475e` on `main`, with CI green. This page explains what Fairflow is, how it is built today, the rules for working on it, what is done, what comes next, and what is waiting on the maintainer. When this page and the code disagree, the code and the decision records (`docs/decisions/`) win. When the blueprint and a decision record disagree, the later decision record wins.
+State on 2026-10-12 at commit `c79475e` on `main`, with CI green; sections 7 and 8 updated after the client-reconnection commit `a5de7bc`. This page explains what Fairflow is, how it is built today, the rules for working on it, what is done, what comes next, and what is waiting on the maintainer. When this page and the code disagree, the code and the decision records (`docs/decisions/`) win. When the blueprint and a decision record disagree, the later decision record wins.
 
 ## 0. Read first, in this order
 
@@ -28,10 +28,10 @@ State on 2026-10-12 at commit `c79475e` on `main`, with CI green. This page expl
 Fairflow is an academic serious game about distributive justice in water allocation, built at IHE Delft as the entry point of the EquiNex suite.
 
 **How a game runs:**
-- Three water users (farms) and a basin Authority share a river and an aquifer over five or six seasons, each season one irrigation year.
+- Three irrigation schemes in a river basin, each played by one player, and a basin Authority share a river and an aquifer over five or six seasons, each season one irrigation year.
 - Each season the table votes on which principle of justice (a "lens") splits the river water.
-- Each farm then decides privately how much groundwater to pump and whether to invest (Orchard, Drip, Expand).
-- The table is scored together on equity, efficiency and sustainability, and each farm separately on livelihood.
+- Each scheme then decides privately how much groundwater to pump and whether to invest (Orchard, Drip, Expand).
+- The table is scored together on equity, efficiency and sustainability, and each scheme separately on livelihood.
 
 **The proposition it must make felt:** there is no lens-free way to share scarce water.
 - **UX idea:** the vote moves equity, the pumps move sustainability, and the reveal tells both as one story.
@@ -71,7 +71,7 @@ These come from the maintainer. Breaking them is a defect, not a style choice.
    - Prefer stopping and documenting an open question over guessing.
    - Never tune the game or the display to pass a criterion. Balance and privacy gates measure; they are not targets to fit.
 7. **Decisions go in a decision record** (`docs/decisions/NNNN-*.md`): context, decision, consequences, sources, and status with who accepted it and when. Value judgements, legal and ethics choices, and thresholds belong to the maintainer: propose them, don't decide them.
-8. **Privacy is part of the design.** Per-farm water, adequacy, yield, livelihood and pumping never reach any other screen during play (§9.1 privacy test; ADR 0004). New events need a visibility class, and new projections need a privacy test.
+8. **Privacy is part of the design.** Per-scheme water, adequacy, yield, livelihood and pumping never reach any other screen during play (§9.1 privacy test; ADR 0004). New events need a visibility class, and new projections need a privacy test.
 9. **Licensing.**
    - Every file carries an SPDX header: MIT for code, CC BY 4.0 for docs, content, scenarios and fixtures (see `REUSE.toml`).
    - `reuse lint` runs in CI.
@@ -134,11 +134,13 @@ Only the engine computes model numbers. The UI formats and displays them.
 
 ## 4. The model in brief
 
+**Wording.** The three seats are irrigation schemes in a river basin, not farms: B, for example, is a 900 ha cooperative with more than 5,000 people living from it. Write "irrigation scheme" (or "scheme" once that is clear) on screens, in documents, in data and in comments. Names such as "Tail-end Wheat Farms" are scheme names and stay. Accepted decision records keep their original wording.
+
 The current model is defined by ADR 0007–0010 on top of blueprint §2. The values below are quoted from those decision records; the registry and scenario file are the source of truth.
 
-**Farms:**
+**Schemes:**
 
-| Farm | Crop, method | Area | Gross depth | β | Wells |
+| Scheme | Crop, method | Area | Gross depth | β | Wells |
 |---|---|---|---|---|---|
 | A, Upper Citrus Estate | citrus, drip | 625 ha | 1,000 mm | 0.90 | deep submersibles; pump-cost factor 1.0 |
 | B, Midstream Paddy Cooperative | flooded rice | 900 ha | 1,000 mm | 0.60 | shallow smallholder wells, fail at B ≤ B_low; factor 1.8 |
@@ -156,19 +158,19 @@ The current model is defined by ADR 0007–0010 on top of blueprint §2. The val
 - B_res = 10;
 - κ = 0.1;
 - natural gain G(B) = min(r₀, κ·(B₀ − B_observed)), and the river loses the same G next season (capture-consistent, ADR 0009);
-- spill above full goes to the river below the farms;
+- spill above full goes to the river below the schemes' off-takes;
 - 60 % of return flow recharges the aquifer.
 
 **Pumping:**
-- each farm's cap is 0.5 × its demand;
+- each scheme's cap is 0.5 × its demand;
 - cost = factor × (2 + 0.8·(1 − B/B₀)) per Mm³ (lift energy);
 - requests are rationed pro rata when the stock above B_res runs short.
 
 **Actions:**
-- Orchard (once): switch to citrus at the farm's own area and method.
+- Orchard (once): switch to citrus at the scheme's own area and method.
 - Drip (once): consumption × 0.95, diversion = consumption / 0.90.
 - Expand (repeatable): × 1.2.
-- Which farm may play which action follows its irrigation method: A may only Expand; B may play Orchard or Expand; C may play any.
+- Which scheme may play which action follows its irrigation method: A may only Expand; B may play Orchard or Expand; C may play any.
 
 **Lenses enabled in v1.0:**
 - utilitarian (value-maximising; ties broken by leximin adequacy);
@@ -186,7 +188,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
   - F (productivity, consumed or diverted);
   - S, sustainability: ΣβW plus the non-recharging share of the return flow, divided by allocable water plus G.
 - **Collective score:** the mean of the seasons' geometric means. The score is itself a lens, close to ∛E_PJ (ADR 0010).
-- **Livelihood points** per farm.
+- **Livelihood points** per scheme.
 - **Survival floor:** A < 0.5 strictly. Two such years running raises the flag "below the survival floor two years running"; the record field is still named `cropFailure`.
 - **Private goals** (R15).
 - **Two-line verdict:** the rule voted versus the rule the outcome best satisfied.
@@ -199,7 +201,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
   - total pumping rounded half up to 1 Mm³.
 - The exact values are sealed.
 - The private preview shows harvest and points only up to the pumping the observed tank guarantees (E11).
-- **At the debrief**, per-farm figures open only if the table chooses (`debrief.opened {perPlayer}`). Otherwise everything computed on actual use stays sealed.
+- **At the debrief**, per-scheme figures open only if the table chooses (`debrief.opened {perPlayer}`). Otherwise everything computed on actual use stays sealed.
 
 ## 5. The Season Record (as implemented)
 
@@ -261,7 +263,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Not wired into CI as the "baseline tier". |
 | E3b Table-mode fallback | Not started. A cohort-cut candidate. |
 | E6 Reduced Builder | Not started. A cohort-cut candidate. |
-| E7 PWA and robustness | Not started. |
+| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Not built: persistent rooms, Wake Lock, service worker. |
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
@@ -296,8 +298,9 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - Salts destroyed after the course; a free-text filter.
    - Needs the retention and controller decisions.
 6. **Robustness (E7).**
-   - Reconnection after phone sleep or reload (the token is in localStorage; verify every phase).
-   - Wake Lock, a service worker, and interrupted-state tests.
+   - Done: reconnection after a dropped socket or a reload (`api.ts` `connect`, browser test in `e2e/room.spec.ts`).
+   - Next: persistent rooms, so a server restart does not end a game; this needs the hosting and retention decisions (§9 below, and blueprint §12.3).
+   - Then: Wake Lock, a service worker, and interrupted-state tests in every phase.
 7. **Cohort-cut items, decided at app pilot 1:**
    - E3b, table mode: port the Season Record to the TypeScript mirror, verified against Python-generated record vectors the same way season vectors are.
    - E6, reduced Builder: edit the Kelvara numbers with live loader checks.
@@ -380,4 +383,4 @@ The e2e step needs Playwright's Chromium (`npx -w packages/ui playwright install
 - **Rounding:** the engine rounds every number to 1e-6 at the event boundary (§7.2). Tests compare to the printed precision of the blueprint value.
 - **TS mirror ties:** the mirror refuses utilitarian ties it cannot break the way Python does (`TIE_DIGITS`) rather than return a different optimum.
 - **Public field names:** avoid sealed key names (`pumpsTotal`, `W`, `A`, `Y`, `dL`, `P`, …) in public payloads. Privacy tests scan every message for them.
-- **UI tables:** the debrief has two tables. Query them by accessible name (`getByRole('table', { name: /Each farm/ })`).
+- **UI tables:** the debrief has two tables. Query them by accessible name (`getByRole('table', { name: /Each scheme/ })`).

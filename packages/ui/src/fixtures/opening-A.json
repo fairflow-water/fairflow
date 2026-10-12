@@ -147,7 +147,7 @@
     "role": "A",
     "deviceId": "fixture-A",
     "participationAcknowledged": true,
-    "infoSheetVersion": "draft-2026-10-12",
+    "infoSheetVersion": "draft-2026-10-12.2",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -162,7 +162,7 @@
     "role": "B",
     "deviceId": "fixture-B",
     "participationAcknowledged": true,
-    "infoSheetVersion": "draft-2026-10-12",
+    "infoSheetVersion": "draft-2026-10-12.2",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -177,7 +177,7 @@
     "role": "C",
     "deviceId": "fixture-C",
     "participationAcknowledged": true,
-    "infoSheetVersion": "draft-2026-10-12",
+    "infoSheetVersion": "draft-2026-10-12.2",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -192,7 +192,7 @@
     "role": "authority",
     "deviceId": "fixture-authority",
     "participationAcknowledged": true,
-    "infoSheetVersion": "draft-2026-10-12",
+    "infoSheetVersion": "draft-2026-10-12.2",
     "presurveyComplete": true
    },
    "visibility": "public"
@@ -470,7 +470,7 @@
      }
     ],
     "previewLimit": 10.0,
-    "assumes": "the other farms do not pump"
+    "assumes": "the other schemes do not pump"
    },
    "visibility": "self"
   }

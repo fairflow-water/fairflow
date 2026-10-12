@@ -24,7 +24,7 @@ export interface Climate {
 }
 export type Band = 'good' | 'fair' | 'ok' | 'poor' | 'warning' | 'unsustainable';
 export interface Allocation { lens: string; Q: number[]; adequacyBands?: Band[] }
-/** S6: what the engine previewed for this farm alone (a `self` event). */
+/** S6: what the engine previewed for this scheme alone (a `self` event). */
 export interface PrivateTurn {
   role: string; cap: number; pumpCostPerMm3: number; actions: Record<string, number>;
   wellsDry?: boolean; // ADR 0008: shallow wells below their suction limit
@@ -38,7 +38,7 @@ export interface PublicResult {
   observedStockNext: number; aquiferFull?: boolean; inflowLossNext: number; asAllocated: Dials;
   sustainabilityBand: Band; bands?: { ePJ: Band; eSE: Band; F: Band };
 }
-/** This farm's own results for a season (the `self` part of season.resolved). */
+/** This scheme's own results for a season (the `self` part of season.resolved). */
 // points: the season's full ΔL (harvest value − pumping − action cost, §2.4); dL leaves out the action cost
 export interface MyResult { pumpCost: number; P: number; W: number; A: number; Y: number; dL: number; points: number; L: number; cropFailure: boolean }
 /** Everything computed on actual use (ADR 0004): readable only after a per-player debrief (R19). */

@@ -3,7 +3,7 @@
 //
 // S7 — the three-beat reveal (blueprint §5.2) in the form ADR 0004 decided: during play the table sees total pumping,
 // the coarse tank and the sustainability band word, and the equity and efficiency dials as allocated; actual-use values
-// wait for the debrief. A farm also sees its own results, privately. Band words make every dial readable without colour.
+// wait for the debrief. A scheme also sees its own results, privately. Band words make every dial readable without colour.
 import { useState } from 'react';
 import type { MyResult, PublicResult } from '../room';
 
@@ -39,7 +39,7 @@ export function Reveal({ result, mine, season, practice = false }: {
     <div key="water">
       <h3>The table pumped about {fmt(result.pumpsTotalObserved)} Mm³.</h3>
       <p>The aquifer is at about {fmt(result.observedStockNext)} Mm³. Water use is {SUSTAIN[result.sustainabilityBand] ?? result.sustainabilityBand} ({result.sustainabilityBand}).</p>
-      {result.aquiferFull && <p data-testid="full">The aquifer is full: any more recharge flows on to the river below the farms.</p>}
+      {result.aquiferFull && <p data-testid="full">The aquifer is full: any more recharge flows on to the river below the irrigation schemes.</p>}
     </div>,
     <div key="equity">
       <h3>How fair was the sharing?</h3>
@@ -60,8 +60,8 @@ export function Reveal({ result, mine, season, practice = false }: {
         ? <button type="button" onClick={() => setBeat(b => b + 1)}>Next</button>
         : null}
       {mine && (
-        <aside className="mine" aria-label="Your farm (only you see this)">
-          <h3>Your farm</h3>
+        <aside className="mine" aria-label="Your scheme (only you see this)">
+          <h3>Your scheme</h3>
           <p>Harvest {fmt(mine.Y)} t, {signed(mine.points)} points this season; {fmt(mine.L)} points in total.</p>
         </aside>
       )}

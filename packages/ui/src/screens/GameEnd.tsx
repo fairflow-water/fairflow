@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 //
 // S8 — game end (blueprint §5.2): the revealed length (and a time-box badge), the collective score with the survival-floor
-// flag, goals met or missed (each farm sees only its own), and for the facilitator the engine's three-line brief and
+// flag, goals met or missed (each scheme sees only its own), and for the facilitator the engine's three-line brief and
 // the way into the debrief: the safety norm first, then "reveal who pumped?" (R19, §5.3).
 import type { GameEnd as End, GoalResult, PublicLens } from '../room';
 

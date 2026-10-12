@@ -73,7 +73,7 @@ describe('S6 private turn', () => {
     act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null);
   });
-  it('is shown only to a farm that has not committed; the projector waits', () => {
+  it('is shown only to a scheme that has not committed; the projector waits', () => {
     const { unmount } = render(<Season view={privateS2} scenario={scenario} role="A" onIntent={() => undefined} />);
     expect(screen.getByRole('heading', { name: 'Your turn' })).toBeTruthy();
     unmount();
@@ -111,12 +111,12 @@ describe('S7 reveal', () => {
     expect(needleAngle(-5)).toBe(needleAngle(-1));
     expect(needleAngle(5)).toBe(needleAngle(1));
   });
-  it('the projector sees no per-farm result; a farm sees only its own', () => {
+  it('the projector sees no per-scheme result; a scheme sees only its own', () => {
     const { unmount } = render(<Season view={reveal} scenario={scenario} role="display" onIntent={() => undefined} />);
-    expect(screen.queryByLabelText(/Your farm/)).toBeNull();
+    expect(screen.queryByLabelText(/Your scheme/)).toBeNull();
     unmount();
     render(<Season view={upTo(eventsA, 'season.resolved', 1)} scenario={scenario} role="A" onIntent={() => undefined} />);
-    expect(screen.getByLabelText(/Your farm/)).toBeTruthy();
+    expect(screen.getByLabelText(/Your scheme/)).toBeTruthy();
   });
   it('lets only the facilitator open the next season', async () => {
     const onIntent = vi.fn();
@@ -128,7 +128,7 @@ describe('S7 reveal', () => {
     const next = upTo(eventsPub, 'season.climate', 2);
     render(<Season view={next} scenario={scenario} role="display" onIntent={() => undefined} />);
     expect(next.mapBands).not.toBeNull();
-    expect(screen.getByTestId(`farm-${scenario.schemes[0]!.id}`).textContent).toContain(next.mapBands![0]!);
+    expect(screen.getByTestId(`scheme-${scenario.schemes[0]!.id}`).textContent).toContain(next.mapBands![0]!);
     expect(screen.getByTestId('aquifer').textContent).toContain(String(next.aquifer));
   });
 });
@@ -136,7 +136,7 @@ describe('S7 reveal', () => {
 describe('S8 game end', () => {
   const endA = viewOf(eventsA);
   const endPub = viewOf(eventsPub);
-  it("shows the length, the collective score and this farm's own goal", () => {
+  it("shows the length, the collective score and this scheme's own goal", () => {
     render(<Season view={endA} scenario={scenario} role="A" onIntent={() => undefined} />);
     const text = screen.getByRole('region').textContent ?? '';
     expect(text).toContain(`${endA.ended!.seasonsPlayed} seasons`);
@@ -144,7 +144,7 @@ describe('S8 game end', () => {
     expect(text).toContain(endA.myGoal!.met ? 'met' : 'missed');
     expect(screen.queryByText('Debrief brief')).toBeNull();
   });
-  it('the projector sees no farm goal', () => {
+  it('the projector sees no scheme goal', () => {
     render(<Season view={endPub} scenario={scenario} role="display" onIntent={() => undefined} />);
     expect(endPub.myGoal).toBeNull();
     expect(screen.queryByText(/Your goal/)).toBeNull();

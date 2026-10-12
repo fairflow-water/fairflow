@@ -174,7 +174,7 @@ describe('Season by phase', () => {
     render(<Season view={lobby} scenario={scenario} role="A" onIntent={onIntent} />);
     expect(screen.getByText(/Waiting for the facilitator/)).toBeTruthy();
   });
-  it('after the choice: the facilitator and projector wait while farms decide (S6-S8 are tested in play.test)', () => {
+  it('after the choice: the facilitator and projector wait while schemes decide (S6-S8 are tested in play.test)', () => {
     const chosen = viewOf(events);
     const { unmount } = render(<Season view={chosen} scenario={scenario} role="display" onIntent={() => undefined} />);
     expect(screen.getByText(/Private turns/)).toBeTruthy();

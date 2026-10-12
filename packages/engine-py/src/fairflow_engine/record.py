@@ -392,8 +392,8 @@ class Game:
         presurveyComplete: bool,
     ) -> None:
         """R2, R3, ADR 0011: a role is taken once, after part 1 (the information read, taking part) and, while research
-        is enabled, a farm's yes or no to research. The research answer goes to a `server` event that no projection
-        returns; it is written for every farm whatever the answer, so its presence says nothing. The Authority (the
+        is enabled, a scheme's yes or no to research. The research answer goes to a `server` event that no projection
+        returns; it is written for every scheme whatever the answer, so its presence says nothing. The Authority (the
         facilitator) is not a research participant and gives no research answer."""
         self._need(s.phase == "lobby", "wrong_phase", "players join before season 1")
         self._need(actor in [*self._scheme_roles(), AUTHORITY], "unknown_role", actor)
@@ -670,7 +670,7 @@ class Game:
                     "actions": {a: self.setup.actions[a]["cost"] for a in open_actions},
                     "options": options,
                     "previewLimit": limit,
-                    "assumes": "the other farms do not pump",
+                    "assumes": "the other schemes do not pump",
                 },
                 season=s.season,
             )
@@ -804,7 +804,7 @@ class Game:
 
     def _goals(self) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """R15 private goals, judged within each scheme: the Authority's from the exact totals, published as the mean of
-        the observed totals (ADR 0004); each farm's from its own sealed results (it sees only its own, as a self event)."""
+        the observed totals (ADR 0004); each scheme's from its own sealed results (it sees only its own, as a self event)."""
         resolved = [e for e in self.events if e["type"] == "season.resolved"]
         climates = {e["season"]: e["payload"] for e in self.events if e["type"] == "season.climate"}
         totals = [e["payload"]["sealed"]["pumpsTotal"] for e in resolved]
@@ -815,7 +815,7 @@ class Game:
             "meanPumping": round6(sum(shown) / len(shown)) if shown else 0.0,  # of the observed totals (ADR 0004)
             "met": mean <= self.setup.authorityMaxMeanPumping,
         }
-        farms = []
+        schemes = []
         for x in self.setup.schemes:
             kind, threshold = self.setup.goals[x.id]
             idx = [e["payload"]["sealed"]["roles"].index(x.id) for e in resolved]
@@ -833,12 +833,12 @@ class Game:
                 met = 2 * value >= len(adequacy)  # layout: "at least half"
             else:
                 raise ValueError(f"unknown private goal kind {kind!r}")
-            farms.append({"role": x.id, "kind": kind, "threshold": threshold, "value": round6(value), "met": met})
-        return authority, farms
+            schemes.append({"role": x.id, "kind": kind, "threshold": threshold, "value": round6(value), "met": met})
+        return authority, schemes
 
     def _end(self, s: State) -> None:
         sec = self.secrets
-        authority, farms = self._goals()
+        authority, schemes = self._goals()
         self._emit(
             "game.ended",
             "engine",
@@ -856,7 +856,7 @@ class Game:
             },
             season=s.season,
         )
-        for goal in farms:
+        for goal in schemes:
             self._emit("goal.result", goal["role"], "self", goal, season=s.season)
 
     def _on_open_debrief(self, s: State, actor: str, perPlayer: bool) -> None:
@@ -869,7 +869,7 @@ class Game:
     def _on_review_answer(self, s: State, actor: str, part: int, item: str, value: str) -> None:
         """S10: one answer of the review form (§5.4), private to its author in every projection, even after a per-player
         debrief. Answers may be revised; the latest per item counts."""
-        self._need(actor in self._scheme_roles(), "not_a_player", "the review form is for the farms' players")
+        self._need(actor in self._scheme_roles(), "not_a_player", "the review form is for the schemes' players")
         self._need(s.phase == "ended", "wrong_phase", "the review follows the game")
         self._need(part in REVIEW_PARTS, "bad_input", f"part {part}")
         self._need(REVIEW_ITEM.fullmatch(item) is not None, "bad_input", "item id")
@@ -970,7 +970,7 @@ def project(events: Sequence[Event], viewer: str) -> list[Event]:
     """The events a viewer may see: 'public' (shared screen, exports before the debrief, relay broadcasts) or a role.
     A role sees public fields plus its own self/sealed entries. Sealed fields open to everyone only when the debrief is
     opened with perPlayer = true; a totals-only debrief opens no per-scheme figure (each of W, A, Y, ΔL, L reveals
-    pumping, R17; ADR 0004). A `server` event (a farm's research answer, ADR 0011) is returned to no viewer."""
+    pumping, R17; ADR 0004). A `server` event (a scheme's research answer, ADR 0011) is returned to no viewer."""
     opened = next((e["payload"] for e in events if e["type"] == "debrief.opened"), None)
     out: list[Event] = []
     for e in events:

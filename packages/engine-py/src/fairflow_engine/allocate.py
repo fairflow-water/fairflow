@@ -134,7 +134,7 @@ def max_value(
     if sum(len(x) for x in per_scheme) == len(set().union(*per_scheme)):  # no slope shared by two schemes: unique
         return [round6(x[i] + x[n + i]) for i in range(n)]
     # Review E5 (maintainer decision 2026-10-08): equal marginal values make the optimum non-unique; among the optimal
-    # allocations take the leximin one in adequacy (equal adequacy among the tied farms), so the result is canonical.
+    # allocations take the leximin one in adequacy (equal adequacy among the tied schemes), so the result is canonical.
     best = float(-res.fun)
     tol = MILP_GAP * max(1.0, abs(best))
     fixed: dict[int, float] = {}

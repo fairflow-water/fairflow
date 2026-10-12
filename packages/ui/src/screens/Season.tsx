@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 //
 // What a device shows for the table's current phase: climate and map (S3), the lens vote (S4) and floor vote, the
-// private turn on a farm's own device (S6), the reveal (S7), the game end (S8), the debrief (S9) and the review (S10).
+// private turn on a scheme's own device (S6), the reveal (S7), the game end (S8), the debrief (S9) and the review (S10).
 import { useState } from 'react';
 import type { PublicScenario, RecordEvent, RoomView } from '../room';
 import { Debrief } from './Debrief';
@@ -22,7 +22,7 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
   const isPlayer = scenario.schemes.some(s => s.id === role);
   const [tab, setTab] = useState<'debrief' | 'review'>('debrief');
   const leaving = isPlayer && (
-    <AfterGame code={code} role={role} farm={scenario.schemes.find(s => s.id === role)?.name ?? role}
+    <AfterGame code={code} role={role} scheme={scenario.schemes.find(s => s.id === role)?.name ?? role}
       joinedOn={view.joinedOn[role]} research={view.researchEnabled} />
   );
   if (view.phase === 'lobby') {
@@ -30,14 +30,14 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
     return role === 'authority'
       ? (
         <>
-          <h2>Farms at the table</h2>
-          <ul className="seats" aria-label="Farms at the table">
+          <h2>Irrigation schemes at the table</h2>
+          <ul className="seats" aria-label="Irrigation schemes at the table">
             {scenario.schemes.map(x => (
               <li key={x.id}>{x.name}: {view.seated.includes(x.id) ? 'joined' : 'waiting to join'}</li>
             ))}
           </ul>
           {missing.length > 0 && (
-            <p className="waiting">Every farm must join before the game starts ({missing.length} still to join). Each farm joins on its own phone or browser.</p>
+            <p className="waiting">Every irrigation scheme needs a player before the game starts ({missing.length} still to join). Each player joins on their own phone or browser.</p>
           )}
           <button type="button" className="cta" disabled={missing.length > 0} onClick={() => onIntent({ intent: 'start_tutorial' })}>Start the practice round</button>
           <button type="button" disabled={missing.length > 0} onClick={() => onIntent({ intent: 'start_season' })}>Skip it and open season 1</button>
@@ -86,8 +86,8 @@ export function Season({ view, scenario, role, onIntent, events = [], code = '' 
         ? <PrivateTurn key={view.season} turn={view.privateTurn} last={banner?.mine ?? null} demand={demand}
             decisionS={scenario.session?.decisionS ?? null}
             onCommit={(pumps, action) => onIntent({ intent: 'commit', pumps, action })} />
-        : <p className="waiting">{!isPlayer ? 'Private turns: each farm decides on its own device.'
-            : view.myCommit ? 'Committed. Waiting for the other farms.' : 'Opening your private turn…'}</p>)}
+        : <p className="waiting">{!isPlayer ? 'Private turns: the player for each scheme decides on their own device.'
+            : view.myCommit ? 'Committed. Waiting for the other schemes.' : 'Opening your private turn…'}</p>)}
       {view.phase === 'reveal' && last && (
         <>
           <Reveal key={view.season} result={last.public} mine={last.mine} season={view.season} practice={view.tutorial} />

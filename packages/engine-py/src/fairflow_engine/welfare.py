@@ -15,7 +15,7 @@ from .model import Scheme
 
 def pwf_ede(A: Sequence[float], gamma: float, supply_floor: float) -> float:
     """The equally-distributed equivalent of PWF_γ (Atkinson 1970) on s_i = min(A_i, 1) floored at `supply_floor`: the
-    share of need which, given to every farm, is worth as much. γ = 0 is the mean (every share counts the same); γ = ∞
+    share of need which, given to every scheme, is worth as much. γ = 0 is the mean (every share counts the same); γ = ∞
     is its limit, the smallest share (only the worst-off counts); γ = 1 is the geometric mean.
 
     Computed relative to the smallest share m as m·exp(log1p(mean(expm1(t·ln(s/m))))/t), t = 1 − γ, which is the same

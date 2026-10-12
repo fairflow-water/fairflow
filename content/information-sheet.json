@@ -1,9 +1,9 @@
 {
-  "$comment": "CC BY 4.0 (see REUSE.toml). Information for players, shown on the join screen (S2) before anyone chooses a farm (ADR 0011). DRAFT: every [BRACKETED] item is for the maintainer and the institute to fill; until they are filled and ethics approval is given, run with research disabled. Change 'version' whenever the text changes: each join records the version the player saw. Sections marked research: true are shown only when research is enabled.",
-  "version": "draft-2026-10-12",
+  "$comment": "CC BY 4.0 (see REUSE.toml). Information for players, shown on the join screen (S2) before anyone chooses a scheme (ADR 0011). DRAFT: every [BRACKETED] item is for the maintainer and the institute to fill; until they are filled and ethics approval is given, run with research disabled. Change 'version' whenever the text changes: each join records the version the player saw. Sections marked research: true are shown only when research is enabled.",
+  "version": "draft-2026-10-12.2",
   "status": "draft with placeholders",
   "title": "Fairflow: information for players",
-  "summary": "Playing is part of your course. The game records your farm and your moves, never your name.",
+  "summary": "Playing is part of your course. The game records which irrigation scheme you play and your moves, never your name.",
   "summaryResearch": "Separately, you choose whether your table's record may be used for research. Nobody at the table, and not the facilitator, sees your answer.",
   "sections": [
     {
@@ -19,12 +19,12 @@
     {
       "heading": "What the game records",
       "research": false,
-      "text": "Your farm, votes, pumping, predictions and other moves, when you made each one, and anything you type in the review. It does not ask your name; please do not type names or personal details. [IF THE SERVER OR A PROXY IN FRONT OF IT LOGS IP ADDRESSES: The server's technical log also notes your phone's internet (IP) address, kept for (PERIOD).]"
+      "text": "Which irrigation scheme you play, your votes, pumping, predictions and other moves, when you made each one, and anything you type in the review. It does not ask your name; please do not type names or personal details. [IF THE SERVER OR A PROXY IN FRONT OF IT LOGS IP ADDRESSES: The server's technical log also notes your phone's internet (IP) address, kept for (PERIOD).]"
     },
     {
       "heading": "Who sees what",
       "research": false,
-      "text": "Your table sees shared results; at the debrief it may see each farm's pumping. Only you see your review answers. The facilitator knows who sat at which farm."
+      "text": "Your table sees shared results; at the debrief it may see each scheme's pumping. Only you see your review answers. The facilitator knows who sat at which scheme."
     },
     {
       "heading": "If you say yes to research",
@@ -34,7 +34,7 @@
     {
       "heading": "Changing your mind",
       "research": true,
-      "text": "Write to [CONTACT E-MAIL] with your room code, farm and date before [DATE WHEN THE LINK IS REMOVED]. After that, the record cannot be traced to you."
+      "text": "Write to [CONTACT E-MAIL] with your room code, scheme and date before [DATE WHEN THE LINK IS REMOVED]. After that, the record cannot be traced to you."
     },
     {
       "heading": "Data protection",

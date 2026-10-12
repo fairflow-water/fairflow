@@ -68,17 +68,17 @@ describe('S4 lens vote', () => {
 
 describe('S2 join (ADR 0011)', () => {
   const room = { room: 'ABCDE', freeRoles: ['A', 'B'], phase: 'lobby', scenario };
-  it('course-only: shows no farm until part 1 is given, asks no research question and no name', async () => {
+  it('course-only: shows no scheme until part 1 is given, asks no research question and no name', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...room, researchEnabled: false }))));
     render(<Join code="ABCDE" onJoined={() => undefined} />);
     await screen.findByText(scenario.name);
-    expect(screen.queryByText('Choose your farm')).toBeNull();
+    expect(screen.queryByText('Choose your irrigation scheme')).toBeNull();
     expect(screen.getAllByRole('checkbox')).toHaveLength(1); // no pre-session checkbox until the survey exists (D6)
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
     expect(screen.queryByText(/your choice|If you say yes|Changing your mind/)).toBeNull(); // the research sections
     expect(screen.queryByRole('textbox')).toBeNull();
     await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
-    expect(screen.getByText('Choose your farm')).toBeTruthy();
+    expect(screen.getByText('Choose your irrigation scheme')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     vi.unstubAllGlobals();
   });
@@ -93,7 +93,7 @@ describe('S2 join (ADR 0011)', () => {
     const [yes, no] = screen.getAllByRole('radio') as HTMLInputElement[];
     expect(yes!.checked || no!.checked).toBe(false);
     await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
-    expect(screen.queryByText('Choose your farm')).toBeNull();
+    expect(screen.queryByText('Choose your irrigation scheme')).toBeNull();
     await userEvent.click(screen.getByRole('radio', { name: 'No' }));
     await userEvent.click(screen.getAllByRole('button')[0]!);
     await vi.waitFor(() => expect(onJoined).toHaveBeenCalledWith('t'));

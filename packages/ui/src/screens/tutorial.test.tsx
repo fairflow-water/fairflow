@@ -41,23 +41,23 @@ describe('season 0, the practice round', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open season 1' }));
     expect(onIntent).toHaveBeenCalledWith({ intent: 'start_season' });
   });
-  it('shows the farm its own practice result only', () => {
+  it('shows the scheme its own practice result only', () => {
     render(<Season view={viewOf(eventsA)} scenario={scenario} role="A" onIntent={() => undefined} />);
-    expect(screen.getByLabelText(/Your farm/)).toBeTruthy();
+    expect(screen.getByLabelText(/Your scheme/)).toBeTruthy();
     expect(JSON.stringify(eventsPub)).not.toContain('"pumpsBy"');
   });
 });
 
 describe('the lobby', () => {
   const joined = (n: number) => viewOf(eventsPub.slice(0, eventsPub.findIndex(e => e.type === 'player.joined' && e.payload['role'] === 'A') + n));
-  it('shows who has joined and keeps the game closed until every farm has', () => {
+  it('shows who has joined and keeps the game closed until every scheme has', () => {
     const one = joined(1);
     expect(one.seated).toContain('A');
     render(<Season view={one} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.getByText(/still to join/)).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Start the practice round' }) as HTMLButtonElement).disabled).toBe(true);
   });
-  it('opens once every farm is seated', () => {
+  it('opens once every scheme is seated', () => {
     const all = viewOf(eventsPub.slice(0, eventsPub.findIndex(e => e.type === 'season.climate')));
     expect(scenario.schemes.every(x => all.seated.includes(x.id))).toBe(true);
     render(<Season view={all} scenario={scenario} role="authority" onIntent={() => undefined} />);

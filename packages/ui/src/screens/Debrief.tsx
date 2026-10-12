@@ -3,7 +3,7 @@
 //
 // S9 — the debrief replay (blueprint §5.2 S9, ADR 0003, ADR 0004). Season tabs; for the selected season the triangle,
 // the two-needle gauge as used beside its as-allocated ghost, the two-line verdict, the equalisandum control (moves only
-// the E_SE needle) and the F consumed/diverted toggle (moves only F); the welfare slider; per-farm pumping only if the
+// the E_SE needle) and the F consumed/diverted toggle (moves only F); the welfare slider; per-scheme pumping only if the
 // table agreed (R19). With per-player results kept sealed, every value computed on actual use stays sealed too, since
 // with the public allocation it would show who pumped (ADR 0004). Every number comes from the engine's events.
 import { useState } from 'react';
@@ -13,7 +13,7 @@ import { needleAngle } from './Reveal';
 type Unit = 'claimant' | 'hectare' | 'person';
 type Basis = 'consumed' | 'diverted';
 const UNITS: { id: Unit; label: string }[] = [
-  { id: 'claimant', label: 'per farm' }, { id: 'hectare', label: 'per hectare' }, { id: 'person', label: 'per person' },
+  { id: 'claimant', label: 'per scheme' }, { id: 'hectare', label: 'per hectare' }, { id: 'person', label: 'per person' },
 ];
 const fmt = (x: number): string => (Number.isInteger(x) ? String(x) : x.toFixed(2));
 const pct = (x: number): string => `${Math.round(x * 100)} %`;
@@ -56,7 +56,7 @@ function Triangle({ r1, r2, r3 }: { r1: number; r2: number; r3: number }) {
 // ADR 0010: the equity measures of §2.5 the scoreboard is shown under, with the lens each one embodies
 const SCOREBOARD: [string, string][] = [
   ['ePJ', 'Same share of need (the game’s own score)'],
-  ['eSE.claimant', 'Same amount for each farm'],
+  ['eSE.claimant', 'Same amount for each scheme'],
   ['eSE.hectare', 'Same amount per hectare'],
   ['eSE.person', 'Same amount per person'],
 ];
@@ -120,8 +120,8 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
             </button>
           </p>
           <table className="sheet">
-            <caption>Each farm this season</caption>
-            <thead><tr><th scope="col">Farm</th><th scope="col">Pumped</th><th scope="col">Water used (allocated + pumped)</th><th scope="col">Harvest t</th><th scope="col">Points</th></tr></thead>
+            <caption>Each scheme this season</caption>
+            <thead><tr><th scope="col">Scheme</th><th scope="col">Pumped</th><th scope="col">Water used (allocated + pumped)</th><th scope="col">Harvest t</th><th scope="col">Points</th></tr></thead>
             <tbody>
               {sealed.roles.map((role, i) => (
                 <tr key={role}>
@@ -136,16 +136,16 @@ export function Debrief({ view, scenario, events }: { view: RoomView; scenario: 
       ) : (
         <>
           <Needles pj={null} se={null} ghostPj={alloc.ePJ} ghostSe={alloc.eSE[unit]} />
-          <p>As allocated: fair shares of need {fmt(alloc.ePJ)}, equal amounts per farm {fmt(alloc.eSE.claimant)}. The table pumped about {fmt(r.public.pumpsTotalObserved)} Mm³.</p>
-          <p className="hint" data-testid="sealed-note">Each farm's pumping was kept private for this debrief. Values on the water as used stay sealed as well: together with the public allocation they would show who pumped.</p>
+          <p>As allocated: fair shares of need {fmt(alloc.ePJ)}, equal amounts per scheme {fmt(alloc.eSE.claimant)}. The table pumped about {fmt(r.public.pumpsTotalObserved)} Mm³.</p>
+          <p className="hint" data-testid="sealed-note">Each scheme's pumping was kept private for this debrief. Values on the water as used stay sealed as well: together with the public allocation they would show who pumped.</p>
         </>
       )}
 
       {welfare && (
         <div className="welfare">
-          <h3>How much more should water to the worst-off farm count?</h3>
+          <h3>How much more should water to the worst-off scheme count?</h3>
           <input type="range" min={0} max={steps} step={1} value={g} onChange={e => setG(Number(e.target.value))}
-            aria-label="Weight on the worst-off farm"
+            aria-label="Weight on the worst-off scheme"
             aria-valuetext={g === 0 ? 'every share counts the same' : g === steps ? 'only the worst-off counts' : g === view.debriefWelfare?.start ? 'reference value' : 'in between'} />
           <div className="slider-ends"><span>every share counts the same</span><span>only the worst-off counts</span></div>
           <ol className="ranking" data-testid="ranking">

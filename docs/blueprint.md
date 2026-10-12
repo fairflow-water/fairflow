@@ -454,7 +454,7 @@ Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every 
 | allocation.issued | public | lens, Q\[\], loss\[\] \[M3\], rotation? \[M2\], surplusToAquifer |
 | handover.accepted | public | role, msSinceCommit (hand-over latency) |
 | prediction.answered | public | role (the predictor), metric, predictedValue, actualValue filled at `season.resolved` |
-| action.played | sealed | role, tokens \[{type, n}\], pumps, steal? \[M2\], cost, committedAt, autoCommitted |
+| action.played | sealed | role, tokens \[{type, n}\], pumps, steal? \[M2\], cost, committedAt, autoCommitted (ADR 0013) |
 | authority.acted | public | action, cost, budgetAfter \[M3\] |
 | event.drawn | public | cardId, effect |
 | season.resolved | mixed | public: pumpsTotal, ePJ, eSE {claimant, hectare, person}, giniStar, F {consumed, diverted}, S, aquifer, inflowNext, ecosystem?, welfare {UWF, PWF, SWF, EWF, CWF}, verdict {voted, satisfied, pumpingGap}, cropFailureFlag, coreStable?; sealed: W\[\], A\[\], Y\[\], dL\[\], L\[\], pumpsBy\[\], cropFailure\[\], shapley? |

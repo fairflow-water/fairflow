@@ -318,6 +318,17 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - blueprint §7.1 and §1.4 still describe a TS-first architecture and table mode in v1.0;
    - §6.2 event table (see §5 above);
    - README lists the balance harness as "planned", but it exists.
+   - Checked against the code and the registry on 2026-10-12 and confirmed; each is to be marked superseded in the blueprint, pointing to the decision record, not rewritten:
+     - **§6.1 scenario example** still shows the pre-Kelvara basin. The shipped `default-basin.json` differs in:
+       - the name: "Kelvara basin (hypothetical)", not "Fairflow default basin";
+       - the aquifer reserve and low threshold: 10 and 15 Mm³, not 5 and 10;
+       - scheme A: "Upper Citrus Estate" (citrus, yield 16 t/ha, ky 0.95, 634 people, price 1.71), not "Orchard Estate" (pomegranate, 8 t/ha, ky 0.8, 81 people, price 1.0);
+       - the pump: a cap of `capShare` 0.5 of demand and `costSlope` 0.8, not a flat cap of 2 and `costSlope` 6.
+       - Sources: ADR 0006 to ADR 0009. The inflows, deck and natural recharge still match.
+     - **R10 ("0–2 Pump tokens") and S6 ("0–2 stepper")** predate ADR 0008. Wells are a share of demand, so at a full aquifer the engine's caps are 3.125, 4.5 and 1.7 Mm³ (`pump_cap`, Kelvara basin). They may be fractional, and they are 0 once the shallow wells fail.
+     - **§9.1 property "S > 1 iff ΣP > r₀ in a season with no surplus"** does not hold under ADR 0007 and ADR 0009. With the engine on the Kelvara basin (proportional lens, stock 16 and 18 Mm³, no spill, dry and normal years), S stays below 1 for ΣP between r₀ = 1 and about 2.3 to 3.5 Mm³. S first exceeds 1 exactly where storage first falls. That is §2.5's own statement, "S > 1 exactly when aquifer storage falls"; return flow and capture recharge the aquifer beyond r₀. No test asserts the §9.1 form.
+     - **§13 row 20** ("pumping fixture r₃ = 0.33") is a v2-to-v3 change-log entry. The current §3.3 pumping fixture has S = 1.36 and r₃ = 0.41. The engine reproduces it: r₃ = 0.405174 for the normal-year proportional season with every scheme pumping its capacity.
+   - **Wording:** "farm" in older text (screens, the handoff and accepted decision records written before the wording rule) means the blueprint's irrigation "scheme" (see §3, "Wording"). Names such as "Tail-end Wheat Farms", and sources describing the family farms inside a scheme, are not this usage.
    - Mark superseded text and point to the decision record rather than rewriting history.
 9. **v1.1:**
    - enable the remaining lenses after balance runs;

@@ -17,7 +17,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "tests"))
 import blueprint as bp  # noqa: E402
 
-from fairflow_engine import AUTHORITY, Game, project  # noqa: E402
+from fairflow_engine import AUTHORITY, ENGINE, Game, project  # noqa: E402
 from fairflow_engine.scenario import load_scenario  # noqa: E402
 
 OUT = bp.ROOT / "packages" / "ui" / "src" / "fixtures"
@@ -49,12 +49,19 @@ def main() -> None:
     g.submit("C", "vote", lens="proportional")
     g.submit(AUTHORITY, "close_vote")
     opening = list(g.events)
-    # then play to the end: A pumps, B expands once, so S6-S8 have real private turns, results and goals
-    first = True
+    # then play to the end: A pumps, B expands once, so S6-S8 have real private turns, results and goals. In season 2
+    # A's own timer commits and C's phone is gone, so the server commits C's untouched default (ADR 0013); the numbers
+    # are those of the same commits made by hand.
+    season = 1
     while True:
         for i, s in enumerate(setup.schemes):
-            g.submit(s.id, "commit", pumps=1.0 if i == 0 else 0.0, action="expand" if (i == 1 and first) else None)
-        first = False
+            if season == 2 and i == len(setup.schemes) - 1:
+                g.submit(ENGINE, "timeout_private", season=g.state.season)
+                continue
+            timer = {"byTimeout": True} if season == 2 and i == 0 else {}
+            action = "expand" if (i == 1 and season == 1) else None
+            g.submit(s.id, "commit", pumps=1.0 if i == 0 else 0.0, action=action, **timer)
+        season += 1
         if g.events[-1]["type"] == "goal.result" or any(e["type"] == "game.ended" for e in g.events):
             break
         g.submit(AUTHORITY, "start_season")

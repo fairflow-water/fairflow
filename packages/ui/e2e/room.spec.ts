@@ -194,3 +194,46 @@ test('a commit made while the connection drops is kept and sent again after reco
   await expect(display.getByRole('heading', { name: 'Season 1: what happened' })).toBeVisible();
   await expect(cutPhone!.getByLabel(/Your scheme/)).toBeVisible();
 });
+
+test('a phone gone during its private turn: the server commits for it and the season resolves (ADR 0013)', async ({ browser }) => {
+  const facilitator = await newPage(browser);
+  await facilitator.goto('/');
+  await facilitator.getByRole('button', { name: 'Open a room' }).click();
+  const heading = await facilitator.getByRole('heading', { level: 1, name: /^Room / }).textContent();
+  const code = (heading ?? '').replace('Room ', '').trim();
+  const display = await newPage(browser);
+  await display.goto((await facilitator.getByRole('link', { name: 'Open the projector view' }).getAttribute('href')) ?? '');
+
+  const link = { down: false, cut: () => Promise.resolve() };
+  const phones: Page[] = [];
+  for (let i = 0; i < 3; i++) {
+    const phone = await newPage(browser, PHONE);
+    if (i === 0) {
+      await phone.routeWebSocket(/\/rooms\/[^/]+\/ws$/, async ws => {
+        if (link.down) { await ws.close({ code: 1001, reason: 'no network' }); return; }
+        const server = ws.connectToServer();
+        link.cut = async () => { await ws.close({ code: 1001, reason: 'no network' }); await server.close(); };
+      });
+    }
+    await phone.goto(`/join/${code}`);
+    await phone.getByRole('checkbox', { name: /will take part/ }).check();
+    await phone.getByRole('list').getByRole('button').first().click();
+    await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();
+    phones.push(phone);
+  }
+  const [gone, ...others] = phones;
+  await facilitator.getByRole('button', { name: 'Skip it and open season 1' }).click();
+  await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
+  for (const phone of phones) await phone.getByTestId('lens-proportional').getByRole('button', { name: 'Vote' }).click();
+  for (const phone of phones) await expect(phone.getByTestId('lens-proportional').getByRole('button', { name: 'Your vote' })).toBeVisible();
+  await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+  await expect(gone!.getByRole('heading', { name: 'Your turn' })).toBeVisible();
+  link.down = true; // the phone is gone for good: dead battery, left in a bag
+  await link.cut();
+  await gone!.close();
+  for (const phone of others) await phone.getByRole('button', { name: 'Commit my turn' }).click();
+  await expect(display.getByText(/Private turns/)).toBeVisible();
+  // the server's deadline: decisionS (45 s) plus the 10 s grace from the private turn's opening
+  await expect(display.getByRole('heading', { name: 'Season 1: what happened' })).toBeVisible({ timeout: 90_000 });
+  for (const page of [display, facilitator, ...others]) await expect(page.getByText(/time(d)? ?out/i)).toHaveCount(0);
+});

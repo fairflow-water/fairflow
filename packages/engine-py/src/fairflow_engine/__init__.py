@@ -34,6 +34,7 @@ from .model import Aquifer, Basin, LensId, LensParams, MissingParameter, Pump, S
 from .production import value_of, yield_of
 from .record import (
     AUTHORITY,
+    ENGINE,
     WHATEVER_WORKS,
     Game,
     GameSetup,
@@ -54,6 +55,7 @@ from .welfare import welfare
 
 __all__ = [
     "AUTHORITY",
+    "ENGINE",
     "FLOOR_RULES",
     "WHATEVER_WORKS",
     "Allocation",

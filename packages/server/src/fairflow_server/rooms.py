@@ -70,6 +70,19 @@ class Room:
             ],
         }
 
+    def private_deadline(self, grace_default: float) -> tuple[int, float] | None:
+        """ADR 0013: while a private turn is open, its season and the server's deadline (epoch seconds): the record time
+        of the season's private.opened, plus the scenario's decisionS (the phone's deadline), plus the grace. None
+        when no private turn is open or the scenario sets no decision time (then no side runs a timer)."""
+        session = self.scenario.get("session", {})
+        decision = session.get("decisionS")
+        state = self.game.state
+        if decision is None or state.phase != "private":
+            return None
+        opened = next(e for e in reversed(self.game.events) if e["type"] == "private.opened")
+        start = datetime.fromisoformat(opened["t"]).timestamp()
+        return opened["season"], start + decision + session.get("privateTurnGraceS", grace_default)
+
     def free_roles(self) -> list[str]:
         taken = set(self.tokens.values())
         return [s.id for s in self.game.setup.schemes if s.id not in taken]

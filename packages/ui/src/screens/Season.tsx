@@ -15,11 +15,11 @@ import { PrivateTurn } from './PrivateTurn';
 import { Reveal } from './Reveal';
 import { Review } from './Review';
 
-export function Season({ view, scenario, role, onIntent, trySend, resync, events = [], code = '' }: {
+export function Season({ view, scenario, role, onIntent, trySend, resync, clockOffsetMs = 0, events = [], code = '' }: {
   view: RoomView; scenario: PublicScenario; role: string; onIntent: (intent: Record<string, unknown>) => void;
   /** Sends silently and says whether it went out (the private turn retries a commit that did not). */
   trySend?: (intent: Record<string, unknown>) => boolean;
-  resync?: number; events?: readonly RecordEvent[]; code?: string;
+  resync?: number; clockOffsetMs?: number; events?: readonly RecordEvent[]; code?: string;
 }) {
   const commitIntent = trySend ?? ((intent: Record<string, unknown>) => { onIntent(intent); return true; });
   const isPlayer = scenario.schemes.some(s => s.id === role);
@@ -87,8 +87,8 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, events
       {view.phase === 'floor_vote' && <FloorVote view={view} role={role} isPlayer={isPlayer} onIntent={onIntent} />}
       {view.phase === 'private' && (isPlayer && view.privateTurn && !view.myCommit
         ? <PrivateTurn key={view.season} turn={view.privateTurn} last={banner?.mine ?? null} demand={demand}
-            decisionS={scenario.session?.decisionS ?? null}
-            resync={resync} onCommit={(pumps, action) => commitIntent({ intent: 'commit', pumps, action })} />
+            decisionS={scenario.session?.decisionS ?? null} clockOffsetMs={clockOffsetMs} resync={resync}
+            onCommit={(pumps, action, byTimeout) => commitIntent({ intent: 'commit', pumps, action, ...(byTimeout ? { byTimeout } : {}) })} />
         : <p className="waiting">{!isPlayer ? 'Private turns: the player for each scheme decides on their own device.'
             : view.myCommit ? 'Committed. Waiting for the other schemes.' : 'Opening your private turn…'}</p>)}
       {view.phase === 'reveal' && last && (

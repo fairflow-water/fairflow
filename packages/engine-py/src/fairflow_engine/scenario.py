@@ -165,6 +165,8 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
         errors.append(f"seats must be 1..{len(schemes)} once each, got {seats}")
     if len({s["id"] for s in schemes}) != len(schemes):
         errors.append("scheme ids must be unique")
+    if {s["id"] for s in schemes} & {"authority", "engine"}:  # the facilitator's and the engine host's roles (ADR 0013)
+        errors.append("scheme ids 'authority' and 'engine' are reserved")
     enabled = [lens for lens in scenario["lenses"] if lens["enabled"]]
     if scenario["defaultLens"] not in [lens["id"] for lens in enabled]:
         errors.append(f"defaultLens {scenario['defaultLens']!r} is not an enabled lens")

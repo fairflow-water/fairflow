@@ -3,16 +3,20 @@
 //
 // S6 — the private turn (blueprint §5.2, R10, R20). This scheme's last results, a 0–cap pump stepper framed as borrowing,
 // the action tokens collapsed to one line, and the engine's preview of harvest and points for the current choice.
-// The countdown runs from the scenario's decision time and commits the current choice when it ends; a commit can be
-// undone for 3 s. Every number comes from the engine's private.opened and season.resolved events.
+// The countdown runs to the server's deadline, the record time of private.opened plus the scenario's decision time, on
+// the server's clock (ADR 0013), so a reload continues it; at zero it commits the current choice, marked as the phone's
+// timer. The server commits the untouched default a grace later for a phone that never does. A commit can be undone for
+// 3 s. Every number comes from the engine's private.opened and season.resolved events.
 // A commit is final on this phone once sent, but it counts only when the server records it: if it could not be sent
-// (no connection), or the connection died with it, the turn stays open and the same choice is sent again after the
-// server's next full sync, which every reconnection brings. A sync that still shows this turn open means the server
-// holds no commit from this phone (once it does, this screen is replaced).
+// (no connection), or the connection died with it, the turn stays open and the same choice is sent again, with the same
+// timer mark, after the server's next full sync, which every reconnection brings. A sync that still shows this turn open
+// means the server holds no commit from this phone (once it does, this screen is replaced).
 import { useEffect, useRef, useState } from 'react';
 import type { MyResult, PrivateTurn as Turn } from '../room';
 
 const UNDO_MS = 3000; // §5.2 S6 "hold-to-commit with 3 s undo"
+const MS = 1000; // layout: milliseconds per second
+const TICK_MS = 250; // layout: how often the countdown is redrawn
 const fmt = (x: number, digits = 1): string => (Number.isInteger(x) ? String(x) : x.toFixed(digits));
 const signed = (x: number): string => `${x >= 0 ? '+' : '−'}${fmt(Math.abs(x))}`;
 const ACTION_TEXT: Record<string, { name: string; effect: string }> = {
@@ -26,13 +30,14 @@ export interface PrivateTurnProps {
   last: MyResult | null;
   demand: number | null;
   decisionS: number | null;
+  clockOffsetMs?: number; // the server's clock minus this device's (ADR 0013)
   /** Returns false when the commit could not be sent (no connection). */
-  onCommit: (pumps: number, action: string | null) => boolean;
+  onCommit: (pumps: number, action: string | null, byTimeout: boolean) => boolean;
   /** Counts the server's full syncs; a new one while this turn is open re-sends a commit made here. */
   resync?: number | undefined;
 }
 
-export function PrivateTurn({ turn, last, demand, decisionS, onCommit, resync }: PrivateTurnProps) {
+export function PrivateTurn({ turn, last, demand, decisionS, clockOffsetMs = 0, onCommit, resync }: PrivateTurnProps) {
   const [level, setLevel] = useState(0); // index into the engine's offered pump levels (ADR 0008: the last may be fractional)
   const pumps = turn.options[level]?.pumps ?? 0;
   const [action, setAction] = useState<string | null>(null);
@@ -42,34 +47,38 @@ export function PrivateTurn({ turn, last, demand, decisionS, onCommit, resync }:
   const choice = useRef({ pumps, action });
   choice.current = { pumps, action };
   const undo = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const made = useRef<{ pumps: number; action: string | null } | null>(null); // the commit made on this phone
+  const made = useRef<{ pumps: number; action: string | null; byTimeout: boolean } | null>(null); // the commit made on this phone
   const [delivery, setDelivery] = useState<'none' | 'sent' | 'waiting'>('none');
 
-  const send = (p: number, a: string | null) => {
+  const send = (p: number, a: string | null, byTimeout = false) => {
     if (made.current) return;
-    made.current = { pumps: p, action: a };
+    made.current = { pumps: p, action: a, byTimeout };
     setPending(true);
-    setDelivery(onCommit(p, a) ? 'sent' : 'waiting');
+    setDelivery(onCommit(p, a, byTimeout) ? 'sent' : 'waiting');
   };
 
   useEffect(() => {
     if (!made.current) return;
-    setDelivery(onCommit(made.current.pumps, made.current.action) ? 'sent' : 'waiting');
+    setDelivery(onCommit(made.current.pumps, made.current.action, made.current.byTimeout) ? 'sent' : 'waiting');
   }, [resync]);
 
   useEffect(() => {
     if (decisionS === null) return undefined;
-    const started = Date.now();
-    const tick = setInterval(() => {
-      const remaining = Math.max(0, decisionS - Math.floor((Date.now() - started) / 1000));
+    // ADR 0013: the deadline is on the server's clock; without the record time (a test fixture) it runs from now
+    const opened = turn.openedAt === undefined ? Number.NaN : Date.parse(turn.openedAt);
+    const deadline = (Number.isNaN(opened) ? Date.now() + clockOffsetMs : opened) + decisionS * MS;
+    const update = () => {
+      const remaining = Math.max(0, Math.ceil((deadline - (Date.now() + clockOffsetMs)) / MS));
       setLeft(remaining);
       if (remaining === 0) {
         clearInterval(tick);
-        send(choice.current.pumps, choice.current.action); // R20: auto-commit the current choice
+        send(choice.current.pumps, choice.current.action, true); // R20: auto-commit the current choice
       }
-    }, 250);
+    };
+    const tick = setInterval(update, TICK_MS);
+    update();
     return () => clearInterval(tick);
-  }, [decisionS]);
+  }, [decisionS, turn.openedAt, clockOffsetMs]);
 
   useEffect(() => () => { if (undo.current) clearTimeout(undo.current); }, []);
 

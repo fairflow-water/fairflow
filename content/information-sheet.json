@@ -1,7 +1,8 @@
 {
-  "$comment": "CC BY 4.0 (see REUSE.toml). Information for players, shown on the join screen (S2) before anyone chooses a scheme (ADR 0011). DRAFT: every [BRACKETED] item is for the maintainer and the institute to fill; until they are filled and ethics approval is given, run with research disabled. Change 'version' whenever the text changes: each join records the version the player saw. Sections marked research: true are shown only when research is enabled.",
-  "version": "draft-2026-10-12.2",
+  "$comment": "CC BY 4.0 (see REUSE.toml). Information for players, shown on the join screen (S2) before anyone chooses a scheme (ADR 0011). DRAFT: every [BRACKETED] item is for the maintainer and the institute to fill; until they are filled and ethics approval is given, run with research disabled. Change 'version' whenever the text changes: each join records the version the player saw. Sections marked research: true are shown only when research is enabled. 'roomTtlHours' must equal the server's FAIRFLOW_ROOM_TTL_HOURS and the text must say the same number of hours; the server refuses to start otherwise (ADR 0012).",
+  "version": "draft-2026-10-12.3",
   "status": "draft with placeholders",
+  "roomTtlHours": 24,
   "title": "Fairflow: information for players",
   "summary": "Playing is part of your course. The game records which irrigation scheme you play and your moves, never your name.",
   "summaryResearch": "Separately, you choose whether your table's record may be used for research. Nobody at the table, and not the facilitator, sees your answer.",
@@ -19,12 +20,12 @@
     {
       "heading": "What the game records",
       "research": false,
-      "text": "Which irrigation scheme you play, your votes, pumping, predictions and other moves, when you made each one, and anything you type in the review. It does not ask your name; please do not type names or personal details. [IF THE SERVER OR A PROXY IN FRONT OF IT LOGS IP ADDRESSES: The server's technical log also notes your phone's internet (IP) address, kept for (PERIOD).]"
+      "text": "Which irrigation scheme you play, your votes, pumping, predictions and other moves, when you made each one, and anything you type in the review. It does not ask your name; please do not type names or personal details."
     },
     {
       "heading": "Who sees what",
       "research": false,
-      "text": "Your table sees shared results; at the debrief it may see each scheme's pumping. Only you see your review answers. The facilitator knows who sat at which scheme."
+      "text": "Your table sees shared results; at the debrief it may see each scheme's pumping. Only you see your review answers. The facilitator knows who sat at which scheme. If the facilitator saves the debrief screen, that copy shows schemes, never names."
     },
     {
       "heading": "If you say yes to research",
@@ -39,7 +40,7 @@
     {
       "heading": "Data protection",
       "research": false,
-      "text": "Controller: [LEGAL NAME OF CONTROLLER]. Legal basis: [LEGAL BASIS]. Kept on [WHERE] for [RETENTION PERIOD]. Your rights and the data protection officer: [DPO CONTACT; PRIVACY STATEMENT LINK]. You may complain to the Autoriteit Persoonsgegevens. [ETHICS APPROVAL: REFERENCE, IF RESEARCH IS ENABLED]."
+      "text": "Controller: [LEGAL NAME OF CONTROLLER]. Legal basis: [LEGAL BASIS]. The game record is kept on a server run by [INSTITUTE] in [EU COUNTRY] and is deleted automatically 24 hours after the game's last move. Your rights and the data protection officer: [DPO CONTACT; PRIVACY STATEMENT LINK]. You may complain to the Autoriteit Persoonsgegevens. [ETHICS APPROVAL: REFERENCE, IF RESEARCH IS ENABLED]."
     }
   ],
   "part1": "I have read the information and I will take part in the game.",

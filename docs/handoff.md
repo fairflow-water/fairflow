@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 Model values in section 4 are quoted as of commit c79475e; the parameter registry and decision records are authoritative.
 
-State on 2026-10-12 at commit `c79475e` on `main`, with CI green; sections 7 and 8 updated after the client-reconnection commit `a5de7bc`. This page explains what Fairflow is, how it is built today, the rules for working on it, what is done, what comes next, and what is waiting on the maintainer. When this page and the code disagree, the code and the decision records (`docs/decisions/`) win. When the blueprint and a decision record disagree, the later decision record wins.
+State on 2026-10-12 at commit `c79475e` on `main`, with CI green; sections 7 and 8 updated after the client-reconnection commit `a5de7bc`, and for persistent rooms (ADR 0012, branch `persistent-rooms-24h`, a draft pull request not yet merged). This page explains what Fairflow is, how it is built today, the rules for working on it, what is done, what comes next, and what is waiting on the maintainer. When this page and the code disagree, the code and the decision records (`docs/decisions/`) win. When the blueprint and a decision record disagree, the later decision record wins.
 
 ## 0. Read first, in this order
 
@@ -105,8 +105,10 @@ packages/
   engine/      @fairflow/engine — TypeScript MIRROR of season resolution only (no record yet); must reproduce the
                Python golden vectors (fixtures/conformance.json); `engine serve` NDJSON worker
   server/      fairflow_server — FastAPI + WebSockets room server (ADR 0002, OWASP API/WebSocket protections)
-    settings.py  FAIRFLOW_ALLOWED_ORIGINS, FAIRFLOW_RESEARCH_ENABLED (ADR 0011), limits
-    rooms.py     RoomRegistry: rooms in memory, tokens → roles, join
+    settings.py  FAIRFLOW_ALLOWED_ORIGINS, FAIRFLOW_RESEARCH_ENABLED (ADR 0011), FAIRFLOW_STORE and
+                 FAIRFLOW_ROOM_TTL_HOURS (ADR 0012), limits
+    rooms.py     RoomRegistry: rooms, token hashes → roles, join, restore at start-up, TTL sweep
+    store.py     the room store (ADR 0012): one SQLite file; deleted rooms are overwritten
     app.py       REST create/join/info; one WebSocket per device; token as first message; per-viewer projections
     protocol.py  strict pydantic intents (extra fields rejected)
   ui/          React + TypeScript + Vite client; Vitest unit tests; Playwright e2e (a whole game in Chromium)
@@ -117,7 +119,7 @@ packages/
     src/fixtures/       engine-played records for UI tests (regenerate, never hand-edit)
   scenarios/   default-basin.json (Kelvara) and parameters.json (sourced registry)
 content/       review-form.json, floor-rules.json, information-sheet.json (draft with placeholders)
-docs/          blueprint, decisions 0001–0011, reviews, research.md
+docs/          blueprint, decisions 0001–0012, reviews, research.md, plans/ (unbuilt plans)
 paper/         JOSS draft (engine paper, planned for v1.1)
 scripts/check-all.sh
 ```
@@ -249,6 +251,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0009 | Capture-consistent river–aquifer balance; where the spill goes |
 | 0010 | Strict survival floor; the collective score keeps its declared lens; debrief scoreboard per equity measure; two §9.2 criteria restated |
 | 0011 | Two-part consent; research answer in a `server` event; course-only by default |
+| 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (proposed, draft PR) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 
@@ -257,13 +260,13 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E1 Engine core | Done. Not built: user-defined lens grammar (`criterion`); `stability` and Shapley. |
 | E2 Schema and scenarios | Done for Kelvara. Balotra and Mwea example scenarios are not written. |
 | E3 Record and replay | Done on the server (`record.py`). Not in the TypeScript mirror (see E3b). |
-| E10 Room mode | Done. Rooms live in memory only; there is no persistence. |
+| E10 Room mode | Done. With `FAIRFLOW_STORE` set, rooms survive a restart and are deleted 24 h after the last move (ADR 0012, draft PR); unset, they live in memory only. |
 | E4 Core screens | Done: S2, S3 (schematic map), S4, floor vote, S6 (with the 45 s private-turn timer), S7 three-beat reveal, S8. |
 | E5 Onboarding and debrief | Done: season 0 tutorial, S9 debrief (season tabs, gauge, triangle, equalisandum, F toggle, welfare slider, scoreboard), S10 review. Not built: the pre-session survey and linking code. |
 | E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Not wired into CI as the "baseline tier". |
 | E3b Table-mode fallback | Not started. A cohort-cut candidate. |
 | E6 Reduced Builder | Not started. A cohort-cut candidate. |
-| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Not built: persistent rooms, Wake Lock, service worker. |
+| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms in a draft PR (ADR 0012). Not built: Wake Lock, service worker. |
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
@@ -296,10 +299,12 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - Store rooms durably; EU hosting; a DPIA screening.
    - Research export on the server only (§6.3: `seasons.csv`, `events.csv`, `codebook.md`), using the consent filter: a table is eligible only if every `research.consent` is yes.
    - Salts destroyed after the course; a free-text filter.
-   - Needs the retention and controller decisions.
+   - Planned, not built: `docs/plans/research-retention.md` (pending store until after grading, a pseudonymised archive, withdrawal by room code and date). Needs the retention and controller decisions.
 6. **Robustness (E7).**
    - Done: reconnection after a dropped socket or a reload (`api.ts` `connect`, browser test in `e2e/room.spec.ts`).
-   - Next: persistent rooms, so a server restart does not end a game; this needs the hosting and retention decisions (§9 below, and blueprint §12.3).
+   - Persistent rooms (ADR 0012, draft PR on `persistent-rooms-24h`): one SQLite file, each move on disk before it is broadcast, a restart resumes every room whose record checks out, rooms deleted 24 h after the last move, the facilitator can continue a room from the start page.
+   - **Deployment requirement:** the reverse proxy in front of the server must log no client IP addresses. The information sheet no longer mentions an IP log; if the proxy cannot be configured that way, the sheet must say so again (`packages/server/README.md`). Also exclude the store from backups and encrypt the disk.
+   - Open: a seat cannot move to another phone; a pause longer than the TTL loses the game.
    - Then: Wake Lock, a service worker, and interrupted-state tests in every phase.
 7. **Cohort-cut items, decided at app pilot 1:**
    - E3b, table mode: port the Season Record to the TypeScript mirror, verified against Python-generated record vectors the same way season vectors are.
@@ -324,7 +329,7 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - (c) in either case, confirm the 5-point margin.
 2. **Consent text (ADR 0011).** The placeholders in `content/information-sheet.json`:
    - legal basis, controller, data protection officer (dpo@un-ihe.org to be confirmed);
-   - ethics reference, retention, withdrawal date, contact;
+   - ethics reference, withdrawal date, contact; the host (`[INSTITUTE]`) and `[EU COUNTRY]` (retention is 24 hours under ADR 0012);
    - course and researcher names.
 
    Keep `FAIRFLOW_RESEARCH_ENABLED` unset until these are filled and ethics approval is given. Change the sheet's `version` whenever its text changes.
@@ -363,7 +368,7 @@ uv run pytest -q
 ```
 To run it locally:
 ```sh
-FAIRFLOW_ALLOWED_ORIGINS=http://localhost:5173 uv run uvicorn fairflow_server.app:create_app --factory --no-access-log --port 8000
+FAIRFLOW_ALLOWED_ORIGINS=http://localhost:5173 uv run uvicorn fairflow_server.app:create_app --factory --no-access-log --log-level warning --port 8000
 ```
 
 **TypeScript:**

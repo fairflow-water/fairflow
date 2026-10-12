@@ -23,6 +23,10 @@ function Live({ code, token, fallbackRole }: { code: string; token: string; fall
   if (!scenario) return <p>Connecting…</p>;
   return (
     <>
+      {room.link === 'reconnecting' && <p role="status" className="notice">Connection lost. Reconnecting…</p>}
+      {room.link === 'gone' && (
+        <p role="alert" className="notice">This room is no longer on the server (it may have restarted). Ask the facilitator.</p>
+      )}
       {room.notice && <p role="status" className="notice">{room.notice}</p>}
       <Season view={room.view} scenario={scenario} role={room.role ?? fallbackRole} onIntent={room.send} events={room.events} code={code} />
     </>

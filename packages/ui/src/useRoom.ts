@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { connect, type RoomSocket } from './api';
+import { connect, type LinkStatus, type RoomSocket } from './api';
 import { applyMessage, viewOf, type RecordEvent, type RoomView } from './room';
 
 export interface RoomConnection {
@@ -9,6 +9,7 @@ export interface RoomConnection {
   events: RecordEvent[];
   role: string | null;
   notice: string | null;
+  link: LinkStatus | null; // null until the first connection opens
   send: (intent: Record<string, unknown>) => void;
 }
 
@@ -17,6 +18,7 @@ export function useRoom(code: string, token: string | null): RoomConnection {
   const [events, setEvents] = useState<RecordEvent[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [link, setLink] = useState<LinkStatus | null>(null);
   const socket = useRef<RoomSocket | null>(null);
 
   useEffect(() => {
@@ -26,11 +28,14 @@ export function useRoom(code: string, token: string | null): RoomConnection {
       else if (msg.type === 'rejected') setNotice(msg.message);
       else if (msg.type === 'invalid') setNotice('That action was not understood.');
       else { setNotice(null); setEvents(prev => applyMessage(prev, msg)); }
-    });
+    }, setLink);
     socket.current = s;
     return () => s.close();
   }, [code, token]);
 
   const view = useMemo(() => viewOf(events), [events]);
-  return { view, events, role, notice, send: intent => socket.current?.send(intent) };
+  const send = (intent: Record<string, unknown>) => {
+    if (!socket.current?.send(intent)) setNotice('Not connected just now, so that was not sent. Try again in a moment.');
+  };
+  return { view, events, role, notice, link, send };
 }

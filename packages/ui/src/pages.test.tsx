@@ -15,14 +15,25 @@ const events = opening.events as unknown as RecordEvent[];
 const scenario = opening.scenario as PublicScenario;
 
 class FakeSocket {
+  static OPEN = 1;
+  static CLOSED = 3;
   static last: FakeSocket | null = null;
+  static count = 0;
+  readyState = 0;
   sent: string[] = [];
-  listeners: Record<string, ((ev: { data?: string }) => void)[]> = {};
-  constructor(public url: string) { FakeSocket.last = this; }
-  addEventListener(type: string, fn: (ev: { data?: string }) => void) { (this.listeners[type] ??= []).push(fn); }
+  listeners: Record<string, ((ev: { data?: string; code?: number }) => void)[]> = {};
+  constructor(public url: string) { FakeSocket.last = this; FakeSocket.count += 1; }
+  addEventListener(type: string, fn: (ev: { data?: string; code?: number }) => void) { (this.listeners[type] ??= []).push(fn); }
   send(text: string) { this.sent.push(text); }
-  close() { /* closed */ }
-  emit(type: string, data?: unknown) { for (const fn of this.listeners[type] ?? []) fn(data === undefined ? {} : { data: JSON.stringify(data) }); }
+  close() { this.readyState = FakeSocket.CLOSED; }
+  emit(type: string, data?: unknown) {
+    if (type === 'open') this.readyState = FakeSocket.OPEN;
+    for (const fn of this.listeners[type] ?? []) fn(data === undefined ? {} : { data: JSON.stringify(data) });
+  }
+  drop(code: number) {
+    this.readyState = FakeSocket.CLOSED;
+    for (const fn of this.listeners['close'] ?? []) fn({ code });
+  }
 }
 
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
@@ -80,6 +91,36 @@ describe('api', () => {
     expect(JSON.parse(ws.sent[1] ?? '{}')).toEqual({ intent: 'start_season' });
     expect(messages).toEqual([{ type: 'welcome', role: 'A', room: 'ABCDE' }]);
     s.close();
+  });
+  it('reopens a dropped connection with backoff and sends the token first again', () => {
+    vi.useFakeTimers();
+    const status: string[] = [];
+    const s = connect('ABCDE', 'tok', () => undefined, x => status.push(x));
+    const first = FakeSocket.last as FakeSocket;
+    first.emit('open');
+    first.drop(1006); // abnormal closure: the phone slept or the Wi-Fi dropped
+    expect(status).toEqual(['open', 'reconnecting']);
+    expect(s.send({ intent: 'vote', lens: 'proportional' })).toBe(false); // nothing is sent while down
+    vi.runOnlyPendingTimers();
+    const second = FakeSocket.last as FakeSocket;
+    expect(second).not.toBe(first);
+    second.emit('open');
+    expect(JSON.parse(second.sent[0] ?? '{}')).toEqual({ token: 'tok' });
+    expect(status.at(-1)).toBe('open');
+    s.close();
+    vi.useRealTimers();
+  });
+  it('gives up when the server refuses the room or token (e.g. after a restart) and says so', () => {
+    vi.useFakeTimers();
+    const status: string[] = [];
+    const s = connect('ABCDE', 'tok', () => undefined, x => status.push(x));
+    const before = FakeSocket.count;
+    (FakeSocket.last as FakeSocket).drop(1008);
+    vi.runAllTimers();
+    expect(status).toEqual(['gone']);
+    expect(FakeSocket.count).toBe(before);
+    s.close();
+    vi.useRealTimers();
   });
 });
 

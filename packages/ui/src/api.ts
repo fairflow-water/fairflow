@@ -61,12 +61,62 @@ export const tokenStore = {
   },
 };
 
-export interface RoomSocket { send(intent: Record<string, unknown>): void; close(): void }
+export interface RoomSocket { send(intent: Record<string, unknown>): boolean; close(): void }
 
-export function connect(code: string, token: string, onMessage: (m: ServerMessage) => void): RoomSocket {
+/** Connection state for the screen: open; lost and retrying; or refused for good (unknown room or token, e.g. after a
+ * server restart, since rooms are held in memory). */
+export type LinkStatus = 'open' | 'reconnecting' | 'gone';
+
+const POLICY_VIOLATION = 1008; // RFC 6455 close code the server uses for a bad token, origin or room: do not retry
+const RETRY_FIRST_MS = 500; // layout: first retry after a dropped connection
+const RETRY_MAX_MS = 8000; // layout: retries back off by doubling up to this interval
+
+/** One room connection that survives a dropped socket (a phone locked or asleep, Wi-Fi lost): it reopens with
+ * backoff, at once when the page becomes visible or the browser comes back online, and sends the token first each
+ * time; the server then sends a full sync, so nothing is missed. */
+export function connect(code: string, token: string, onMessage: (m: ServerMessage) => void,
+  onStatus: (s: LinkStatus) => void = () => undefined): RoomSocket {
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${scheme}://${location.host}/rooms/${encodeURIComponent(code)}/ws`);
-  ws.addEventListener('open', () => ws.send(JSON.stringify({ token })));
-  ws.addEventListener('message', ev => onMessage(JSON.parse(String(ev.data)) as ServerMessage));
-  return { send: intent => ws.send(JSON.stringify(intent)), close: () => ws.close() };
+  const url = `${scheme}://${location.host}/rooms/${encodeURIComponent(code)}/ws`;
+  let ws: WebSocket;
+  let stopped = false;
+  let attempt = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  function open() {
+    timer = undefined;
+    const socket = new WebSocket(url);
+    ws = socket;
+    socket.addEventListener('open', () => { attempt = 0; socket.send(JSON.stringify({ token })); onStatus('open'); });
+    socket.addEventListener('message', ev => onMessage(JSON.parse(String(ev.data)) as ServerMessage));
+    socket.addEventListener('close', ev => {
+      if (stopped || socket !== ws) return;
+      if (ev.code === POLICY_VIOLATION) { stopped = true; onStatus('gone'); return; }
+      onStatus('reconnecting');
+      timer = setTimeout(open, Math.min(RETRY_MAX_MS, RETRY_FIRST_MS * 2 ** attempt));
+      attempt += 1;
+    });
+  }
+  function wake() {
+    if (stopped || document.visibilityState === 'hidden' || timer === undefined) return;
+    clearTimeout(timer);
+    open();
+  }
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('online', wake);
+  open();
+  return {
+    send(intent) {
+      if (ws.readyState !== WebSocket.OPEN) return false;
+      ws.send(JSON.stringify(intent));
+      return true;
+    },
+    close() {
+      stopped = true;
+      if (timer !== undefined) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', wake);
+      window.removeEventListener('online', wake);
+      ws.close();
+    },
+  };
 }

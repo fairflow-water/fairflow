@@ -28,9 +28,19 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   await display.goto(displayHref ?? '');
   await expect(display.getByText(/Waiting for the facilitator/)).toBeVisible();
 
+  // The first phone's room socket runs through a route the test can cut, as a locked phone or lost Wi-Fi would.
+  // (Chromium's offline emulation does not close an open WebSocket.)
+  const link: { down: boolean; cut: () => Promise<void> } = { down: false, cut: () => Promise.resolve() };
   const phones: Page[] = [];
   for (let i = 0; i < 3; i++) {
     const phone = await newPage(browser, PHONE);
+    if (i === 0) {
+      await phone.routeWebSocket(/\/rooms\/[^/]+\/ws$/, async ws => {
+        if (link.down) { await ws.close({ code: 1001, reason: 'no network' }); return; }
+        const server = ws.connectToServer();
+        link.cut = async () => { await ws.close({ code: 1001, reason: 'no network' }); await server.close(); };
+      });
+    }
     await phone.goto(`/join/${code}`);
     await phone.getByRole('checkbox', { name: /will take part/ }).check();
     await phone.getByRole('list').getByRole('button').first().click();
@@ -57,7 +67,21 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
     await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
     for (const phone of phones) await phone.getByTestId('lens-proportional').getByRole('button', { name: 'Vote' }).click();
     for (const phone of phones) await expect(phone.getByTestId('lens-proportional').getByRole('button', { name: 'Your vote' })).toBeVisible();
-    await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+    if (season === 1) {
+      // A phone loses its connection mid-season (locked, asleep, Wi-Fi gone) and the vote closes while it is away: it
+      // says so, reconnects by itself and receives its private turn from the resync. Another reloads the page and
+      // rejoins its role from the stored token.
+      const [dropped, reloaded] = phones;
+      link.down = true;
+      await link.cut();
+      await expect(dropped!.getByText('Connection lost. Reconnecting…')).toBeVisible();
+      await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+      link.down = false;
+      await expect(dropped!.getByText('Connection lost. Reconnecting…')).toHaveCount(0, { timeout: 15_000 });
+      await reloaded!.reload();
+    } else {
+      await facilitator.getByRole('button', { name: 'Close the vote' }).click();
+    }
 
     // S6 on every phone; the first farm borrows one unit, and the projector never shows a private turn
     for (const [i, phone] of phones.entries()) {

@@ -29,7 +29,7 @@ const decisionS = scenario.session!.decisionS!;
 
 describe('S6 private turn', () => {
   it("shows last season's own results and the engine preview for each pump level", async () => {
-    render(<PrivateTurn turn={turn} last={lastMine} demand={lastMine.W} decisionS={null} onCommit={() => undefined} />);
+    render(<PrivateTurn turn={turn} last={lastMine} demand={lastMine.W} decisionS={null} onCommit={() => true} />);
     expect(screen.getByText(/Last season you used/).textContent).toContain(fmt(lastMine.points));
     for (const option of turn.options) {
       const text = screen.getByTestId('preview').textContent ?? '';
@@ -39,7 +39,7 @@ describe('S6 private turn', () => {
     }
   });
   it('steps through the offered pump levels up to the cap, which may be fractional (ADR 0008)', async () => {
-    render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={null} onCommit={() => undefined} />);
+    render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={null} onCommit={() => true} />);
     expect((screen.getByRole('button', { name: 'One less' }) as HTMLButtonElement).disabled).toBe(true);
     for (let k = 1; k < turn.options.length; k++) await userEvent.click(screen.getByRole('button', { name: 'One more' }));
     expect(screen.getByTestId('pumps').textContent).toBe(fmt(turn.cap));
@@ -47,7 +47,7 @@ describe('S6 private turn', () => {
     expect((screen.getByRole('button', { name: 'One more' }) as HTMLButtonElement).disabled).toBe(true);
   });
   it('shows the engine points for a chosen action', async () => {
-    render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={null} onCommit={() => undefined} />);
+    render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={null} onCommit={() => true} />);
     await userEvent.click(screen.getByRole('button', { name: /^Actions:/ }));
     const first = Object.keys(turn.actions)[0]!;
     await userEvent.click(screen.getByRole('radio', { name: new RegExp(first, 'i') }));
@@ -55,7 +55,7 @@ describe('S6 private turn', () => {
   });
   it('commits after the undo window, and an undo cancels', () => {
     vi.useFakeTimers();
-    const onCommit = vi.fn();
+    const onCommit = vi.fn(() => true);
     render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={null} onCommit={onCommit} />);
     act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
     act(() => { screen.getByRole('button', { name: 'Undo' }).click(); });
@@ -68,10 +68,41 @@ describe('S6 private turn', () => {
   });
   it('auto-commits the current choice when the timer ends (R20)', () => {
     vi.useFakeTimers();
-    const onCommit = vi.fn();
+    const onCommit = vi.fn(() => true);
     render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
     act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null);
+  });
+  it('keeps a commit that could not be sent and sends it again after the next sync', () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn().mockReturnValueOnce(false).mockReturnValue(true);
+    const props = { turn, last: null, demand: null, decisionS: null, onCommit };
+    const { rerender } = render(<PrivateTurn {...props} resync={1} />);
+    act(() => { screen.getByRole('button', { name: 'One more' }).click(); });
+    act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, null);
+    expect(screen.getByText(/Not connected. Your turn is kept/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Commit my turn' })).toBeNull(); // the choice is final on this phone
+    expect((screen.getByRole('button', { name: 'One more' }) as HTMLButtonElement).disabled).toBe(true);
+    rerender(<PrivateTurn {...props} resync={2} />);
+    expect(onCommit).toHaveBeenCalledTimes(2);
+    expect(onCommit).toHaveBeenLastCalledWith(1, null);
+    expect(screen.getByText('Sending your turn…')).toBeTruthy();
+    expect(screen.queryByText(/Not connected/)).toBeNull();
+  });
+  it('sends a commit again after a sync even if it went out, since the connection may have died with it', () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn(() => true);
+    const props = { turn, last: null, demand: null, decisionS, onCommit };
+    const { rerender } = render(<PrivateTurn {...props} resync={1} />);
+    rerender(<PrivateTurn {...props} resync={2} />);
+    expect(onCommit).not.toHaveBeenCalled(); // no commit made yet: a sync sends nothing
+    act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null);
+    rerender(<PrivateTurn {...props} resync={3} />);
+    expect(onCommit).toHaveBeenCalledTimes(2);
+    expect(onCommit).toHaveBeenLastCalledWith(0, null);
   });
   it('is shown only to a scheme that has not committed; the projector waits', () => {
     const { unmount } = render(<Season view={privateS2} scenario={scenario} role="A" onIntent={() => undefined} />);

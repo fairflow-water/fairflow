@@ -31,6 +31,7 @@ export interface PrivateTurn {
   // review E11: levels above previewLimit (the stock the public tank level guarantees) carry no preview
   options: { pumps: number; yieldT: number | null; points: Record<string, number> | null }[];
   previewLimit?: number;
+  openedAt?: string; // the record time of private.opened, on the server's clock: the timer runs from it (ADR 0013)
 }
 export interface Dials { ePJ: number; eSE: { claimant: number; hectare: number; person: number }; F: { consumed: number; diverted: number } }
 export interface PublicResult {
@@ -133,7 +134,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         v = { ...v, allocation: p as unknown as Allocation };
         break;
       case 'private.opened':
-        v = { ...v, privateTurn: p as unknown as PrivateTurn };
+        v = { ...v, privateTurn: { ...(p as unknown as PrivateTurn), openedAt: e.t } };
         break;
       case 'action.played':
         v = { ...v, myCommit: { pumps: Number(p['pumps']), action: typeof p['action'] === 'string' ? p['action'] : null } };
@@ -201,7 +202,7 @@ export function tally(votes: Record<string, string>): Record<string, number> {
 }
 
 export type ServerMessage =
-  | { type: 'welcome'; role: string; room: string }
+  | { type: 'welcome'; role: string; room: string; serverTime?: number } // ADR 0013: the server's clock, in ms
   | { type: 'sync' | 'events'; events: RecordEvent[] }
   | { type: 'rejected'; code: string; message: string }
   | { type: 'invalid'; fields: string[] };

@@ -27,6 +27,23 @@ const lastMine = privateS2.results[0]!.mine!;
 const fmt = (x: number) => (Number.isInteger(x) ? String(x) : x.toFixed(1));
 const decisionS = scenario.session!.decisionS!;
 
+describe('timeout marks (ADR 0013)', () => {
+  const fixtures = import.meta.glob<{ events: RecordEvent[] }>('../fixtures/*.json', { eager: true, import: 'default' });
+  const marked = (events: RecordEvent[]) => events.filter(e => e.type === 'action.played' && 'byTimeout' in e.payload);
+  it('reach no device before a per-player debrief, and every device after it', () => {
+    expect(Object.keys(fixtures).length).toBeGreaterThanOrEqual(10); // every stage, as the projector and as A
+    for (const [file, data] of Object.entries(fixtures)) {
+      const text = JSON.stringify(data.events);
+      if (file.includes('/debrief-')) {
+        expect(marked(data.events).map(e => e.payload['timeoutBy']), file).toEqual(['phone', 'server']);
+      } else {
+        expect(marked(data.events), file).toEqual([]);
+        expect(text.includes('timeoutBy'), file).toBe(false);
+      }
+    }
+  });
+});
+
 describe('S6 private turn', () => {
   it("shows last season's own results and the engine preview for each pump level", async () => {
     render(<PrivateTurn turn={turn} last={lastMine} demand={lastMine.W} decisionS={null} onCommit={() => true} />);
@@ -64,14 +81,56 @@ describe('S6 private turn', () => {
     act(() => { screen.getByRole('button', { name: 'One more' }).click(); });
     act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
     act(() => { vi.advanceTimersByTime(3000); });
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, null);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, null, false); // made by the player, not the timer
   });
-  it('auto-commits the current choice when the timer ends (R20)', () => {
+  it('auto-commits the current choice when the timer ends, marked as the phone timer (R20, ADR 0013)', () => {
     vi.useFakeTimers();
-    const onCommit = vi.fn(() => true);
-    render(<PrivateTurn turn={turn} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
-    act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null);
+    const onCommit = vi.fn();
+    const opened = { ...turn, openedAt: new Date().toISOString() };
+    render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
+    act(() => { screen.getByRole('button', { name: 'One more' }).click(); });
+    act(() => { vi.advanceTimersByTime(decisionS * 1000 - 500); });
+    expect(onCommit).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(turn.options[1]!.pumps, null, true);
+  });
+  it('counts down to the server deadline on the server clock, so a reload does not restart it (ADR 0013)', () => {
+    vi.useFakeTimers();
+    const elapsedS = 20; // test input: the private turn opened this long ago on the server
+    const offsetMs = 5000; // test input: the server's clock runs this far ahead of the phone's
+    const openedAt = new Date(Date.now() + offsetMs - elapsedS * 1000).toISOString();
+    const props = { turn: { ...turn, openedAt }, last: null, demand: null, decisionS, onCommit: vi.fn() };
+    const { unmount } = render(<PrivateTurn {...props} clockOffsetMs={offsetMs} />);
+    expect(screen.getByText(`${decisionS - elapsedS} s`)).toBeTruthy();
+    unmount();
+    act(() => { vi.advanceTimersByTime(3000); }); // the page reloads
+    render(<PrivateTurn {...props} clockOffsetMs={offsetMs} />);
+    expect(screen.getByText(`${decisionS - elapsedS - 3} s`)).toBeTruthy();
+    expect(props.onCommit).not.toHaveBeenCalled();
+  });
+  it('takes the timer start from the record time of private.opened', () => {
+    const opened = eventsA.filter(e => e.type === 'private.opened')[1]!;
+    expect(privateS2.privateTurn!.openedAt).toBe(opened.t);
+  });
+  it('sends a timer commit with byTimeout and a player commit without it', () => {
+    vi.useFakeTimers();
+    const onIntent = vi.fn();
+    render(<Season view={privateS2} scenario={scenario} role="A" onIntent={onIntent} />); // the fixture turn opened long ago
+    expect(onIntent).toHaveBeenCalledExactlyOnceWith({ intent: 'commit', pumps: 0, action: null, byTimeout: true });
+    cleanup();
+    const later = { ...privateS2, privateTurn: { ...turn, openedAt: new Date().toISOString() } };
+    const byHand = vi.fn();
+    render(<Season view={later} scenario={scenario} role="A" onIntent={byHand} />);
+    act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(byHand).toHaveBeenCalledExactlyOnceWith({ intent: 'commit', pumps: 0, action: null });
+  });
+  it('commits at once when it opens after the deadline has passed', () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn();
+    const openedAt = new Date(Date.now() - (decisionS + 1) * 1000).toISOString();
+    render(<PrivateTurn turn={{ ...turn, openedAt }} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null, true);
   });
   it('keeps a commit that could not be sent and sends it again after the next sync', () => {
     vi.useFakeTimers();
@@ -81,13 +140,13 @@ describe('S6 private turn', () => {
     act(() => { screen.getByRole('button', { name: 'One more' }).click(); });
     act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
     act(() => { vi.advanceTimersByTime(3000); });
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, null);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, null, false);
     expect(screen.getByText(/Not connected. Your turn is kept/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Commit my turn' })).toBeNull(); // the choice is final on this phone
     expect((screen.getByRole('button', { name: 'One more' }) as HTMLButtonElement).disabled).toBe(true);
     rerender(<PrivateTurn {...props} resync={2} />);
     expect(onCommit).toHaveBeenCalledTimes(2);
-    expect(onCommit).toHaveBeenLastCalledWith(1, null);
+    expect(onCommit).toHaveBeenLastCalledWith(1, null, false);
     expect(screen.getByText('Sending your turn…')).toBeTruthy();
     expect(screen.queryByText(/Not connected/)).toBeNull();
   });
@@ -99,10 +158,10 @@ describe('S6 private turn', () => {
     rerender(<PrivateTurn {...props} resync={2} />);
     expect(onCommit).not.toHaveBeenCalled(); // no commit made yet: a sync sends nothing
     act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null, true);
     rerender(<PrivateTurn {...props} resync={3} />);
     expect(onCommit).toHaveBeenCalledTimes(2);
-    expect(onCommit).toHaveBeenLastCalledWith(0, null);
+    expect(onCommit).toHaveBeenLastCalledWith(0, null, true); // the timer's mark goes out again with it
   });
   it('is shown only to a scheme that has not committed; the projector waits', () => {
     const { unmount } = render(<Season view={privateS2} scenario={scenario} role="A" onIntent={() => undefined} />);

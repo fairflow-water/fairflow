@@ -229,7 +229,10 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - `join`, `start_tutorial`, `start_season`;
 - `propose`, `vote`, `close_vote`, `break_tie`;
 - `floor_vote`, `close_floor_vote`;
-- `commit`, `timebox`, `open_debrief`, `review_answer`.
+- `commit` (with `byTimeout` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
+- `timeout_private`, from the server's private-turn timer only (actor `engine`, not in the client protocol; ADR 0013).
+
+**Timeout marks (ADR 0013):** a timer's commit carries `byTimeout: true` and `timeoutBy` (`phone` or `server`) on `action.played`. `project` withholds both from every viewer, the scheme itself included, until a per-player debrief.
 
 **Properties:**
 - `audit(setup, events)` recomputes every season and checks the commitments; an empty list means verified.

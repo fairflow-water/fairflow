@@ -13,6 +13,9 @@ Security choices (OWASP API Security Top 10 2023; OWASP WebSocket Security Cheat
   blanked here (`NoClientAddress`), whatever the log level (ADR 0012);
 - with a store (ADR 0012), each accepted intent is on disk before it is broadcast, and a room is deleted
   `room_ttl_hours` after its last event, its connections closed.
+
+The private turn is timed here (ADR 0013): when its deadline plus a grace has passed, the engine commits the untouched
+default for every scheme that has not committed, so a season resolves when a phone is gone.
 """
 
 from __future__ import annotations
@@ -26,7 +29,7 @@ from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from typing import Any
 
-from fairflow_engine import Rejection, project
+from fairflow_engine import ENGINE, Rejection, project
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -40,6 +43,8 @@ SERVER_VERSION = "1.0.0.dev0"
 POLICY_VIOLATION = 1008  # RFC 6455 close codes (layout)
 MESSAGE_TOO_BIG = 1009
 SWEEP_EVERY_S = 600.0  # layout: how often expired rooms are looked for; `get` refuses an expired room at once anyway
+TIMER_TICK_S = 1.0  # layout: how often a private-turn timer reads the clock (seconds)
+MS = 1000  # layout: the welcome message gives the server's time in milliseconds, as the browser counts it
 
 
 class CreateRoom(BaseModel):
@@ -90,14 +95,16 @@ def _viewer(role: str) -> str:
 
 
 def create_app(settings: Settings | None = None, now: Callable[[], float] = time.time) -> FastAPI:
-    """`now` is the wall clock the room TTL is measured on (a test passes its own)."""
+    """`now` is the wall clock the room TTL and the private-turn deadline are measured on (a test passes its own)."""
     settings = settings or Settings.from_env()
     uvicorn_log = logging.getLogger("uvicorn.error")
     if not any(isinstance(f, NoClientAddress) for f in uvicorn_log.filters):
         uvicorn_log.addFilter(NoClientAddress())
     registry = RoomRegistry(settings, now)
+    grace_default: float = registry.registry["session.privateTurnGraceS"]  # ADR 0013
     connections: dict[str, list[Connection]] = {}
     locks: dict[str, asyncio.Lock] = {}
+    timers: dict[str, asyncio.Task[None]] = {}  # room code → the open private turn's timer
 
     async def sweep() -> None:
         for code in registry.sweep():
@@ -117,9 +124,10 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
         try:
             yield
         finally:
-            task.cancel()
-            with suppress(asyncio.CancelledError):
-                await task
+            for t in [task, *timers.values()]:
+                t.cancel()
+                with suppress(asyncio.CancelledError):
+                    await t
             if registry.store is not None:
                 registry.store.close()
 
@@ -208,6 +216,36 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
                 await send_projection(room, conn, full)
             except (WebSocketDisconnect, RuntimeError):
                 connections[room.code].remove(conn)
+        arm(room)
+
+    def arm(room: Room) -> None:
+        """Start the timer of a private turn that has just opened (one per season; called after every change)."""
+        due = room.private_deadline(grace_default)
+        if due is None:
+            return
+        season, deadline = due
+        name = f"{room.code}:{season}"
+        running = timers.get(room.code)
+        if running is not None and not running.done() and running.get_name() == name:
+            return
+        timers[room.code] = asyncio.create_task(expire(room, season, deadline), name=name)
+
+    async def expire(room: Room, season: int, deadline: float) -> None:
+        """ADR 0013: at the server's deadline, commit the untouched default for every scheme still missing."""
+        while (left := deadline - now()) > 0:
+            await asyncio.sleep(min(left, TIMER_TICK_S))
+        async with locks.setdefault(room.code, asyncio.Lock()):
+            state = room.game.state
+            if state.phase != "private" or state.season != season:
+                return  # every scheme committed in time
+            before = len(room.game.events)
+            try:
+                room.game.submit(ENGINE, "timeout_private", season=season)
+            except Rejection as r:
+                log.warning("timer refused room=%s code=%s", room.code, r.code)
+                return
+            log.info("accepted room=%s role=%s intent=%s", room.code, ENGINE, "timeout_private")
+            await broadcast(room, before)
 
     @app.websocket("/rooms/{code}/ws")
     async def socket(websocket: WebSocket, code: str) -> None:
@@ -233,7 +271,8 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
         connections.setdefault(room.code, []).append(conn)
         lock = locks.setdefault(room.code, asyncio.Lock())
         bucket = TokenBucket(settings.rate_burst, settings.rate_per_second)
-        await websocket.send_json({"type": "welcome", "role": role, "room": room.code})
+        # serverTime: the phone counts down to the server's private-turn deadline on this clock (ADR 0013)
+        await websocket.send_json({"type": "welcome", "role": role, "room": room.code, "serverTime": round(now() * MS)})
         await send_projection(room, conn, full=True)
         try:
             while True:

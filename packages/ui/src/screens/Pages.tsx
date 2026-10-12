@@ -29,7 +29,7 @@ function Live({ code, token, fallbackRole }: { code: string; token: string; fall
       )}
       {room.notice && <p role="status" className="notice">{room.notice}</p>}
       <Season view={room.view} scenario={scenario} role={room.role ?? fallbackRole} onIntent={room.send}
-        trySend={room.trySend} resync={room.syncs} events={room.events} code={code} />
+        trySend={room.trySend} resync={room.syncs} clockOffsetMs={room.clockOffsetMs} events={room.events} code={code} />
     </>
   );
 }

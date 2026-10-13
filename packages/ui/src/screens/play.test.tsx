@@ -153,7 +153,8 @@ describe('S6 private turn', () => {
   it('sends a commit again after a sync even if it went out, since the connection may have died with it', () => {
     vi.useFakeTimers();
     const onCommit = vi.fn(() => true);
-    const props = { turn, last: null, demand: null, decisionS, onCommit };
+    const opened = { ...turn, openedAt: new Date().toISOString() }; // ADR 0013: the turn opens now, so the timer runs its full time
+    const props = { turn: opened, last: null, demand: null, decisionS, onCommit };
     const { rerender } = render(<PrivateTurn {...props} resync={1} />);
     rerender(<PrivateTurn {...props} resync={2} />);
     expect(onCommit).not.toHaveBeenCalled(); // no commit made yet: a sync sends nothing

@@ -13,15 +13,26 @@ from typing import Any
 
 from fairflow_engine import audit
 from fastapi.testclient import TestClient
-from test_private_timer import DECISION_S, GRACE_S, TIMER_TICK_S, Clock, commit, open_private_turn, roles_of, wait_for_phase
+from test_private_timer import (
+    DECISION_S,
+    GRACE_S,
+    TIMER_TICK_S,
+    Clock,
+    commit,
+    open_private_turn,
+    opened,
+    roles_of,
+    wait_for_phase,
+)
 from test_server import connect, open_room
 from test_store import settings
 
 from fairflow_server.app import create_app
 
 
-def play_to_private_turn(tmp_path: Path, clock: Clock) -> tuple[str, list[str]]:
-    """Open a room on a store, open season 1's private turn and let every scheme but the last commit; then stop."""
+def play_to_private_turn(tmp_path: Path, clock: Clock) -> tuple[str, list[str], float]:
+    """Open a room on a store, open season 1's private turn and let every scheme but the last commit; then stop.
+    Returns the room, its schemes and the record time the private turn opened."""
     with TestClient(create_app(settings(tmp_path), now=clock)) as client:
         info = open_room(client)
         roles = roles_of(info)
@@ -31,7 +42,8 @@ def play_to_private_turn(tmp_path: Path, clock: Clock) -> tuple[str, list[str]]:
             sockets.pop(roles[-1]).close()
             for r in roles[:-1]:
                 commit(sockets, r)
-    return info["room"], roles
+        start = opened(client, info["room"])
+    return info["room"], roles, start
 
 
 def events(client: TestClient, code: str) -> list[dict[str, Any]]:
@@ -40,14 +52,14 @@ def events(client: TestClient, code: str) -> list[dict[str, Any]]:
 
 def test_a_deadline_that_passed_while_the_server_was_down_fires_on_restart(tmp_path: Path) -> None:
     clock = Clock()
-    code, roles = play_to_private_turn(tmp_path, clock)
-    clock.offset = DECISION_S + GRACE_S + TIMER_TICK_S  # the server was down past the deadline
+    code, roles, start = play_to_private_turn(tmp_path, clock)
+    clock.t = start + DECISION_S + GRACE_S + TIMER_TICK_S  # the server was down past the deadline
     with TestClient(create_app(settings(tmp_path), now=clock)) as client:
         assert wait_for_phase(client, code, ("reveal", "ended")) in ("reveal", "ended")
         record = events(client, code)
         setup = client.app.state.registry.get(code).game.setup  # type: ignore[attr-defined]
     plays = [e["payload"] for e in record if e["type"] == "action.played"]
-    assert [p.get("timeoutBy") for p in plays] == [None] * (len(roles) - 1) + ["server"]
+    assert [p.get("autoCommittedBy") for p in plays] == [None] * (len(roles) - 1) + ["server"]
     assert [p for p in audit(setup, record) if not p.startswith("note:")] == []
     with TestClient(create_app(settings(tmp_path), now=clock)) as again:  # the server's commit was written to the store
         assert events(again, code) == record
@@ -55,12 +67,12 @@ def test_a_deadline_that_passed_while_the_server_was_down_fires_on_restart(tmp_p
 
 def test_a_restart_before_the_deadline_keeps_the_deadline_from_the_record(tmp_path: Path) -> None:
     clock = Clock()
-    code, _ = play_to_private_turn(tmp_path, clock)
-    clock.offset = DECISION_S + GRACE_S - 2 * TIMER_TICK_S  # test input: restarted shortly before the deadline
+    code, _, start = play_to_private_turn(tmp_path, clock)
+    clock.t = start + DECISION_S + GRACE_S - 2 * TIMER_TICK_S  # test input: restarted shortly before the deadline
     with TestClient(create_app(settings(tmp_path), now=clock)) as client:
         assert client.get(f"/rooms/{code}").json()["phase"] == "private"
         # a countdown restarted at the restart would need the whole decision time again; the record's needs two ticks
-        clock.offset += 2 * TIMER_TICK_S
+        clock.t += 2 * TIMER_TICK_S
         assert wait_for_phase(client, code, ("reveal", "ended")) in ("reveal", "ended")
         assert events(client, code)[-1]["type"] in ("season.resolved", "game.ended", "goal.result")
 
@@ -76,7 +88,7 @@ def test_a_restored_room_whose_turn_was_complete_gets_no_timer(tmp_path: Path) -
             for r in roles:
                 commit(sockets, r)
         before = events(client, info["room"])
-    clock.offset = DECISION_S + GRACE_S + TIMER_TICK_S
+    clock.t += DECISION_S + GRACE_S + TIMER_TICK_S
     with TestClient(create_app(settings(tmp_path), now=clock)) as client:
         time.sleep(2 * TIMER_TICK_S)  # test input: two ticks in which nothing may happen
         assert events(client, info["room"]) == before

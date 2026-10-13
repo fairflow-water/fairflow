@@ -76,6 +76,8 @@ export interface RoomView {
   proposals: string[];
   votes: Record<string, string>;
   leaders: string[];
+  vetoed: string | null; // R8: the lens the Authority vetoed this season; the rest are re-voted
+  vetoUsed: boolean; // R8: the Authority's one veto per game is spent
   chosen: string | null;
   floorVotes: Record<string, string>;
   allocation: Allocation | null;
@@ -99,7 +101,7 @@ export interface RoomView {
 }
 
 export const emptyView = (): RoomView => ({
-  phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], chosen: null, floorVotes: {},
+  phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], vetoed: null, vetoUsed: false, chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
   tutorial: false, tutorialResult: null, seated: [], researchEnabled: false, joinedOn: {},
@@ -122,6 +124,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
           tutorial: p['tutorial'] === true, seated: v.seated, researchEnabled: v.researchEnabled, joinedOn: v.joinedOn,
+          vetoUsed: v.vetoUsed,
         };
         break;
       case 'player.joined':
@@ -157,6 +160,11 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
       case 'lens.voted':
         v = { ...v, votes: { ...v.votes, [str(p['voter'])]: str(p['lens']) } };
         break;
+      case 'lens.vetoed': {
+        const lens = str(p['lens']);
+        v = { ...v, proposals: v.proposals.filter(x => x !== lens), votes: {}, vetoed: lens, vetoUsed: true };
+        break;
+      }
       case 'lens.tied':
         v = { ...v, phase: 'tiebreak', leaders: (p['leaders'] as string[] | undefined) ?? [] };
         break;

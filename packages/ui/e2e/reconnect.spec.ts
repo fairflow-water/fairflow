@@ -162,6 +162,13 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
         },
         () => see(me.getByText(/Committed\. Waiting for the other schemes|Season \d+: what happened/))));
     }
+    if (season === 1) {
+      // issue #15: scheme B (the second seat taken, others[0]; the paddy cooperative, the largest demand) expands, so
+      // from season 2 the sufficientarian floors exceed a dry year's water and a floor vote follows when that lens
+      // wins; a game that draws no dry card after season 1 reports the phase not reached
+      await others[0].getByRole('button', { name: /^Actions:/ }).click();
+      await others[0].getByRole('radio', { name: /^Expand/ }).check();
+    }
     for (const phone of [...others, me]) {
       const button = phone.getByRole('button', { name: 'Commit my turn' });
       if (await button.isVisible()) await button.click();
@@ -185,7 +192,7 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
   }
   if (!tieSeen) rows.push({ phase: 'tie-break', check: 'reload and sleep', result: 'not reached', detail: 'no tie arose' });
   if (!floorSeen) {
-    rows.push({ phase: 'floor vote', check: 'reload and sleep', result: 'not reached', detail: 'no season offered a floor vote (issue #15)' });
+    rows.push({ phase: 'floor vote', check: 'reload and sleep', result: 'not reached', detail: 'no dry season after season 1 offered one (issue #15)' });
   }
 
   // ---- game end, debrief, review

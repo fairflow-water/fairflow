@@ -385,7 +385,7 @@ Two documents define a game: the scenario (what the world is) and the Season Rec
 
 ### 6.1 `scenario.json`
 
-**\[Superseded example, ADR 0006 to ADR 0009.\]** The example below predates the Kelvara basin and is kept as written. The shipped `packages/scenarios/default-basin.json` is authoritative; it differs in the name, the aquifer reserve and low threshold, scheme A and the pump rule (handoff §8).
+**\[Superseded example, ADR 0008.\]** The example below predates the Kelvara basin and is kept as written. The shipped `packages/scenarios/default-basin.json` is authoritative; it differs in the name, the aquifer reserve and low threshold, scheme A and the pump rule (handoff §8).
 
 ```markdown
 {
@@ -634,7 +634,7 @@ Each gate is a decision, not a date: a release that misses its gate holds, and t
 
 ### 9.1 Engineering tests (CI on every change)
 
-- Fixtures of §3 (both sets) to two decimals; property tests by random scenario: allocations sum to min(AW, ΣD); no Qᵢ > Dᵢ; proportional gives equal adequacy; strict egalitarian = CEA; equal sacrifice = CEL; Talmud = CEA on half-claims when AW ≤ ½ΣD; prioritarian → equal shares as γ → 1 and → proportional as γ → ∞; the greedy maximiser is never beaten by 10,000 random feasible allocations (optimality check, since the survival branch makes the function non-concave below A = 0.5); E\_PJ = 1 for proportional and E\_SE(claimant) = 1 for equal shares when uncapped; per-hectare E\_SE = E\_PJ in uniform-depth basins; F = 1 at full demand; S > 1 iff ΣP > r₀ in a season with no surplus \[superseded by ADR 0007 and ADR 0009: S > 1 exactly when aquifer storage falls, §2.5\]; aquifer mass balance closes to 1e-6 every season; a criterion string outside the grammar is rejected at load.
+- Fixtures of §3 (both sets) to two decimals; property tests by random scenario: allocations sum to min(AW, ΣD); no Qᵢ > Dᵢ; proportional gives equal adequacy; strict egalitarian = CEA; equal sacrifice = CEL; Talmud = CEA on half-claims when AW ≤ ½ΣD; prioritarian → equal shares as γ → 1 and → proportional as γ → ∞; the greedy maximiser is never beaten by 10,000 random feasible allocations (optimality check, since the survival branch makes the function non-concave below A = 0.5); E\_PJ = 1 for proportional and E\_SE(claimant) = 1 for equal shares when uncapped; per-hectare E\_SE = E\_PJ in uniform-depth basins; F = 1 at full demand; S > 1 iff ΣP > r₀ in a season with no surplus \[superseded by ADR 0009: S > 1 exactly when aquifer storage falls, §2.5\]; aquifer mass balance closes to 1e-6 every season; a criterion string outside the grammar is rejected at load.
 - Replay invariance: `reduce(applyEvent)` over an export reproduces every `season.resolved` byte for byte, and the same record replayed under Node (V8) and under WebKit (JavaScriptCore, via Playwright) produces identical `seasons.csv`.
 - Privacy projection: with any non-zero pump, no `public` projection, no pre-debrief export and no relay message to a client other than the acting role contains Wᵢ, Aᵢ, Yᵢ, ΔLᵢ or Pᵢ; the S3, S4, S7, S8 and S11 renderers consume public projections only; `debrief.opened {perPlayer: false}` keeps `pumpsBy` out of every projection including S9.
 - Rejections: every impossible event returns a typed rejection and leaves state unchanged; a `game.timeboxed` at any point yields a valid, verifiable `game.ended`.
@@ -827,7 +827,7 @@ Each row names the finding, which of the four blind v2 reviewers raised it (G = 
 | 17 | v1.0 estimated at 32–36 dev-days | T, G | Cohort-cut list of six items decided at the week-3 pilot | §8.3 |
 | 18 | Inflow factors 17 × 1.3 = 22.1 ≠ 22 ✓ | W | Absolute inflows stored; migration 2.0 → 3.0 | §2.2, §6.1 |
 | 19 | Drip "frees basin water" contradicts Perry/Grafton; no consumptive fraction | W | β per scheme, return flows, F on consumed water with a diverted toggle, S on consumptive use (v2 rev 2.1, consolidated) | §2.1, §2.5, §2.6 |
-| 20 | r₃ collapses to zero at 3 Mm³ pumped in a dry year ✓ | W | Ramp /0.6; pumping fixture r₃ = 0.33 \[superseded: the current §3.3 fixture gives r₃ = 0.41 (ADR 0007 to ADR 0009)\] | §2.5, §3.3 |
+| 20 | r₃ collapses to zero at 3 Mm³ pumped in a dry year ✓ | W | Ramp /0.6; pumping fixture r₃ = 0.33 \[superseded by ADR 0009: the current §3.3 fixture gives r₃ = 0.41\] | §2.5, §3.3 |
 | 21 | Pumping too attractive: 5.5–6.4 pts/Mm³ vs cost 2 → 6.5 ✓ | W | Kept as intended; balance criterion "dilemma bites then costs" makes the shape explicit | §3.4, §9.2, §12.2 |
 | 22 | Demand not climate-scaled; depths not crop-specific | W | Stated; ET-scaled option in v1.2 | §2.2, §1.4 |
 | 23 | N mixes employees and households | W | Stated on cards; `peopleUnit` field; Builder forces one unit | §2.2, §6.1 |

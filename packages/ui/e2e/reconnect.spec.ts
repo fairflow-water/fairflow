@@ -10,9 +10,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 const PHONE = { viewport: { width: 360, height: 640 } };
 const BACK_MS = 20_000; // layout: how long a phone may take to show the right screen after waking or reloading
 // Phases that fail today, each with the issue that tracks it; a check listed here is reported, not failed.
-const KNOWN: Record<string, string> = {
-  'private turn: sleep across its own commit': 'PR #10 (a commit lost with the connection); remove this line when it is merged',
-};
+const KNOWN: Record<string, string> = {};
 
 interface Row { phase: string; check: string; result: 'works' | 'fails' | 'not reached'; detail: string }
 

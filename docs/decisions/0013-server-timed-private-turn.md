@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0013: The server times the private turn
 
-- Status: **accepted by the maintainer 2026-10-12** (plan approved with these choices: a 10 s grace, the phone's own timer commit flagged too and told apart from the server's, no timeout indication on any screen during play, no mid-season end).
+- Status: **accepted by the maintainer 2026-10-12** (plan approved with these choices: a 10 s grace, the phone's own timer commit flagged too and told apart from the server's, no timeout indication on any screen during play, no mid-season end). Field names set by the maintainer on 2026-10-13: `autoCommitted` and `autoCommittedBy`, the §6.2 name.
 - Amends R20 (who runs the private-turn timer in room mode) and the `action.played` row of blueprint §6.2. First part of issue #9.
 
 ## Context
@@ -49,9 +49,9 @@ The engine record had no way to tell a timed-out commit from a chosen one. Bluep
    - At zero, the phone still commits the player's current choice, as before. The 3 s undo is unchanged.
 
 5. **Which side fired is recorded.**
-   - A commit made by a timer adds `byTimeout: true` and `timeoutBy` to `action.played`. `timeoutBy` is `"phone"` for the phone's own timer and `"server"` for the server's.
+   - A commit made by a timer adds `autoCommitted: true` and `autoCommittedBy` to `action.played`. `autoCommittedBy` is `"phone"` for the phone's own timer and `"server"` for the server's.
    - A commit the player made is unchanged: the two fields are absent.
-   - `byTimeout` is the name `lens.chosen` already uses for a timer's choice (R8). It is the field §6.2 calls `autoCommitted` (see "Relation to the blueprint").
+   - `autoCommitted` is the name §6.2 gives this field. The phone's commit intent carries `autoCommitted: true` when its own timer fired. (`lens.chosen` keeps its own `byTimeout` for the vote timer, R8.)
 
 6. **A host-only intent.** The server's commit is a new engine intent, `timeout_private {season}`:
    - It is accepted only from the actor `engine`, and only in the private phase of the named season. A stale timer for an earlier season is refused.
@@ -61,7 +61,7 @@ The engine record had no way to tell a timed-out commit from a chosen one. Bluep
 
 7. **No indication during play.**
    - A server timeout implies 0 pumps, so showing it would disclose a private action (ADR 0004).
-   - `byTimeout` and `timeoutBy` are therefore withheld from every projection until a per-player debrief, including the scheme's own projection.
+   - `autoCommitted` and `autoCommittedBy` are therefore withheld from every projection until a per-player debrief, including the scheme's own projection.
    - A totals-only debrief never shows them.
    - The server-side record keeps them, for audit and a future research export.
    - No screen shows that a scheme timed out. A plain "phone disconnected" indicator belongs to issue #9, not to this decision.
@@ -72,22 +72,21 @@ The engine record had no way to tell a timed-out commit from a chosen one. Bluep
 
 ## Relation to the blueprint (for the maintainer)
 
-- §6.2 names the flag `autoCommitted`. This decision records it as `byTimeout` plus `timeoutBy`, so that a timer's choice is spelled the same in `lens.chosen` and `action.played`, and so that the phone and the server can be told apart, as decided.
+- §6.2 names the flag `autoCommitted`, and this decision keeps that name (maintainer, 2026-10-13). It adds `autoCommittedBy`, so that the phone and the server can be told apart, as decided.
 - The §6.2 row now points here. Its text is not rewritten.
-- If `autoCommitted` should be kept as the name, the field can be renamed before any research record exists.
 
 ## Consequences
 
 - **Game record.**
   - `action.played` may carry two more fields. Its visibility class stays `sealed`.
   - The engine has one more intent. The set of event types is unchanged.
-  - Records made before this decision replay and audit unchanged: an absent `byTimeout` means a commit the player made.
+  - Records made before this decision replay and audit unchanged: an absent `autoCommitted` means a commit the player made.
   - `audit` recomputes seasons from the recorded pumps, so it is unaffected.
 - **What a 0 means.**
   - A server-timed 0 means the phone was absent, not that the player chose 0.
   - A phone-timed commit means the player let the clock run; its choice is their last selection.
   - An analysis must keep these apart. The fields are there for that, and the §6.3 codebook needs a line for them when the research export is built.
-- **The phone's flag is the phone's claim.** A modified client could set or omit `byTimeout` on its own commits. It describes how the commit was made; it is not proof. The server's flag is set by the server alone.
+- **The phone's flag is the phone's claim.** A modified client could set or omit `autoCommitted` on its own commits. It describes how the commit was made; it is not proof. The server's flag is set by the server alone.
 - **A residual signal.** A season that resolves exactly at the server's deadline tells the table that some scheme was committed by the server, though not which. At a physical table, an absent player is visible anyway. A season that resolves at the phone's deadline says that some phone's timer ran out, with its own choice.
 - **Not decided here:** moving a seat to another phone and a "phone disconnected" indicator (issue #9).
 

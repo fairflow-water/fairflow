@@ -34,7 +34,7 @@ Visibility = Literal["public", "self", "sealed", "mixed", "server"]  # server: n
 Event = dict[str, Any]  # one Season Record entry (§6.2)
 AUTHORITY = "authority"
 ENGINE = "engine"  # the engine host's own actor (the room server's timer, ADR 0013); never a connection's role
-TIMEOUT_FIELDS = ("byTimeout", "timeoutBy")  # ADR 0013: on action.played, withheld until a per-player debrief
+AUTO_COMMIT_FIELDS = ("autoCommitted", "autoCommittedBy")  # ADR 0013: on action.played, withheld until a per-player debrief
 WHATEVER_WORKS = "whatever_works"  # ADR 0003: the "whatever works" option
 CROP_FAILURE_RUN = 2  # §2.4 "A < 0.5 in two consecutive seasons" (ADR 0010: below the survival floor two years running)
 TUTORIAL_LENSES = ("proportional", "utilitarian")  # R3 season 0: "two lenses (proportional, utilitarian)"
@@ -677,10 +677,10 @@ class Game:
                 season=s.season,
             )
 
-    def _on_commit(self, s: State, actor: str, pumps: float, action: str | None = None, byTimeout: bool = False) -> None:
-        """R10: each scheme commits its private turn (0..cap pumps). Sealed until the debrief. `byTimeout`: the phone's
-        own R20 timer made this commit (ADR 0013); it is the phone's account, recorded with `timeoutBy: "phone"`."""
-        self._need(isinstance(byTimeout, bool), "bad_input", "byTimeout is true or false")
+    def _on_commit(self, s: State, actor: str, pumps: float, action: str | None = None, autoCommitted: bool = False) -> None:
+        """R10: each scheme commits its private turn (0..cap pumps). Sealed until the debrief. `autoCommitted`: the phone's
+        own R20 timer made this commit (ADR 0013); it is the phone's account, recorded with `autoCommittedBy: "phone"`."""
+        self._need(isinstance(autoCommitted, bool), "bad_input", "autoCommitted is true or false")
         self._need(s.phase == "private", "wrong_phase", s.phase)
         self._need(actor in self._scheme_roles(), "not_a_scheme", actor)
         self._need(actor not in s.committed, "already_committed", actor)
@@ -693,7 +693,7 @@ class Game:
             self._need(action in self.setup.actions_for(actor), "action_not_for_this_scheme", action)
             self._need(action != "orchard" or self.setup.orchardCrop is not None, "no_orchard_crop", action)
             self._need(not (action in ONCE_PER_GAME and action in s.used.get(actor, [])), "action_used", action)
-        timeout = {"byTimeout": True, "timeoutBy": "phone"} if byTimeout else {}
+        timeout = {"autoCommitted": True, "autoCommittedBy": "phone"} if autoCommitted else {}
         self._emit(
             "action.played",
             actor,
@@ -707,7 +707,7 @@ class Game:
     def _on_timeout_private(self, s: State, actor: str, season: int) -> None:
         """ADR 0013: the server's private-turn deadline has passed. Every scheme that has not committed gets the commit
         an untouched phone makes — the first level it was offered in its private.opened (0 pumps, R10 "0..cap") and no
-        action — marked `byTimeout` by the server; the season then resolves. Only the engine host may send this, for
+        action — marked `autoCommitted` by the server; the season then resolves. Only the engine host may send this, for
         the season it timed (a timer left over from an earlier season is refused)."""
         self._need(actor == ENGINE, "not_engine", "only the server's timer ends a private turn")
         self._need(s.phase == "private", "wrong_phase", s.phase)
@@ -728,8 +728,8 @@ class Game:
                     "pumps": opened[role]["options"][0]["pumps"],
                     "action": None,
                     "committedAt": self.clock(),
-                    "byTimeout": True,
-                    "timeoutBy": "server",
+                    "autoCommitted": True,
+                    "autoCommittedBy": "server",
                 },
                 season=s.season,
             )
@@ -1023,9 +1023,9 @@ def project(events: Sequence[Event], viewer: str) -> list[Event]:
                 out.append(e)
             elif e["actor"] == viewer:
                 # ADR 0013: whether a timer made the commit is not shown even to its own scheme during play
-                hidden = e["type"] == "action.played" and any(k in e["payload"] for k in TIMEOUT_FIELDS)
+                hidden = e["type"] == "action.played" and any(k in e["payload"] for k in AUTO_COMMIT_FIELDS)
                 out.append(
-                    {**e, "payload": {k: v for k, v in e["payload"].items() if k not in TIMEOUT_FIELDS}} if hidden else e
+                    {**e, "payload": {k: v for k, v in e["payload"].items() if k not in AUTO_COMMIT_FIELDS}} if hidden else e
                 )
         elif vis == "mixed":
             p = e["payload"]

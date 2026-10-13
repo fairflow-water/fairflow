@@ -114,10 +114,10 @@ def test_a_phone_that_is_gone_is_committed_for_at_the_deadline(client: TestClien
         for who, ws in sockets.items():
             msg = ws.receive_json()
             assert msg["type"] == "events", who
-            assert "timeoutBy" not in json.dumps(msg), who
-            assert not any("byTimeout" in e["payload"] for e in msg["events"] if e["type"] == "action.played"), who
+            assert "autoCommittedBy" not in json.dumps(msg), who
+            assert not any("autoCommitted" in e["payload"] for e in msg["events"] if e["type"] == "action.played"), who
     plays = [e["payload"] for e in record(client, info["room"]) if e["type"] == "action.played"]
-    assert [p.get("timeoutBy") for p in plays] == [None] * (len(roles) - 1) + ["server"]
+    assert [p.get("autoCommittedBy") for p in plays] == [None] * (len(roles) - 1) + ["server"]
     assert plays[-1]["pumps"] == 0 and plays[-1]["action"] is None
 
 
@@ -127,14 +127,14 @@ def test_a_phone_that_commits_in_time_is_never_overridden(client: TestClient, cl
     with ExitStack() as stack:
         sockets = {w: connect(client, stack, info["room"], info[w]) for w in ["authority", "display", *roles]}
         open_private_turn(sockets, roles)
-        commit(sockets, roles[0], byTimeout=True)  # its own timer ran out
+        commit(sockets, roles[0], autoCommitted=True)  # its own timer ran out
         for r in roles[1:]:
             commit(sockets, r)
         assert phase(client, info["room"]) in ("reveal", "ended")
         clock.t += DECISION_S + GRACE_S + WAIT_S
         time.sleep(2 * TIMER_TICK_S)  # test input: the season's timer wakes and must do nothing
     plays = [e["payload"] for e in record(client, info["room"]) if e["type"] == "action.played"]
-    assert [p.get("timeoutBy") for p in plays] == ["phone"] + [None] * (len(roles) - 1)
+    assert [p.get("autoCommittedBy") for p in plays] == ["phone"] + [None] * (len(roles) - 1)
 
 
 def test_the_next_season_gets_its_own_timer(client: TestClient, clock: Clock) -> None:
@@ -152,7 +152,7 @@ def test_the_next_season_gets_its_own_timer(client: TestClient, clock: Clock) ->
         clock.t = opened(client, info["room"]) + DECISION_S + GRACE_S  # past both seasons' deadlines
         assert wait_for_phase(client, info["room"], ("reveal", "ended")) in ("reveal", "ended")
     plays = [e for e in record(client, info["room"]) if e["type"] == "action.played"]
-    assert {e["season"] for e in plays if e["payload"].get("timeoutBy") == "server"} == {2}
+    assert {e["season"] for e in plays if e["payload"].get("autoCommittedBy") == "server"} == {2}
 
 
 def test_no_client_can_send_the_server_intent(client: TestClient) -> None:
@@ -165,8 +165,8 @@ def test_no_client_can_send_the_server_intent(client: TestClient) -> None:
         for who in ["authority", "display", roles[0]]:
             sockets[who].send_text(json.dumps({"intent": "timeout_private", "season": season}))
             assert sockets[who].receive_json()["type"] == "invalid", who
-        sockets[roles[0]].send_text(json.dumps({"intent": "commit", "pumps": 0.0, "byTimeout": False}))
-        assert sockets[roles[0]].receive_json() == {"type": "invalid", "fields": ["commit.byTimeout"]}
+        sockets[roles[0]].send_text(json.dumps({"intent": "commit", "pumps": 0.0, "autoCommitted": False}))
+        assert sockets[roles[0]].receive_json() == {"type": "invalid", "fields": ["commit.autoCommitted"]}
     assert phase(client, info["room"]) == "private"
     assert not any(e["type"] == "action.played" for e in record(client, info["room"]))
 
@@ -202,7 +202,7 @@ def test_the_timer_waits_for_the_room_lock(client: TestClient, clock: Clock) -> 
             client.portal.call(lock.release)  # type: ignore[union-attr]
         time.sleep(2 * TIMER_TICK_S)  # test input: the timer runs after the lock is released
     plays = [e["payload"] for e in record(client, info["room"]) if e["type"] == "action.played"]
-    assert [p.get("timeoutBy") for p in plays] == [None] * len(roles)
+    assert [p.get("autoCommittedBy") for p in plays] == [None] * len(roles)
 
 
 def test_a_timer_left_from_the_last_season_does_nothing(
@@ -225,4 +225,4 @@ def test_a_timer_left_from_the_last_season_does_nothing(
             time.sleep(2 * TIMER_TICK_S)  # test input: two ticks for the old timer to wake
         assert phase(client, info["room"]) == "private"
     assert not [r for r in caplog.records if "timeout_private" in r.getMessage() or "timer refused" in r.getMessage()]
-    assert not any(e["payload"].get("timeoutBy") for e in record(client, info["room"]) if e["type"] == "action.played")
+    assert not any(e["payload"].get("autoCommittedBy") for e in record(client, info["room"]) if e["type"] == "action.played")

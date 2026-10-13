@@ -29,16 +29,16 @@ const decisionS = scenario.session!.decisionS!;
 
 describe('timeout marks (ADR 0013)', () => {
   const fixtures = import.meta.glob<{ events: RecordEvent[] }>('../fixtures/*.json', { eager: true, import: 'default' });
-  const marked = (events: RecordEvent[]) => events.filter(e => e.type === 'action.played' && 'byTimeout' in e.payload);
+  const marked = (events: RecordEvent[]) => events.filter(e => e.type === 'action.played' && 'autoCommitted' in e.payload);
   it('reach no device before a per-player debrief, and every device after it', () => {
     expect(Object.keys(fixtures).length).toBeGreaterThanOrEqual(10); // every stage, as the projector and as A
     for (const [file, data] of Object.entries(fixtures)) {
       const text = JSON.stringify(data.events);
       if (file.includes('/debrief-')) {
-        expect(marked(data.events).map(e => e.payload['timeoutBy']), file).toEqual(['phone', 'server']);
+        expect(marked(data.events).map(e => e.payload['autoCommittedBy']), file).toEqual(['phone', 'server']);
       } else {
         expect(marked(data.events), file).toEqual([]);
-        expect(text.includes('timeoutBy'), file).toBe(false);
+        expect(text.includes('autoCommittedBy'), file).toBe(false);
       }
     }
   });
@@ -112,11 +112,11 @@ describe('S6 private turn', () => {
     const opened = eventsA.filter(e => e.type === 'private.opened')[1]!;
     expect(privateS2.privateTurn!.openedAt).toBe(opened.t);
   });
-  it('sends a timer commit with byTimeout and a player commit without it', () => {
+  it('sends a timer commit with autoCommitted and a player commit without it', () => {
     vi.useFakeTimers();
     const onIntent = vi.fn();
     render(<Season view={privateS2} scenario={scenario} role="A" onIntent={onIntent} />); // the fixture turn opened long ago
-    expect(onIntent).toHaveBeenCalledExactlyOnceWith({ intent: 'commit', pumps: 0, action: null, byTimeout: true });
+    expect(onIntent).toHaveBeenCalledExactlyOnceWith({ intent: 'commit', pumps: 0, action: null, autoCommitted: true });
     cleanup();
     const later = { ...privateS2, privateTurn: { ...turn, openedAt: new Date().toISOString() } };
     const byHand = vi.fn();

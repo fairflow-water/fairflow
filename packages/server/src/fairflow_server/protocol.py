@@ -66,7 +66,7 @@ class Commit(_Intent):
     intent: Literal["commit"]
     pumps: Finite
     action: Literal["orchard", "drip", "expand"] | None = None
-    byTimeout: Literal[True] | None = None  # ADR 0013: the phone's own timer made this commit
+    autoCommitted: Literal[True] | None = None  # ADR 0013: the phone's own timer made this commit
 
 
 class Timebox(_Intent):

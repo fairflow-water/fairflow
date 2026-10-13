@@ -12,7 +12,7 @@ from test_record import REGISTRY, ROLES, SCENARIO, keys_in, new_game, play_seaso
 from test_tutorial import tutorial
 
 from fairflow_engine import AUTHORITY, ENGINE, Rejection, audit, project, replay, verify_reveal
-from fairflow_engine.record import TIMEOUT_FIELDS
+from fairflow_engine.record import AUTO_COMMIT_FIELDS
 from fairflow_engine.scenario import load_scenario
 
 
@@ -46,12 +46,12 @@ def test_server_timeout_commits_the_untouched_default_and_resolves():
     g.submit("A", "commit", pumps=1.0, action="expand")
     g.submit(ENGINE, "timeout_private", season=season)
     played = plays(g, season)
-    assert played["A"]["payload"] == {k: v for k, v in played["A"]["payload"].items() if k not in TIMEOUT_FIELDS}
+    assert played["A"]["payload"] == {k: v for k, v in played["A"]["payload"].items() if k not in AUTO_COMMIT_FIELDS}
     for r in ROLES[1:]:
         p = played[r]["payload"]
         assert played[r]["actor"] == r and played[r]["visibility"] == "sealed"
         assert p["pumps"] == first[r] == 0  # R10 "0..cap": the first offered level is 0 pumps
-        assert p["action"] is None and p["byTimeout"] is True and p["timeoutBy"] == "server"
+        assert p["action"] is None and p["autoCommitted"] is True and p["autoCommittedBy"] == "server"
     assert replay(g.events).phase in ("reveal", "ended")
     assert audit(g.setup, g.events) == []
 
@@ -95,13 +95,13 @@ def test_a_timer_from_another_season_or_phase_is_refused():
 def test_the_phone_timer_is_recorded_as_the_phone():
     g = open_private(new_game())
     season = replay(g.events).season
-    g.submit("A", "commit", pumps=1.0, byTimeout=True)
-    g.submit("B", "commit", pumps=0.0, byTimeout=False)
+    g.submit("A", "commit", pumps=1.0, autoCommitted=True)
+    g.submit("B", "commit", pumps=0.0, autoCommitted=False)
     p = plays(g, season)
-    assert p["A"]["payload"]["byTimeout"] is True and p["A"]["payload"]["timeoutBy"] == "phone"
-    assert not set(TIMEOUT_FIELDS) & set(p["B"]["payload"])
+    assert p["A"]["payload"]["autoCommitted"] is True and p["A"]["payload"]["autoCommittedBy"] == "phone"
+    assert not set(AUTO_COMMIT_FIELDS) & set(p["B"]["payload"])
     with pytest.raises(Rejection) as e:
-        g.submit("C", "commit", pumps=0.0, byTimeout="yes")
+        g.submit("C", "commit", pumps=0.0, autoCommitted="yes")
     assert e.value.code == "bad_input"
 
 
@@ -110,7 +110,8 @@ def test_the_practice_round_times_out_too():
     g.submit("A", "commit", pumps=1.0)
     g.submit(ENGINE, "timeout_private", season=0)
     assert any(e["type"] == "tutorial.resolved" for e in g.events)
-    assert {r: e["payload"].get("timeoutBy") for r, e in plays(g, 0).items()} == {"A": None, "B": "server", "C": "server"}
+    fired = {r: e["payload"].get("autoCommittedBy") for r, e in plays(g, 0).items()}
+    assert fired == {"A": None, "B": "server", "C": "server"}
     assert audit(g.setup, g.events) == []
 
 
@@ -133,7 +134,7 @@ def timed_game():
     g = tutorial(new_game())
     open_private(g)
     season = replay(g.events).season
-    g.submit("A", "commit", pumps=1.0, byTimeout=True)
+    g.submit("A", "commit", pumps=1.0, autoCommitted=True)
     g.submit(ENGINE, "timeout_private", season=season)
     return g
 
@@ -144,7 +145,7 @@ VOTE_TIMERS = ("lens.chosen", "lens.floorRule")  # R8: these public events have 
 
 def marks(events) -> set:
     """Timeout marks anywhere except the vote timer's own public byTimeout."""
-    return set(TIMEOUT_FIELDS) & keys_in([e for e in events if e["type"] not in VOTE_TIMERS])
+    return set(AUTO_COMMIT_FIELDS) & keys_in([e for e in events if e["type"] not in VOTE_TIMERS])
 
 
 def test_the_timeout_marks_reach_no_projection_before_a_per_player_debrief():
@@ -153,18 +154,18 @@ def test_the_timeout_marks_reach_no_projection_before_a_per_player_debrief():
     g = timed_game()
     while replay(g.events).phase != "ended":
         play_season(g)
-    assert set(TIMEOUT_FIELDS) <= marks(g.events)  # the record keeps them
+    assert set(AUTO_COMMIT_FIELDS) <= marks(g.events)  # the record keeps them
     for viewer in VIEWERS:
         seen = project(g.events, viewer)
         assert not marks(seen), viewer
-        assert "timeoutBy" not in json.dumps(seen), viewer
+        assert "autoCommittedBy" not in json.dumps(seen), viewer
     totals = copy.deepcopy(g)
     totals.submit(AUTHORITY, "open_debrief", perPlayer=False)
     for viewer in VIEWERS:
         assert not marks(project(totals.events, viewer)), viewer
     g.submit(AUTHORITY, "open_debrief", perPlayer=True)
     for viewer in VIEWERS:
-        fired = [e["payload"].get("timeoutBy") for e in project(g.events, viewer) if e["type"] == "action.played"]
+        fired = [e["payload"].get("autoCommittedBy") for e in project(g.events, viewer) if e["type"] == "action.played"]
         assert fired.count("phone") == 1 and fired.count("server") == 2, viewer
 
 

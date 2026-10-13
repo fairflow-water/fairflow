@@ -264,13 +264,13 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E1 Engine core | Done. Not built: user-defined lens grammar (`criterion`); `stability` and Shapley. |
 | E2 Schema and scenarios | Done for Kelvara. Balotra and Mwea example scenarios are not written. |
 | E3 Record and replay | Done on the server (`record.py`). Not in the TypeScript mirror (see E3b). |
-| E10 Room mode | Done. With `FAIRFLOW_STORE` set, rooms survive a restart and are deleted 24 h after the last move (ADR 0012, draft PR); unset, they live in memory only. |
+| E10 Room mode | Done. With `FAIRFLOW_STORE` set, rooms survive a restart and are deleted 24 h after the last move (ADR 0012, accepted by the maintainer, 2026-10-14; merged in PR #8); unset, they live in memory only. |
 | E4 Core screens | Done: S2, S3 (schematic map), S4, floor vote, S6 (with the 45 s private-turn timer), S7 three-beat reveal, S8. |
 | E5 Onboarding and debrief | Done: season 0 tutorial, S9 debrief (season tabs, gauge, triangle, equalisandum, F toggle, welfare slider, scoreboard), S10 review. Not built: the pre-session survey and linking code. |
 | E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Baseline tier in CI (`.github/workflows/balance.yml`): 50 games per cell on every merge to main; a failed criterion opens an issue and blocks nothing. |
 | E3b Table-mode fallback | Not started. A cohort-cut candidate. |
 | E6 Reduced Builder | Not started. A cohort-cut candidate. |
-| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms in a draft PR (ADR 0012). Not built: Wake Lock, service worker. |
+| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms merged in PR #8 (ADR 0012, accepted by the maintainer, 2026-10-14). Not built: Wake Lock, service worker. |
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
@@ -307,7 +307,7 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - Planned, not built: `docs/plans/research-retention.md` (pending store until after grading, a pseudonymised archive, withdrawal by room code and date). Needs the retention and controller decisions.
 6. **Robustness (E7).**
    - Done: reconnection after a dropped socket or a reload (`api.ts` `connect`, browser test in `e2e/room.spec.ts`).
-   - Persistent rooms (ADR 0012, draft PR on `persistent-rooms-24h`): one SQLite file, each move on disk before it is broadcast, a restart resumes every room whose record checks out, rooms deleted 24 h after the last move, the facilitator can continue a room from the start page.
+   - Persistent rooms (ADR 0012, accepted by the maintainer, 2026-10-14; merged in PR #8): one SQLite file, each move on disk before it is broadcast, a restart resumes every room whose record checks out, rooms deleted 24 h after the last move, the facilitator can continue a room from the start page.
    - **Deployment requirement:** the reverse proxy in front of the server must log no client IP addresses. The information sheet no longer mentions an IP log; if the proxy cannot be configured that way, the sheet must say so again (`packages/server/README.md`). Also exclude the store from backups and encrypt the disk.
    - Open: a seat cannot move to another phone; a pause longer than the TTL loses the game.
    - Then: Wake Lock, a service worker, and interrupted-state tests in every phase.

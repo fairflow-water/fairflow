@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0012: Persistent rooms, deleted 24 hours after the last move
 
-- Status: **proposed** in a draft pull request. On 2026-10-12 the maintainer chose this variant ("records kept only until the game ends plus 24 hours, on a self-hosted EU server") over keeping records for later analysis. That second variant is planned in `docs/plans/research-retention.md` and is not built.
+- Status: **accepted by the maintainer, 2026-10-14 (merged in PR #8)**. On 2026-10-12 the maintainer chose this variant ("records kept only until the game ends plus 24 hours, on a self-hosted EU server") over keeping records for later analysis. That second variant is planned in `docs/plans/research-retention.md` and is not built.
 - Builds on ADR 0011 (course-only mode, the information sheet) and on the client reconnection of review E7. The host and the country are left to the maintainer and the institute (blueprint §12.3; `[INSTITUTE]` and `[EU COUNTRY]` in the sheet).
 
 ## Context

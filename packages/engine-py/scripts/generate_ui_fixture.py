@@ -58,7 +58,7 @@ def main() -> None:
             if season == 2 and i == len(setup.schemes) - 1:
                 g.submit(ENGINE, "timeout_private", season=g.state.season)
                 continue
-            timer = {"byTimeout": True} if season == 2 and i == 0 else {}
+            timer = {"autoCommitted": True} if season == 2 and i == 0 else {}
             action = "expand" if (i == 1 and season == 1) else None
             g.submit(s.id, "commit", pumps=1.0 if i == 0 else 0.0, action=action, **timer)
         season += 1

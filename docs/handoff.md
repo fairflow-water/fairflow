@@ -229,10 +229,10 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - `join`, `start_tutorial`, `start_season`;
 - `propose`, `vote`, `close_vote`, `break_tie`;
 - `floor_vote`, `close_floor_vote`;
-- `commit` (with `byTimeout` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
+- `commit` (with `autoCommitted` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
 - `timeout_private`, from the server's private-turn timer only (actor `engine`, not in the client protocol; ADR 0013).
 
-**Timeout marks (ADR 0013):** a timer's commit carries `byTimeout: true` and `timeoutBy` (`phone` or `server`) on `action.played`. `project` withholds both from every viewer, the scheme itself included, until a per-player debrief.
+**Timeout marks (ADR 0013):** a timer's commit carries `autoCommitted: true` and `autoCommittedBy` (`phone` or `server`) on `action.played`. `project` withholds both from every viewer, the scheme itself included, until a per-player debrief.
 
 **Properties:**
 - `audit(setup, events)` recomputes every season and checks the commitments; an empty list means verified.
@@ -255,7 +255,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0010 | Strict survival floor; the collective score keeps its declared lens; debrief scoreboard per equity measure; two §9.2 criteria restated |
 | 0011 | Two-part consent; research answer in a `server` event; course-only by default |
 | 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (merged, PR #8) |
-| 0013 | The server times the private turn; untouched default (0 pumps, no action); `byTimeout` and `timeoutBy` withheld until a per-player debrief |
+| 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 

@@ -32,7 +32,7 @@ export interface PrivateTurnProps {
   decisionS: number | null;
   clockOffsetMs?: number; // the server's clock minus this device's (ADR 0013)
   /** Returns false when the commit could not be sent (no connection). */
-  onCommit: (pumps: number, action: string | null, byTimeout: boolean) => boolean;
+  onCommit: (pumps: number, action: string | null, autoCommitted: boolean) => boolean;
   /** Counts the server's full syncs; a new one while this turn is open re-sends a commit made here. */
   resync?: number | undefined;
 }
@@ -47,19 +47,19 @@ export function PrivateTurn({ turn, last, demand, decisionS, clockOffsetMs = 0, 
   const choice = useRef({ pumps, action });
   choice.current = { pumps, action };
   const undo = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const made = useRef<{ pumps: number; action: string | null; byTimeout: boolean } | null>(null); // the commit made on this phone
+  const made = useRef<{ pumps: number; action: string | null; autoCommitted: boolean } | null>(null); // the commit made on this phone
   const [delivery, setDelivery] = useState<'none' | 'sent' | 'waiting'>('none');
 
-  const send = (p: number, a: string | null, byTimeout = false) => {
+  const send = (p: number, a: string | null, autoCommitted = false) => {
     if (made.current) return;
-    made.current = { pumps: p, action: a, byTimeout };
+    made.current = { pumps: p, action: a, autoCommitted };
     setPending(true);
-    setDelivery(onCommit(p, a, byTimeout) ? 'sent' : 'waiting');
+    setDelivery(onCommit(p, a, autoCommitted) ? 'sent' : 'waiting');
   };
 
   useEffect(() => {
     if (!made.current) return;
-    setDelivery(onCommit(made.current.pumps, made.current.action, made.current.byTimeout) ? 'sent' : 'waiting');
+    setDelivery(onCommit(made.current.pumps, made.current.action, made.current.autoCommitted) ? 'sent' : 'waiting');
   }, [resync]);
 
   useEffect(() => {

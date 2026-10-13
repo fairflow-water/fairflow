@@ -1198,8 +1198,8 @@
     "pumps": 1.0,
     "action": null,
     "committedAt": "2026-10-07T09:00:33Z",
-    "byTimeout": true,
-    "timeoutBy": "phone"
+    "autoCommitted": true,
+    "autoCommittedBy": "phone"
    },
    "visibility": "sealed"
   },
@@ -1228,8 +1228,8 @@
     "pumps": 0.0,
     "action": null,
     "committedAt": "2026-10-07T09:00:37Z",
-    "byTimeout": true,
-    "timeoutBy": "server"
+    "autoCommitted": true,
+    "autoCommittedBy": "server"
    },
    "visibility": "sealed"
   },

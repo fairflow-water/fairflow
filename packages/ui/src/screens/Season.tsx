@@ -88,7 +88,7 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
       {view.phase === 'private' && (isPlayer && view.privateTurn && !view.myCommit
         ? <PrivateTurn key={view.season} turn={view.privateTurn} last={banner?.mine ?? null} demand={demand}
             decisionS={scenario.session?.decisionS ?? null} clockOffsetMs={clockOffsetMs} resync={resync}
-            onCommit={(pumps, action, byTimeout) => commitIntent({ intent: 'commit', pumps, action, ...(byTimeout ? { byTimeout } : {}) })} />
+            onCommit={(pumps, action, autoCommitted) => commitIntent({ intent: 'commit', pumps, action, ...(autoCommitted ? { autoCommitted } : {}) })} />
         : <p className="waiting">{!isPlayer ? 'Private turns: the player for each scheme decides on their own device.'
             : view.myCommit ? 'Committed. Waiting for the other schemes.' : 'Opening your private turn…'}</p>)}
       {view.phase === 'reveal' && last && (

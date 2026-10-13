@@ -181,6 +181,8 @@ class State:
     players: dict[str, dict[str, Any]] = field(default_factory=dict)
     proposals: list[str] = field(default_factory=list)
     votes: dict[str, str] = field(default_factory=dict)
+    vetoed: str | None = None  # R8: the lens the Authority vetoed this season, if any
+    vetoUsed: bool = False  # R8: the Authority holds one veto per game
     floorVotes: dict[str, str] = field(default_factory=dict)
     lens: LensId | None = None
     previousLens: LensId | None = None
@@ -220,10 +222,14 @@ def apply_event(state: State, event: Event) -> State:
         s.pendingActions = {}
         s.proposals, s.votes, s.floorVotes, s.committed = [], {}, {}, set()
         s.lens, s.floorRule, s.allocation = None, None, None
+        s.vetoed = None
     elif kind == "lens.proposed":
         s.proposals.append(p["lens"])
     elif kind == "lens.voted":
         s.votes[p["voter"]] = p["lens"]
+    elif kind == "lens.vetoed":  # R8: the remaining lenses are re-voted
+        s.proposals = [x for x in s.proposals if x != p["lens"]]
+        s.votes, s.vetoed, s.vetoUsed = {}, p["lens"], True
     elif kind == "lens.tied":
         s.phase = "tiebreak"
     elif kind == "lens.chosen":
@@ -514,6 +520,7 @@ class Game:
         self._need(lens in [name for name, _ in self.setup.lenses], "lens_not_enabled", lens)
         self._need(not self._is_tutorial(s) or lens in self._tutorial_lenses(), "lens_not_in_tutorial", lens)
         self._need(lens not in s.proposals, "already_proposed", lens)
+        self._need(lens != s.vetoed, "vetoed", lens)  # R8: a vetoed lens stays out of this season's re-vote
         self._emit("lens.proposed", actor, "public", {"lens": lens, "proposer": actor}, season=s.season)
 
     def _on_vote(self, s: State, actor: str, lens: str) -> None:
@@ -543,6 +550,18 @@ class Game:
             return
         self._choose(s, self._as_lens(leaders[0]), tally=dict(tally), by_timeout=False)
 
+    def _on_veto(self, s: State, actor: str, lens: str) -> None:
+        """R8: the Authority holds one veto per game, after which the remaining lenses are re-voted (ADR 0015). It vetoes
+        a proposed lens while the vote is open; every vote cast so far is cleared. Not in the practice round, which
+        is not scored, and only while another proposal remains."""
+        self._need(actor == AUTHORITY, "not_authority", "only the Authority vetoes")
+        self._need(s.phase == "vote", "wrong_phase", s.phase)
+        self._need(not self._is_tutorial(s), "veto_not_in_tutorial", "the practice round has no veto")
+        self._need(not s.vetoUsed, "veto_used", "the Authority holds one veto per game")
+        self._need(lens in s.proposals, "not_proposed", lens)
+        self._need(len(s.proposals) > 1, "nothing_left", "a veto needs another proposal to re-vote on")
+        self._emit("lens.vetoed", actor, "public", {"lens": lens}, season=s.season)
+
     def _on_break_tie(self, s: State, actor: str, lens: str) -> None:
         self._need(actor == AUTHORITY, "not_authority", "only the Authority breaks a tie")
         self._need(s.phase == "tiebreak", "wrong_phase", s.phase)
@@ -556,7 +575,14 @@ class Game:
             "lens.chosen",
             AUTHORITY if tie_break else "engine",
             "public",
-            {"lens": lens, "tally": tally, "byTimeout": by_timeout, "tieBreak": tie_break, "floorVoteNeeded": floors_short},
+            {
+                "lens": lens,
+                "tally": tally,
+                "byTimeout": by_timeout,
+                "tieBreak": tie_break,
+                "floorVoteNeeded": floors_short,
+                **({"veto": s.vetoed, "revote": True} if s.vetoed else {}),  # R8, §6.2
+            },
             season=s.season,
         )
         if not floors_short:

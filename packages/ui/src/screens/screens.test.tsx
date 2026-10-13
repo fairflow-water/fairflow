@@ -66,6 +66,56 @@ describe('S4 lens vote', () => {
   });
 });
 
+describe('S4 Authority veto (R8, ADR 0015)', () => {
+  const upTo = events.slice(0, events.findIndex(e => e.type === 'lens.chosen'));
+  const target = voting.proposals[0] ?? '';
+  const last = upTo[upTo.length - 1]!;
+  const vetoed = viewOf([...upTo, { ...last, seq: last.seq + 1, actor: 'authority', type: 'lens.vetoed', payload: { lens: target } }]);
+  const plain = (lens: string) => scenario.lenses.find(l => l.id === lens)?.plainName ?? lens;
+  it('asks the Authority to confirm, then sends the veto; Cancel sends nothing', async () => {
+    const onIntent = vi.fn();
+    render(<LensVote view={voting} scenario={scenario} role="authority" onIntent={onIntent} />);
+    expect(screen.getAllByRole('button', { name: 'Veto' })).toHaveLength(voting.proposals.length);
+    const row = within(screen.getByTestId(`lens-${target}`));
+    await userEvent.click(row.getByRole('button', { name: 'Veto' }));
+    await userEvent.click(row.getByRole('button', { name: 'Cancel' }));
+    expect(onIntent).not.toHaveBeenCalled();
+    await userEvent.click(row.getByRole('button', { name: 'Veto' }));
+    await userEvent.click(row.getByRole('button', { name: 'Confirm veto' }));
+    expect(onIntent).toHaveBeenCalledExactlyOnceWith({ intent: 'veto', lens: target });
+  });
+  it('after the veto: the lens leaves the ballot, every vote is cleared, the table is told, and no second veto', () => {
+    expect(vetoed.proposals).toEqual(voting.proposals.filter(l => l !== target));
+    expect(vetoed.votes).toEqual({});
+    render(<LensVote view={vetoed} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.getByRole('status').textContent).toBe(`The Authority vetoed ${plain(target)}. Vote again on the remaining lenses.`);
+    const row = within(screen.getByTestId(`lens-${target}`));
+    expect(row.getByText('Vetoed this season.')).toBeTruthy();
+    expect(row.queryByRole('button', { name: 'Propose' })).toBeNull();
+    expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+  });
+  it('the veto is spent for the game: the next season offers none', () => {
+    const climateEvent = upTo.find(e => e.type === 'season.climate')!;
+    const proposals = upTo.filter(e => e.type === 'lens.proposed');
+    const veto = { ...last, seq: last.seq + 1, actor: 'authority', type: 'lens.vetoed', payload: { lens: target } };
+    const nextSeason = [climateEvent, ...proposals].map((e, k) => ({ ...e, seq: veto.seq + 1 + k, season: climateEvent.season + 1 }));
+    const next = viewOf([...upTo, veto, ...nextSeason]);
+    expect([next.vetoUsed, next.vetoed, next.proposals.length]).toEqual([true, null, voting.proposals.length]);
+    render(<LensVote view={next} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+  it('players and the projector get no veto button, nor does the Authority in the practice round', () => {
+    for (const role of [scenario.schemes[0]?.id ?? '', 'display']) {
+      const { unmount } = render(<LensVote view={voting} scenario={scenario} role={role} onIntent={() => undefined} />);
+      expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+      unmount();
+    }
+    render(<LensVote view={{ ...voting, tutorial: true }} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+  });
+});
+
 describe('S2 join (ADR 0011)', () => {
   const room = { room: 'ABCDE', freeRoles: ['A', 'B'], phase: 'lobby', scenario };
   it('course-only: shows no scheme until part 1 is given, asks no research question and no name', async () => {

@@ -64,7 +64,24 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   let open = facilitator.getByRole('button', { name: 'Open season 1', exact: true });
   for (let season = 1; ; season++) {
     await open.click();
-    await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
+    if (season === 2) {
+      // R8 (ADR 0015): the table votes for the biggest harvest; the Authority vetoes it once, after confirming, and
+      // every screen says so; the votes are cleared and the remaining lens is re-voted
+      for (const lens of ['proportional', 'utilitarian']) {
+        await facilitator.getByTestId(`lens-${lens}`).getByRole('button', { name: 'Propose' }).click();
+      }
+      for (const phone of phones) await phone.getByTestId('lens-utilitarian').getByRole('button', { name: 'Vote' }).click();
+      const row = facilitator.getByTestId('lens-utilitarian');
+      await row.getByRole('button', { name: 'Veto' }).click();
+      await row.getByRole('button', { name: 'Confirm veto' }).click();
+      for (const page of [facilitator, display, ...phones]) {
+        await expect(page.getByText(/The Authority vetoed .+\. Vote again on the remaining lenses\./)).toBeVisible();
+        await expect(page.getByTestId('lens-utilitarian').getByRole('button')).toHaveCount(0);
+      }
+      await expect(facilitator.getByRole('button', { name: 'Veto' })).toHaveCount(0); // one veto per game
+    } else {
+      await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
+    }
     for (const phone of phones) await phone.getByTestId('lens-proportional').getByRole('button', { name: 'Vote' }).click();
     for (const phone of phones) await expect(phone.getByTestId('lens-proportional').getByRole('button', { name: 'Your vote' })).toBeVisible();
     if (season === 1) {

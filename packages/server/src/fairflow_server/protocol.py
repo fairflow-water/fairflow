@@ -45,6 +45,13 @@ class CloseVote(_Intent):
     intent: Literal["close_vote"]
 
 
+class Veto(_Intent):
+    """R8 (ADR 0015): the Authority's one veto per game."""
+
+    intent: Literal["veto"]
+    lens: str
+
+
 class BreakTie(_Intent):
     intent: Literal["break_tie"]
     lens: str
@@ -94,6 +101,7 @@ Intent = Annotated[
     | Propose
     | Vote
     | CloseVote
+    | Veto
     | BreakTie
     | FloorVote
     | CloseFloorVote

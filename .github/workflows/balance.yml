@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: MIT
 #
 # Balance baseline (blueprint §9.2 baseline tier; handoff §8 item 2): on every merge to main, whole games through the
-# engine with the strategy agents, failing on any §9.2 criterion. It measures; nothing here may be tuned to pass
-# (handoff §2 rule 6). 50 games per cell is the documented baseline (a few minutes on a runner).
+# engine with the strategy agents, checked against every §9.2 criterion. It measures; nothing here may be tuned to pass
+# (handoff §2 rule 6). 50 games per cell is the documented baseline (a few minutes on a runner). A failed criterion
+# opens an issue (or comments on the open one) and blocks nothing: the job stays green (maintainer, 2026-10-13).
 name: balance
 on:
   push:
@@ -19,22 +20,55 @@ jobs:
     name: Balance baseline (§9.2), 50 games per cell
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write # only to report a failed criterion
     defaults:
       run:
         working-directory: packages/engine-py
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           python-version: "3.12"
       - run: uv sync --locked
-      - name: Run the harness and fail on any criterion
-        run: uv run python analysis/balance.py 50 --check | tee balance-report.json
+      - name: Run the harness and check every criterion
+        id: check
+        continue-on-error: true # a failure is reported as an issue below and blocks nothing
+        run: |
+          status=0
+          uv run python analysis/balance.py 50 --check 2> balance-failed.txt | tee balance-report.json || status=$?
+          cat balance-failed.txt >&2
+          exit "$status"
         shell: bash -o pipefail {0}
+      - name: Report a failed criterion as an issue
+        if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Balance baseline: a §9.2 criterion fails on main"
+          {
+            echo "Commit $GITHUB_SHA, run $RUN_URL"
+            echo
+            echo '```'
+            cat balance-failed.txt
+            echo '```'
+            echo
+            echo "The full report is the run's balance-report artifact. Nothing may be tuned to pass (handoff §2 rule 6); a failure is a finding."
+          } > issue-body.md
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body-file issue-body.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file issue-body.md
+          fi
       - name: Keep the report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: balance-report
-          path: packages/engine-py/balance-report.json
+          path: |
+            packages/engine-py/balance-report.json
+            packages/engine-py/balance-failed.txt

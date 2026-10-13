@@ -267,7 +267,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E10 Room mode | Done. With `FAIRFLOW_STORE` set, rooms survive a restart and are deleted 24 h after the last move (ADR 0012, draft PR); unset, they live in memory only. |
 | E4 Core screens | Done: S2, S3 (schematic map), S4, floor vote, S6 (with the 45 s private-turn timer), S7 three-beat reveal, S8. |
 | E5 Onboarding and debrief | Done: season 0 tutorial, S9 debrief (season tabs, gauge, triangle, equalisandum, F toggle, welfare slider, scoreboard), S10 review. Not built: the pre-session survey and linking code. |
-| E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Not wired into CI as the "baseline tier". |
+| E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Baseline tier in CI (`.github/workflows/balance.yml`): 50 games per cell on every merge to main; a failed criterion opens an issue and blocks nothing. |
 | E3b Table-mode fallback | Not started. A cohort-cut candidate. |
 | E6 Reduced Builder | Not started. A cohort-cut candidate. |
 | E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms in a draft PR (ADR 0012). Not built: Wake Lock, service worker. |
@@ -288,8 +288,9 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 Each item ends with `scripts/check-all.sh` green, plus a decision record if it changes the model, the record schema or a promise made to players.
 
 1. **Wait for the maintainer decisions in §9 below** before touching the privacy display or enabling research.
-2. **Balance baseline in CI (§9.2 baseline tier).**
-   - Run `analysis/balance.py` on every merge at a game count that fits CI time, failing on any criterion.
+2. **Balance baseline in CI (§9.2 baseline tier).** Built: `.github/workflows/balance.yml`.
+   - It runs `analysis/balance.py 50 --check` on every merge to main. A failed criterion opens an issue, or comments on the open one, and blocks nothing (maintainer, 2026-10-13).
+   - At 10 games per cell, "goals attainable" fails on noise (scheme A under the proportional lens, 0.58 against the 0.50 threshold), so CI uses 50.
    - The full run (50 games per cell, 400 mixed games) takes about 4 minutes locally.
    - Don't change the table mix to make it pass.
 3. **Missing rules R8, R10, R20.**

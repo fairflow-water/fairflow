@@ -46,7 +46,7 @@ Live raster processing or WaPOR API calls on the device; shapefile upload in the
 
 ### 1.4 Release train
 
-**\[Superseded in part, ADR 0005.\]** v1.0 delivers room mode (QR join; the Python engine runs on a server, with the relay pulled forward from v1.1, ADR 0002), with table mode as the offline fallback. The table below is kept as written.
+**\[Superseded in part, ADR 0005.\]** v1.0 delivers room mode (QR join; the Python engine runs on a server, with the relay pulled forward from v1.1, ADR 0002), with table mode as the offline fallback, subject to the §8.3 cohort-cut decision. The table below is kept as written.
 
 | Release | Delivers | Gate |
 | --- | --- | --- |
@@ -469,7 +469,7 @@ Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every 
 | review.answer | self | part, item, value |
 | agent.rationale | sealed | role, text (v2.0) |
 
-**\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied`, `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
+**\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied` (R8's tie-break), `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
 
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 

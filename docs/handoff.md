@@ -238,7 +238,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 **Properties:**
 - `audit(setup, events)` recomputes every season and checks the commitments; an empty list means verified.
 - Replay is byte-exact.
-- The §6.2 table in the blueprint is incomplete next to this list (it has no `private.opened`, `goal.result`, `debrief.welfare`, `tutorial.resolved` or `lens.tied`). `record.py` is the source of truth; bring §6.2 up to date when you touch it.
+- The §6.2 table in the blueprint is incomplete next to this list (it has no `private.opened`, `goal.result`, `debrief.welfare`, `tutorial.resolved`, `lens.tied`, `lens.floorVoted` or `lens.floorRule`). `record.py` is the source of truth; bring §6.2 up to date when you touch it.
 
 ## 6. Decision records
 

@@ -43,7 +43,7 @@ SERVER_VERSION = "1.0.0.dev0"
 POLICY_VIOLATION = 1008  # RFC 6455 close codes (layout)
 MESSAGE_TOO_BIG = 1009
 SWEEP_EVERY_S = 600.0  # layout: how often expired rooms are looked for; `get` refuses an expired room at once anyway
-TIMER_TICK_S = 1.0  # layout: how often a private-turn timer reads the clock (seconds)
+TIMER_TICK_S = 1.0  # layout: how often a timer (private turn, negotiation) reads the clock (seconds)
 MS = 1000  # layout: the welcome message gives the server's time in milliseconds, as the browser counts it
 
 
@@ -104,7 +104,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
     grace_default: float = registry.registry["session.privateTurnGraceS"]  # ADR 0013
     connections: dict[str, list[Connection]] = {}
     locks: dict[str, asyncio.Lock] = {}
-    timers: dict[str, asyncio.Task[None]] = {}  # room code → the open private turn's timer
+    timers: dict[str, asyncio.Task[None]] = {}  # room code → the timer of the open vote or private turn
 
     async def sweep() -> None:
         for code in registry.sweep():
@@ -124,7 +124,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         for room in list(registry.rooms.values()):
-            arm(room)  # a room restored mid private turn: its deadline comes from the record (fires at once if past)
+            arm(room)  # a room restored mid vote or private turn: its deadline comes from the record (fires at once if past)
         task = asyncio.create_task(sweeper())
         try:
             yield
@@ -225,33 +225,41 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
         arm(room)
 
     def arm(room: Room) -> None:
-        """Start the timer of a private turn that has just opened (one per season; called after every change)."""
-        due = room.private_deadline(grace_default)
-        if due is None:
+        """Start the timer of a vote (ADR 0014) or a private turn (ADR 0013) that has just opened: one per phase and
+        season; called after every change."""
+        for phase, intent, due in (
+            ("vote", "timeout_vote", room.vote_deadline()),
+            ("private", "timeout_private", room.private_deadline(grace_default)),
+        ):
+            if due is None:
+                continue
+            season, deadline = due
+            name = f"{room.code}:{phase}:{season}"
+            running = timers.get(room.code)
+            if running is not None and not running.done() and running.get_name() == name:
+                return
+            if running is not None and running is not asyncio.current_task():
+                running.cancel()  # the last phase's timer, still asleep; one that is broadcasting ends by itself
+            timers[room.code] = asyncio.create_task(expire(room, phase, intent, season, deadline), name=name)
             return
-        season, deadline = due
-        name = f"{room.code}:{season}"
-        running = timers.get(room.code)
-        if running is not None and not running.done() and running.get_name() == name:
-            return
-        timers[room.code] = asyncio.create_task(expire(room, season, deadline), name=name)
 
-    async def expire(room: Room, season: int, deadline: float) -> None:
-        """ADR 0013: at the server's deadline, commit the untouched default for every scheme still missing."""
+    async def expire(room: Room, phase: str, intent: str, season: int, deadline: float) -> None:
+        """At the server's deadline, end the phase if it is still open: the vote closes on what the table has (ADR
+        0014), or every scheme still missing gets the untouched default (ADR 0013)."""
         while (left := deadline - now()) > 0:
             await asyncio.sleep(min(left, TIMER_TICK_S))
         async with locks.setdefault(room.code, asyncio.Lock()):
             state = room.game.state
-            if state.phase != "private" or state.season != season:
-                return  # every scheme committed in time
+            if state.phase != phase or state.season != season:
+                return  # the table finished the phase in time
             before = len(room.game.events)
             try:
-                room.game.submit(ENGINE, "timeout_private", season=season)
+                room.game.submit(ENGINE, intent, season=season)
                 registry.record(room, before)  # on disk before anyone is told, like every accepted intent (ADR 0012)
             except Rejection as r:
                 log.warning("timer refused room=%s code=%s", room.code, r.code)
                 return
-            log.info("accepted room=%s role=%s intent=%s", room.code, ENGINE, "timeout_private")
+            log.info("accepted room=%s role=%s intent=%s", room.code, ENGINE, intent)
             await broadcast(room, before)
 
     @app.websocket("/rooms/{code}/ws")

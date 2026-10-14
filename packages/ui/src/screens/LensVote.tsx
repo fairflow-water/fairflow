@@ -5,6 +5,7 @@
 // share of need (acceptance: bar lengths equal the shares to 1 %). The academic name is a small subtitle (§5.1).
 import { useState } from 'react';
 import { tally, type PublicScenario, type RoomView } from '../room';
+import { NegotiationBar } from './NegotiationBar';
 
 const pct = (share: number): string => `${Math.round(share * 100)} %`;
 
@@ -17,9 +18,10 @@ export interface LensVoteProps {
   scenario: PublicScenario;
   role: string; // 'authority', 'display' or a scheme id
   onIntent: (intent: Record<string, unknown>) => void;
+  clockOffsetMs?: number; // the server's clock minus this device's (ADR 0013)
 }
 
-export function LensVote({ view, scenario, role, onIntent }: LensVoteProps) {
+export function LensVote({ view, scenario, role, onIntent, clockOffsetMs = 0 }: LensVoteProps) {
   const [confirming, setConfirming] = useState<string | null>(null); // the lens the Authority is about to veto
   const climate = view.climate;
   if (!climate) return null;
@@ -33,6 +35,10 @@ export function LensVote({ view, scenario, role, onIntent }: LensVoteProps) {
   return (
     <section aria-labelledby="vote-title" className="vote">
       <h2 id="vote-title">How do you share it?</h2>
+      {view.phase === 'vote' && view.voteOpenedAt && scenario.session?.negotiationS && (
+        <NegotiationBar openedAt={view.voteOpenedAt} season={view.season} negotiationS={scenario.session.negotiationS}
+          clockOffsetMs={clockOffsetMs} />
+      )}
       {view.vetoed && (
         <p className="banner" role="status">
           The Authority vetoed {names.get(view.vetoed) ?? view.vetoed}. Vote again on the remaining lenses.

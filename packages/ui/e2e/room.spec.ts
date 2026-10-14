@@ -67,7 +67,7 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
     if (season === 2) {
       // R8 (ADR 0015): the table votes for the biggest harvest; the Authority vetoes it once, after confirming, and
       // every screen says so; the votes are cleared and the remaining lens is re-voted
-      for (const lens of ['proportional', 'utilitarian']) {
+      for (const lens of ['proportional', 'utilitarian', 'egalitarian']) {
         await facilitator.getByTestId(`lens-${lens}`).getByRole('button', { name: 'Propose' }).click();
       }
       for (const phone of phones) await phone.getByTestId('lens-utilitarian').getByRole('button', { name: 'Vote' }).click();
@@ -78,7 +78,8 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
         await expect(page.getByText(/The Authority vetoed .+\. Vote again on the remaining lenses\./)).toBeVisible();
         await expect(page.getByTestId('lens-utilitarian').getByRole('button')).toHaveCount(0);
       }
-      await expect(facilitator.getByRole('button', { name: 'Veto' })).toHaveCount(0); // one veto per game
+      // one veto per game: two lenses remain, so only the spent veto keeps the button away
+      await expect(facilitator.getByRole('button', { name: 'Veto' })).toHaveCount(0);
     } else {
       await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
     }

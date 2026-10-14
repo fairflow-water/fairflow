@@ -77,9 +77,11 @@ export function PrivateTurn({ turn, last, demand, decisionS, clockOffsetMs = 0, 
       setLeft(remaining);
       if (remaining === 0) {
         clearInterval(tick);
-        // once per turn, and never over a commit already made or in its undo window (by hand or by the timer)
-        if (!timerFired.current && !undo.current && !made.current) {
-          timerFired.current = true;
+        // once per turn, and never over a commit already made or in its undo window (by hand or by the timer); a
+        // later re-run (a reconnection) finds it fired, so the outcome never depends on whether one happened
+        const act = !timerFired.current && !undo.current && !made.current;
+        timerFired.current = true;
+        if (act) {
           if (!checked.current) {
             send(choice.current.pumps, choice.current.action, true); // opened after its deadline: no time left to undo
           } else {

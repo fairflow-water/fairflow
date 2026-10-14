@@ -51,6 +51,21 @@ def test_a_veto_removes_the_lens_clears_the_votes_and_the_rest_is_re_voted():
     assert replay(g.events).phase == "private"
 
 
+def test_after_a_veto_no_new_lens_is_proposed_until_the_next_season():
+    """R8: "the remaining lenses are re-voted" (ADR 0015, accepted): a lens nobody proposed does not join the re-vote."""
+    g = open_vote(new_game())
+    g.submit(AUTHORITY, "veto", lens="proportional")
+    assert refused(g, AUTHORITY, "propose", lens="utilitarian") == "revote_only"
+    for role in ROLES:
+        g.submit(role, "vote", lens="egalitarian")
+    g.submit(AUTHORITY, "close_vote")
+    for role in ROLES:
+        g.submit(role, "commit", pumps=0.0)
+    g.submit(AUTHORITY, "start_season")
+    g.submit(AUTHORITY, "propose", lens="utilitarian")  # a new season: proposals are open again
+    assert "utilitarian" in replay(g.events).proposals
+
+
 def test_a_re_vote_can_tie_and_the_authority_breaks_it():
     g = open_vote(new_game())
     g.submit(AUTHORITY, "veto", lens="proportional")

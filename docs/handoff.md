@@ -219,7 +219,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 
 **Event types emitted today:**
 - `game.created`, `player.joined`, `research.consent`;
-- `season.climate`, `lens.proposed`, `lens.voted`, `lens.vetoed` (ADR 0015, proposed), `lens.tied`, `lens.chosen`, `lens.floorVoted`, `lens.floorRule`;
+- `season.climate`, `lens.proposed`, `lens.voted`, `lens.vetoed` (ADR 0015), `lens.tied`, `lens.chosen`, `lens.floorVoted`, `lens.floorRule`;
 - `allocation.issued`, `private.opened`, `action.played`;
 - `season.resolved`, `tutorial.resolved`;
 - `game.timeboxed`, `game.ended`, `goal.result`;
@@ -227,7 +227,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 
 **Intents (`_on_*` in `record.py`):**
 - `join`, `start_tutorial`, `start_season`;
-- `propose`, `vote`, `veto` (Authority, once per game; ADR 0015, proposed), `close_vote`, `break_tie`;
+- `propose`, `vote`, `veto` (Authority, once per game, then a re-vote of the remaining lenses only; ADR 0015), `close_vote`, `break_tie`;
 - `floor_vote`, `close_floor_vote`;
 - `commit` (with `autoCommitted` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
 - `timeout_private`, from the server's private-turn timer only (actor `engine`, not in the client protocol; ADR 0013).
@@ -256,7 +256,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0011 | Two-part consent; research answer in a `server` event; course-only by default |
 | 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (merged, PR #8) |
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
-| 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public) (proposed, draft PR) |
+| 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 
@@ -276,7 +276,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | v1.1+ (E11–E15) | Not started. |
 
 **Rules from §4 that are not implemented yet:**
-- Authority veto and re-vote (R8): built in a draft PR with ADR 0015 (proposed), waiting for the maintainer;
+- Authority veto and re-vote (R8): built, ADR 0015 accepted by the maintainer (2026-10-14), PR #21;
 - the negotiation timer with timeout to the previous lens (R8, R20); only the private-turn timer exists;
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
 - Authority hand-over event (R3);

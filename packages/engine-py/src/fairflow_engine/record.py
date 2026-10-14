@@ -521,6 +521,8 @@ class Game:
         self._need(not self._is_tutorial(s) or lens in self._tutorial_lenses(), "lens_not_in_tutorial", lens)
         self._need(lens not in s.proposals, "already_proposed", lens)
         self._need(lens != s.vetoed, "vetoed", lens)  # R8: a vetoed lens stays out of this season's re-vote
+        # R8 "the remaining lenses are re-voted" (ADR 0015): after a veto no new lens joins this season's re-vote
+        self._need(s.vetoed is None, "revote_only", "after a veto only the remaining lenses are re-voted")
         self._emit("lens.proposed", actor, "public", {"lens": lens, "proposer": actor}, season=s.season)
 
     def _on_vote(self, s: State, actor: str, lens: str) -> None:

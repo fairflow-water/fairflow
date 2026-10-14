@@ -80,6 +80,9 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
       }
       // one veto per game: two lenses remain, so only the spent veto keeps the button away
       await expect(facilitator.getByRole('button', { name: 'Veto' })).toHaveCount(0);
+      // only the remaining lenses are re-voted, and the Authority is told why the vote cannot close yet
+      await expect(facilitator.getByRole('button', { name: 'Propose' })).toHaveCount(0);
+      await expect(facilitator.getByText(/The veto cleared every vote\./)).toBeVisible();
     } else {
       await facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
     }

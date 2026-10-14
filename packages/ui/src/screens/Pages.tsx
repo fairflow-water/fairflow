@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { createRoom, hostStore, roomInfo, tokenStore, type CreatedRoom } from '../api';
 import type { PublicScenario } from '../room';
 import { useRoom } from '../useRoom';
+import { useWakeLock } from '../useWakeLock';
 import { Join } from './Join';
 import { Season } from './Season';
 
@@ -20,6 +21,7 @@ function useScenario(code: string): PublicScenario | null {
 function Live({ code, token, fallbackRole }: { code: string; token: string; fallbackRole: string }) {
   const scenario = useScenario(code);
   const room = useRoom(code, token);
+  useWakeLock(room.link !== 'gone' && room.view.phase !== 'ended'); // E7: the screen stays on until the game ends
   if (!scenario) return <p>Connecting…</p>;
   return (
     <>

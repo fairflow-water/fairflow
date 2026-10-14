@@ -278,7 +278,6 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - Authority veto and re-vote (R8);
 - the negotiation timer with timeout to the previous lens (R8, R20); only the private-turn timer exists;
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
-- auto-commit with undo (R20);
 - Authority hand-over event (R3);
 - `treatment.assigned` (R1);
 - `linking.code` (R3).

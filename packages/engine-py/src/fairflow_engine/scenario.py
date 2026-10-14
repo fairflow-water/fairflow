@@ -175,6 +175,15 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
         errors.append("gameLength.min exceeds gameLength.max")
     if sum(scenario["basin"]["deck"].values()) < length["max"]:
         errors.append("the deck has fewer cards than the longest game")
+    negotiation = scenario.get("session", {}).get("negotiationS")
+    if negotiation is not None and not (
+        isinstance(negotiation, dict)
+        and all(
+            isinstance(negotiation.get(k), int | float) and not isinstance(negotiation.get(k), bool) and negotiation[k] > 0
+            for k in ("seasons0to2", "from3")
+        )
+    ):  # the server times the negotiation from these (ADR 0014)
+        errors.append("session.negotiationS needs seasons0to2 and from3, each a positive number of seconds (R20)")
     errors.extend(hard_checks(scenario, registry))
     if errors:
         return ScenarioLoad(None, errors, warnings)

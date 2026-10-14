@@ -4,11 +4,14 @@
 proposal, no vote or a tie, the previous season's lens applies (the scenario's default in season 1). `lens.chosen`
 records byTimeout either way."""
 
+import copy
+
 import pytest
-from test_record import ROLES, new_game, play_season
+from test_record import REGISTRY, ROLES, SCENARIO, new_game, play_season
 from test_tutorial import tutorial
 
 from fairflow_engine import AUTHORITY, ENGINE, Rejection, audit, replay
+from fairflow_engine.scenario import load_scenario
 
 
 def chosen(g):
@@ -114,3 +117,20 @@ def test_a_timed_out_vote_audits_and_the_game_goes_on():
         for role in ROLES:
             g.submit(role, "commit", pumps=0.0)
     assert audit(g.setup, g.events) == []
+
+
+@pytest.mark.parametrize(
+    "negotiation", [{"seasons0to2": 180}, {"seasons0to2": 0, "from3": 240}, {"seasons0to2": "3:00", "from3": 240}, 180]
+)
+def test_a_scenario_with_an_unusable_negotiation_time_does_not_load(negotiation):
+    """The server and the bar compute the deadline from both lengths; a missing, zero or non-numeric one is refused."""
+    scenario = copy.deepcopy(SCENARIO)
+    scenario["session"]["negotiationS"] = negotiation
+    load = load_scenario(scenario, REGISTRY)
+    assert load.setup is None and any("negotiationS" in e for e in load.errors)
+
+
+def test_a_scenario_without_a_negotiation_time_loads_and_has_no_timer():
+    scenario = copy.deepcopy(SCENARIO)
+    del scenario["session"]["negotiationS"]
+    assert load_scenario(scenario, REGISTRY).setup is not None

@@ -20,7 +20,7 @@ export interface NegotiationBarProps {
 
 export function NegotiationBar({ openedAt, season, negotiationS, clockOffsetMs = 0 }: NegotiationBarProps) {
   const lengthS = season <= LAST_SHORT_SEASON ? negotiationS.seasons0to2 : negotiationS.from3;
-  const deadline = Date.parse(openedAt) + lengthS * MS;
+  const deadline = Date.parse(openedAt) + lengthS * MS; // NaN for an unreadable time: then no bar is drawn
   const left = () => Math.max(0, Math.ceil((deadline - (Date.now() + clockOffsetMs)) / MS));
   const [leftS, setLeftS] = useState(left);
   useEffect(() => {
@@ -28,6 +28,7 @@ export function NegotiationBar({ openedAt, season, negotiationS, clockOffsetMs =
     const tick = setInterval(() => setLeftS(left()), TICK_MS);
     return () => clearInterval(tick);
   }, [deadline, clockOffsetMs]);
+  if (!Number.isFinite(deadline) || !(lengthS > 0)) return null; // the engine refuses such a scenario; never draw NaN
   return (
     <div className="negotiation" role="timer" aria-label="Time left to negotiate">
       <span className="bar" role="meter" aria-label="Negotiation time left" aria-valuemin={0} aria-valuemax={lengthS}

@@ -33,13 +33,14 @@ The blueprint does not say what expiry does when lenses *have* been proposed, or
 
 ## Questions for the maintainer
 
-1. With proposals and votes on the table at expiry, should the plurality leader be chosen (as built), or should the previous lens apply, as when nothing was proposed?
+1. With proposals and votes on the table at expiry, should the plurality leader be chosen (as built), or should the previous lens apply, as when nothing was proposed? A related edge case: one lens proposed and no vote cast. The Authority's `close_vote` takes that lens, but expiry applies the previous lens (as built, since nobody voted for it).
 2. Should a tie at expiry go to the previous lens (as built) or wait for the Authority's tie-break?
 3. Should the practice round be timed (as built)?
 
 ## Consequences
 
 - One more engine intent (`timeout_vote`, host only). No new event type and no new field: `lens.chosen.byTimeout` already exists.
+- A scenario's `session.negotiationS`, when present, must give both lengths as positive numbers of seconds, or the scenario does not load. The server computes the deadline from them.
 - The server keeps one timer per room, for whichever phase is timed (vote or private turn). A new phase's timer cancels the last one's, which is still asleep.
 - A table that talks past the deadline loses the choice to the clock. The facilitator can no longer hold a vote open indefinitely.
 

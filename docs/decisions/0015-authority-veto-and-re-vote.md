@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0015: The Authority's veto and the re-vote
 
-- Status: **proposed**, in a draft pull request, for the maintainer's review. (ADR 0014 is reserved for the negotiation timer.)
+- Status: **accepted by the maintainer, 2026-10-14** (PR #21). (ADR 0014 is reserved for the negotiation timer.)
 - Implements R8's veto. Adds one event type to the Season Record (blueprint §6.2).
 
 ## Context
@@ -24,6 +24,7 @@ The blueprint leaves open:
 3. **The re-vote.**
    - The vetoed lens leaves the ballot and cannot be proposed again that season (`vetoed`).
    - Every vote cast so far is cleared, so each scheme votes again on the remaining lenses.
+   - No new lens may be proposed for the rest of that season (`revote_only`): R8 re-votes "the remaining lenses". Proposals open again in the next season.
    - The vote then closes as usual: plurality, with a tie going to the Authority.
 4. **Something must remain.** A veto needs at least one other proposal (`nothing_left`), so a re-vote is always possible.
 5. **Not in the practice round** (`veto_not_in_tutorial`). The practice round is not scored, and a veto spent there would cost the game its one veto.
@@ -31,18 +32,19 @@ The blueprint leaves open:
    - **New event** `lens.vetoed {lens}`: actor `authority`, visibility `public`. Everyone at the table sees the veto, as they see the Authority's tie-break.
    - **`lens.chosen`** carries the §6.2 fields `veto` (the vetoed lens) and `revote: true` in the season of the veto. They are absent otherwise.
    - Records made before this decision replay unchanged.
-7. **M3.** With module M3 the veto is unlocked by a permit audit. M3 is not built, so the veto is available from season 1. When M3 is built, the audit becomes a further condition of the same intent.
+7. **M3.** In v1.0 the veto is available once per game without an audit. When Module 3 ships, the veto becomes audit-gated: the permit audit becomes a further condition of the same intent.
 8. **The screen (S4).**
    - The Authority's "Veto" sits on each proposed lens and asks for confirmation ("Use the one veto of the game on this lens? Every vote so far is cleared.").
-   - Every screen then shows "The Authority vetoed *lens*. Vote again on the remaining lenses." The vetoed row says so and offers no button.
+   - Every screen then shows "The Authority vetoed *lens*. Vote again on the remaining lenses." The vetoed row says so and offers no button, and no lens offers Propose.
+   - The engine refuses to close a vote of several proposals that has no votes (`no_votes`). After a veto that is every vote, so until a scheme votes again the Authority's screen says why: "The veto cleared every vote. The vote can close once the schemes have voted again on the remaining lenses."
 
-## Questions for the maintainer
+## Maintainer's answers (2026-10-14)
 
-- Should the veto instead come after the vote closes, against the winner only? That needs a held result between the tally and `lens.chosen`.
-- Clearing every vote, rather than only the votes for the vetoed lens: R8's "the remaining lenses are re-voted" is read as a full re-vote.
-- Should the practice round allow a veto that does not count against the game's one?
-- Is M3 read right? R8 gives the base game a veto that M3 gates behind a permit audit ("\[M3: after a permit audit\]"), as built. The module table (§2.8, "M3 Audit | Unlocks the Authority veto") and the action table (§4.3, "Audit \[M3\] … unlocks veto") could also be read as "no veto without M3".
-- After a veto the Authority can still propose a lens nobody had proposed, which then joins the re-vote. Should only "the remaining lenses" be re-voted, refusing new proposals?
+- The veto is used during the vote (decision 1), and every vote is cleared (decision 3).
+- M3: in v1.0 the veto is available once per game without an audit; it becomes audit-gated when Module 3 ships (decision 7).
+- After a veto, the remaining proposals are re-voted and no new lens may be proposed, per R8 (decision 3).
+- The veto screen explains a `no_votes` refusal (decision 8).
+- Not raised again: a practice-round veto stays refused (decision 5).
 
 ## Consequences
 

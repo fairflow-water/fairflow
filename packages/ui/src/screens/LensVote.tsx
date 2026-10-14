@@ -8,6 +8,10 @@ import { tally, type PublicScenario, type RoomView } from '../room';
 
 const pct = (share: number): string => `${Math.round(share * 100)} %`;
 
+// R8, ADR 0015: the engine refuses to close a vote of several proposals with no votes (no_votes); after a veto that is
+// every vote, so the Authority is told why before trying
+export const VETO_CLEARED = 'The veto cleared every vote. The vote can close once the schemes have voted again on the remaining lenses.';
+
 export interface LensVoteProps {
   view: RoomView;
   scenario: PublicScenario;
@@ -62,7 +66,7 @@ export function LensVote({ view, scenario, role, onIntent }: LensVoteProps) {
               </div>
               {p.floorVoteNeeded && <p className="hint">Not enough for every minimum: the table would choose how to cut.</p>}
               {view.vetoed === p.lens && <p className="hint">Vetoed this season.</p>}
-              {isAuthority && view.phase === 'vote' && !proposed && view.vetoed !== p.lens && (
+              {isAuthority && view.phase === 'vote' && !proposed && !view.vetoed && ( // R8: after a veto, re-vote only
                 <button type="button" onClick={() => onIntent({ intent: 'propose', lens: p.lens })}>Propose</button>
               )}
               {isPlayer && view.phase === 'vote' && proposed && (
@@ -89,6 +93,9 @@ export function LensVote({ view, scenario, role, onIntent }: LensVoteProps) {
           );
         })}
       </ul>
+      {isAuthority && view.phase === 'vote' && view.vetoed && Object.keys(view.votes).length === 0 && (
+        <p className="hint">{VETO_CLEARED}</p>
+      )}
       {isAuthority && view.phase === 'vote' && (
         <button type="button" className="cta" onClick={() => onIntent({ intent: 'close_vote' })}>Close the vote</button>
       )}

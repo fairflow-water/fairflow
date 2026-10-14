@@ -8,7 +8,7 @@ import opening from '../fixtures/opening-public.json';
 import { viewOf, type Climate as ClimateEvent, type PublicScenario, type RecordEvent } from '../room';
 import { Climate, sentence } from './Climate';
 import { Join } from './Join';
-import { LensVote } from './LensVote';
+import { LensVote, VETO_CLEARED } from './LensVote';
 
 afterEach(cleanup);
 const events = opening.events as unknown as RecordEvent[];
@@ -93,6 +93,19 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
     expect(row.getByText('Vetoed this season.')).toBeTruthy();
     expect(row.queryByRole('button', { name: 'Propose' })).toBeNull();
     expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+  });
+  it('after the veto no new lens is proposed: only the remaining lenses are re-voted (R8)', () => {
+    render(<LensVote view={vetoed} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.queryAllByRole('button', { name: 'Propose' })).toHaveLength(0);
+  });
+  it('tells the Authority why the vote cannot close yet: the veto cleared every vote (no_votes)', () => {
+    const { unmount } = render(<LensVote view={vetoed} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.getByText(VETO_CLEARED)).toBeTruthy();
+    unmount();
+    const voter = scenario.schemes[0]!.id;
+    const revoted = { ...vetoed, votes: { [voter]: vetoed.proposals[0]! } };
+    render(<LensVote view={revoted} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.queryByText(VETO_CLEARED)).toBeNull();
   });
   it('the veto is spent for the game: the next season offers none', () => {
     const climateEvent = upTo.find(e => e.type === 'season.climate')!;

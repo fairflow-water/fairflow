@@ -105,6 +105,17 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
     expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
     expect(screen.queryByRole('status')).toBeNull();
   });
+  it('offers no veto when only one proposal is on the ballot: nothing would be left to re-vote on', () => {
+    const single = { ...voting, proposals: voting.proposals.slice(0, 1) };
+    render(<LensVote view={single} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+  });
+  it('offers no veto during a tie-break: the Authority breaks the tie instead', () => {
+    const tie = { ...voting, phase: 'tiebreak' as const, leaders: voting.proposals };
+    render(<LensVote view={tie} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.getAllByRole('button', { name: 'Break the tie' }).length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+  });
   it('players and the projector get no veto button, nor does the Authority in the practice round', () => {
     for (const role of [scenario.schemes[0]?.id ?? '', 'display']) {
       const { unmount } = render(<LensVote view={voting} scenario={scenario} role={role} onIntent={() => undefined} />);

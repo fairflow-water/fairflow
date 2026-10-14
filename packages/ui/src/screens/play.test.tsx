@@ -8,7 +8,8 @@ import gameA from '../fixtures/game-A.json';
 import gamePublic from '../fixtures/game-public.json';
 import { viewOf, type PublicScenario, type RecordEvent } from '../room';
 import { GameEnd, lensRuns } from './GameEnd';
-import { PrivateTurn } from './PrivateTurn';
+import registry from '../../../scenarios/parameters.json';
+import { PrivateTurn, UNDO_MS } from './PrivateTurn';
 import { needleAngle, Reveal } from './Reveal';
 import { Season } from './Season';
 
@@ -83,16 +84,49 @@ describe('S6 private turn', () => {
     act(() => { vi.advanceTimersByTime(3000); });
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, null, false); // made by the player, not the timer
   });
-  it('auto-commits the current choice when the timer ends, marked as the phone timer (R20, ADR 0013)', () => {
+  it('auto-commits the current choice when the timer ends, with the 3 s undo toast, marked as the phone timer (R20, ADR 0013)', () => {
     vi.useFakeTimers();
-    const onCommit = vi.fn();
+    const onCommit = vi.fn(() => true);
     const opened = { ...turn, openedAt: new Date().toISOString() };
     render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
     act(() => { screen.getByRole('button', { name: 'One more' }).click(); });
     act(() => { vi.advanceTimersByTime(decisionS * 1000 - 500); });
     expect(onCommit).not.toHaveBeenCalled();
     act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByText(/Time is up\. Committing your current choice…/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'One more' }) as HTMLButtonElement).disabled).toBe(true); // the choice is held
+    act(() => { vi.advanceTimersByTime(2000); }); // 2.5 s after the deadline
+    expect(onCommit).not.toHaveBeenCalled(); // still inside the undo window
+    act(() => { vi.advanceTimersByTime(1000); });
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(turn.options[1]!.pumps, null, true);
+  });
+  it("the timer's undo window ends inside the server's grace, so the phone's commit always arrives first (ADR 0013)", () => {
+    const grace = Number(registry.parameters.find(p => p.key === 'session.privateTurnGraceS')!.default);
+    expect(UNDO_MS).toBeLessThan(grace * 1000);
+  });
+  it('an undo after time is up holds the commit, and the player then commits by hand', () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn(() => true);
+    const opened = { ...turn, openedAt: new Date().toISOString() };
+    render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
+    act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
+    act(() => { screen.getByRole('button', { name: 'Undo' }).click(); });
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(onCommit).not.toHaveBeenCalled(); // the timer does not fire twice; the server's grace remains (ADR 0013)
+    act(() => { screen.getByRole('button', { name: 'One more' }).click(); });
+    act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(turn.options[1]!.pumps, null, false);
+  });
+  it("a commit by hand still in its undo window when the timer ends is sent once, as the player's", () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn(() => true);
+    const opened = { ...turn, openedAt: new Date().toISOString() };
+    render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} />);
+    act(() => { vi.advanceTimersByTime(decisionS * 1000 - 1000); });
+    act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null, false);
   });
   it('counts down to the server deadline on the server clock, so a reload does not restart it (ADR 0013)', () => {
     vi.useFakeTimers();
@@ -158,7 +192,7 @@ describe('S6 private turn', () => {
     const { rerender } = render(<PrivateTurn {...props} resync={1} />);
     rerender(<PrivateTurn {...props} resync={2} />);
     expect(onCommit).not.toHaveBeenCalled(); // no commit made yet: a sync sends nothing
-    act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
+    act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500 + 3000); }); // the deadline, then the 3 s undo (R20)
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null, true);
     rerender(<PrivateTurn {...props} resync={3} />);
     expect(onCommit).toHaveBeenCalledTimes(2);

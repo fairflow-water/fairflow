@@ -120,23 +120,25 @@ describe('S6 private turn', () => {
   });
   it('a reconnection (a new clock offset) never skips the undo, fires the timer twice, or relabels a commit by hand', () => {
     vi.useFakeTimers();
-    const run = (before: (r: (offset: number) => void) => void) => {
+    const run = (before: (r: (offset: number) => void, sent: ReturnType<typeof vi.fn>) => void) => {
       const opened = { ...turn, openedAt: new Date().toISOString() }; // each case's turn opens now
       const onCommit = vi.fn(() => true);
       const { rerender, unmount } = render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} clockOffsetMs={0} />);
       const reconnect = (offset: number) => rerender(
         <PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} clockOffsetMs={offset} />);
-      before(reconnect);
+      before(reconnect, onCommit);
       unmount();
       return onCommit;
     };
     // A: a reconnection inside the timer's undo window: the commit still waits out the window
-    const a = run(reconnect => {
+    const a = run((reconnect, sent) => {
       act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
       act(() => { reconnect(1); });
       expect(screen.getByRole('button', { name: 'Undo' })).toBeTruthy();
+      expect(sent).not.toHaveBeenCalled();
+      act(() => { vi.advanceTimersByTime(3000); }); // the rest of the window, then it goes out
     });
-    expect(a).not.toHaveBeenCalled();
+    expect(a).toHaveBeenCalledExactlyOnceWith(0, null, true);
     // B: undone after time is up, then a reconnection: the timer does not fire again
     const b = run(reconnect => {
       act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
@@ -154,6 +156,16 @@ describe('S6 private turn', () => {
       act(() => { vi.advanceTimersByTime(5000); });
     });
     expect(c).toHaveBeenCalledExactlyOnceWith(0, null, false);
+    // D: a commit by hand undone after the deadline passed, then a reconnection: the timer does not act late
+    const d = run(reconnect => {
+      act(() => { vi.advanceTimersByTime(decisionS * 1000 - 1000); });
+      act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => { screen.getByRole('button', { name: 'Undo' }).click(); });
+      act(() => { reconnect(4); });
+      act(() => { vi.advanceTimersByTime(5000); });
+    });
+    expect(d).not.toHaveBeenCalled(); // the server commits the default at its deadline (ADR 0013)
   });
   it("a commit by hand still in its undo window when the timer ends is sent once, as the player's", () => {
     vi.useFakeTimers();

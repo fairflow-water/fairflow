@@ -51,6 +51,9 @@ export function PrivateTurn({ turn, last, demand, decisionS, clockOffsetMs = 0, 
   const made = useRef<{ pumps: number; action: string | null; autoCommitted: boolean } | null>(null); // the commit made on this phone
   const [delivery, setDelivery] = useState<'none' | 'sent' | 'waiting'>('none');
   const [timeUp, setTimeUp] = useState(false); // the timer, not the player, started the commit now pending
+  // Kept across re-runs of the timer effect, which a reconnection causes (a new clock offset from the welcome):
+  const checked = useRef(false); // the countdown has been read at least once since this turn appeared
+  const timerFired = useRef(false); // the timer has reached zero once; it never acts again in this turn
 
   const send = (p: number, a: string | null, autoCommitted = false) => {
     if (made.current) return;
@@ -69,23 +72,27 @@ export function PrivateTurn({ turn, last, demand, decisionS, clockOffsetMs = 0, 
     // ADR 0013: the deadline is on the server's clock; without the record time (a test fixture) it runs from now
     const opened = turn.openedAt === undefined ? Number.NaN : Date.parse(turn.openedAt);
     const deadline = (Number.isNaN(opened) ? Date.now() + clockOffsetMs : opened) + decisionS * MS;
-    let first = true;
     const update = () => {
       const remaining = Math.max(0, Math.ceil((deadline - (Date.now() + clockOffsetMs)) / MS));
       setLeft(remaining);
       if (remaining === 0) {
         clearInterval(tick);
-        if (first) {
-          send(choice.current.pumps, choice.current.action, true); // opened after its deadline: no time left to undo
-        } else if (!undo.current) {
-          // R20: auto-commit the current choice with the 3 s undo toast; it goes out inside the server's grace (ADR 0013)
-          setTimeUp(true);
-          setPending(true);
-          const { pumps: p, action: a } = choice.current;
-          undo.current = setTimeout(() => send(p, a, true), UNDO_MS);
+        // once per turn, and never over a commit already made or in its undo window (by hand or by the timer)
+        if (!timerFired.current && !undo.current && !made.current) {
+          timerFired.current = true;
+          if (!checked.current) {
+            send(choice.current.pumps, choice.current.action, true); // opened after its deadline: no time left to undo
+          } else {
+            // R20: auto-commit the current choice with the 3 s undo toast; it goes out inside the server's grace
+            // (ADR 0013)
+            setTimeUp(true);
+            setPending(true);
+            const { pumps: p, action: a } = choice.current;
+            undo.current = setTimeout(() => { undo.current = null; send(p, a, true); }, UNDO_MS);
+          }
         }
       }
-      first = false;
+      checked.current = true;
     };
     const tick = setInterval(update, TICK_MS);
     update();
@@ -99,7 +106,7 @@ export function PrivateTurn({ turn, last, demand, decisionS, clockOffsetMs = 0, 
 
   function commit() {
     setPending(true);
-    undo.current = setTimeout(() => send(pumps, action), UNDO_MS);
+    undo.current = setTimeout(() => { undo.current = null; send(pumps, action); }, UNDO_MS);
   }
   function cancel() {
     if (undo.current) clearTimeout(undo.current);

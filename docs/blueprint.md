@@ -46,6 +46,8 @@ Live raster processing or WaPOR API calls on the device; shapefile upload in the
 
 ### 1.4 Release train
 
+**\[Superseded in part, ADR 0005.\]** v1.0 delivers room mode (QR join; the Python engine runs on a server, with the relay pulled forward from v1.1, ADR 0002), with table mode as the offline fallback. The table below is kept as written.
+
 | Release | Delivers | Gate |
 | --- | --- | --- |
 | v1.0 (build weeks 1–4; first student cohort) | Table mode; default basin; Builder limited to editing the default basin's numbers with a live allocation table; five classical lenses; Module 1 actions with the 2-pump cap and depletion-scaled cost; three dials, two-needle equity gauge, triangle stack, geometric-mean score; schematic map; Season Record with export and replay; tutorial season 0; three-beat reveal; two-line a posteriori verdict; time-box event and debrief brief; pre-survey by QR, delayed post-survey, review form; printed facilitator script with the 120-minute timetable | Definition of done (1.5); cohort-cut list (§8.3) decided at the week-3 pilot |
@@ -467,6 +469,8 @@ Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every 
 | review.answer | self | part, item, value |
 | agent.rationale | sealed | role, text (v2.0) |
 
+**\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied`, `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
+
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 
 **Sealing.** Commitments at creation, revealed at `game.ended`. In **table mode** the single device holds sealed fields in its IndexedDB and every projection, export and screen before `debrief.opened` omits them. In **room mode** the relay runs the engine and is the only holder of sealed fields: phones send *intents* (`pump 2`, `play drip`), the relay validates, sequences and applies them, stores the record, and sends each phone its own role's `self` projection plus the public views. Sealed data never leave the relay until `debrief.opened`, so there is no client-side key to manage and a reconnecting host learns nothing. (v2 proposed client-side encryption of `pumpsBy` and `action.played`; the technical review showed that host failover requires the full log and the key on every potential host, which breaks the promise. The relay-runs-the-engine design replaces it.) Public projections `view.season`, `view.map`, `view.reveal`, `view.debrief` are derived only from `public` fields, plus `sealed` fields after `debrief.opened` if `perPlayer` allows.
@@ -484,6 +488,8 @@ One pure engine, several thin shells. The engine knows nothing about screens, ne
 Shells render projections and submit intents; the engine validates and applies them; the record stores them with a visibility class per field; services consume the record offline or relay it between devices.
 
 ### 7.1 Modules
+
+**\[Superseded in part, ADR 0002.\]** The authoritative engine is Python (`packages/engine-py`), run live by a FastAPI and WebSockets room server (`packages/server`) from v1.0; `@fairflow/engine` (TypeScript) is a mirror verified against the Python vectors, and the relay row's Node service is that Python server. The table below is kept as written.
 
 | Module | Stack | Responsibility | Release |
 | --- | --- | --- | --- |

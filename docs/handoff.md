@@ -324,8 +324,8 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - E3b, table mode: port the Season Record to the TypeScript mirror, verified against Python-generated record vectors the same way season vectors are.
    - E6, reduced Builder: edit the Kelvara numbers with live loader checks.
 8. **Documentation debt:**
-   - blueprint §7.1 and §1.4 still describe a TS-first architecture and table mode in v1.0;
-   - §6.2 event table (see §5 above);
+   - blueprint §7.1 and §1.4 still describe a TS-first architecture and table mode in v1.0; marked superseded in part, pointing to ADR 0002 and ADR 0005 (draft PR, 2026-10-14);
+   - §6.2 event table (see §5 above); marked incomplete, pointing to `record.py` and the list in §5 (draft PR, 2026-10-14);
    - README lists the balance harness as "planned", but it exists.
    - Checked against the code and the registry on 2026-10-12 and confirmed; each is marked superseded in the blueprint, pointing to the decision record, not rewritten (draft PR, 2026-10-13):
      - **§6.1 scenario example** still shows the pre-Kelvara basin. The shipped `default-basin.json` differs in:

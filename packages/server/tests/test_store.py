@@ -21,6 +21,7 @@ from test_server import ORIGIN, connect, join_body, open_room
 from fairflow_server.app import create_app
 from fairflow_server.rooms import RoomRegistry
 from fairflow_server.settings import Settings
+from fairflow_server.store import Store
 
 HOUR = 3600.0
 MARKER = "feedface" * 8  # test input: a device hash to look for in the file's bytes
@@ -208,3 +209,42 @@ def test_store_and_ttl_settings_and_what_the_server_refuses(tmp_path: Path) -> N
         RoomRegistry(settings(tmp_path, room_ttl_hours=48.0))
     with pytest.raises(RuntimeError, match="research mode"):  # nothing would be left to analyse
         RoomRegistry(settings(tmp_path, research_enabled=True))
+
+
+def test_a_websocket_move_that_cannot_be_written_is_told_to_no_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """ADR 0012: a move is on disk before anyone hears of it. If the write fails, the actor is told so and no other
+    screen hears of the move; the next move that is written is the first news anyone gets."""
+    s = settings(tmp_path)
+    app = create_app(s)
+    with TestClient(app) as client:
+        info = open_room(client)
+        room = app.state.registry.get(info["room"])
+        with ExitStack() as stack:
+            authority = connect(client, stack, info["room"], info["authority"])
+            display = connect(client, stack, info["room"], info["display"])
+            before = list(room.game.events)
+
+            def fail(*_: Any) -> None:
+                raise sqlite3.OperationalError("disk I/O error")  # test input: a full or failing disk
+
+            with monkeypatch.context() as m:
+                m.setattr(app.state.registry.store, "append", fail)
+                authority.send_text(json.dumps({"intent": "start_season"}))
+                assert authority.receive_json()["code"] == "storage_failed"
+            assert room.game.events == before
+            authority.send_text(json.dumps({"intent": "start_season"}))  # written this time
+            first = display.receive_json()  # the display's first message since its sync: the written move
+            assert first["type"] == "events" and first["events"][0]["seq"] == len(before) + 1
+
+
+def test_a_store_written_on_a_failed_transaction_keeps_none_of_it(tmp_path: Path) -> None:
+    """Store.append writes one intent's events and token hashes in one transaction: if any row fails, none is kept."""
+    store = Store(tmp_path / "rooms.sqlite")
+    store.create("ROOM1", {}, "nonce", 1.0)  # test input: a room code, an empty scenario, a nonce and a time
+    store.append("ROOM1", [{"seq": 1, "type": "game.created"}], 2.0, [("hash-1", "A")])
+    with pytest.raises(sqlite3.IntegrityError):  # the second token row repeats a hash already stored
+        store.append("ROOM1", [{"seq": 2, "type": "player.joined"}], 3.0, [("hash-1", "B")])
+    (stored,) = store.rooms()
+    assert [e["seq"] for e in stored.events] == [1] and stored.last_event == 2.0 and stored.tokens == {"hash-1": "A"}
+    store.append("ROOM1", [{"seq": 2, "type": "player.joined"}], 3.0, [("hash-2", "B")])  # the store still takes writes
+    store.close()

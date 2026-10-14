@@ -2,14 +2,16 @@
 // SPDX-License-Identifier: MIT
 // The pages, the connection and the API against a fake server: a fake WebSocket that replays engine-generated events
 // (fixtures from packages/engine-py/scripts/generate_ui_fixture.py) and a fake fetch. No model number is typed here.
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { connect, createRoom, deviceHash, hostStore, joinRoom, roomInfo, tokenStore } from './api';
 import { App } from './App';
+import floorRules from '../../../content/floor-rules.json';
 import opening from './fixtures/opening-public.json';
 import { viewOf, type PublicScenario, type RecordEvent } from './room';
 import { Season } from './screens/Season';
+import { useRoom } from './useRoom';
 
 const events = opening.events as unknown as RecordEvent[];
 const scenario = opening.scenario as PublicScenario;
@@ -124,6 +126,34 @@ describe('api', () => {
   });
 });
 
+describe('connection details', () => {
+  it('a socket that is closing sends nothing and says so, so a commit is kept for the next sync', () => {
+    const s = connect('ABCDE', 'tok', () => undefined);
+    const ws = FakeSocket.last as FakeSocket;
+    ws.emit('open');
+    ws.readyState = 2; // WebSocket.CLOSING (WHATWG readyState): the connection is going down
+    expect(s.send({ intent: 'commit', pumps: 0, action: null })).toBe(false);
+    expect(ws.sent).toHaveLength(1); // the token only
+    s.close();
+  });
+  it("takes the server's clock offset from the welcome: the server's time minus this device's (ADR 0013)", () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); // a still clock: the offset is exact
+    const offsetMs = 5000; // test input: the server's clock runs this far ahead of the phone's
+    const { result, unmount } = renderHook(() => useRoom('ABCDE', 'tok'));
+    try {
+      const ws = FakeSocket.last as FakeSocket;
+      act(() => {
+        ws.emit('open');
+        ws.emit('message', { type: 'welcome', role: 'A', room: 'ABCDE', serverTime: Date.now() + offsetMs });
+      });
+      expect(result.current.clockOffsetMs).toBe(offsetMs);
+    } finally {
+      unmount();
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('pages', () => {
   it('a player with a stored token goes straight to the live season and sees the engine climate', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ok({ room: 'ABCDE', freeRoles: [], phase: 'vote', scenario })));
@@ -197,6 +227,15 @@ describe('Season by phase', () => {
     unmount();
     render(<Season view={chosen} scenario={scenario} role="A" onIntent={() => undefined} />);
     expect(screen.getByText(/Opening your private turn/)).toBeTruthy();
+  });
+  it('floor vote (ADR 0003): a lens.chosen that needs one opens it, from a sync as live, and its rule opens the private turn', () => {
+    const i = events.findIndex(e => e.type === 'lens.chosen');
+    const chosen = events[i]!;
+    const short = { ...chosen, payload: { ...chosen.payload, floorVoteNeeded: true } };
+    const at = (seq: number, type: string, payload: Record<string, unknown>) => ({ ...chosen, seq, type, actor: 'authority', payload });
+    expect(viewOf([...events.slice(0, i), short]).phase).toBe('floor_vote');
+    const rule = at(short.seq + 1, 'lens.floorRule', { rule: floorRules.options[0]!.rule });
+    expect(viewOf([...events.slice(0, i), short, rule]).phase).toBe('private');
   });
   it('floor vote (ADR 0003): players choose, the facilitator closes', async () => {
     const onIntent = vi.fn();

@@ -25,7 +25,7 @@ from test_private_timer import (
     wait_for_phase,
 )
 from test_server import connect, open_room
-from test_store import settings
+from test_store import HOUR, rows, settings
 
 from fairflow_server.app import create_app
 
@@ -92,3 +92,17 @@ def test_a_restored_room_whose_turn_was_complete_gets_no_timer(tmp_path: Path) -
     with TestClient(create_app(settings(tmp_path), now=clock)) as client:
         time.sleep(2 * TIMER_TICK_S)  # test input: two ticks in which nothing may happen
         assert events(client, info["room"]) == before
+
+
+def test_a_room_past_its_ttl_is_not_restored_and_its_timer_does_not_revive_it(tmp_path: Path) -> None:
+    """ADR 0012: a room whose last move is more than the TTL old when the server starts is not served again. Its open
+    private turn's deadline has long passed too, but the server must not commit for it: that would be a new last move."""
+    clock = Clock()
+    code, _, start = play_to_private_turn(tmp_path, clock)
+    clock.t = start + settings(tmp_path).room_ttl_hours * HOUR + DECISION_S + GRACE_S  # the server was down this long
+    app = create_app(settings(tmp_path), now=clock)
+    with TestClient(app) as client:
+        time.sleep(2 * TIMER_TICK_S)  # test input: two ticks for any timer to act
+        assert code not in app.state.registry.rooms
+        assert client.get(f"/rooms/{code}").status_code == 404
+    assert rows(settings(tmp_path).store_path)["rooms"] == 0  # type: ignore[arg-type]

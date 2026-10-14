@@ -5,8 +5,9 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useWakeLock } from './useWakeLock';
 
-function fakeApi() {
+function fakeApi(held = false) {
   const sentinels: { release: ReturnType<typeof vi.fn>; fire: () => void }[] = [];
+  const answers: (() => void)[] = []; // with held, each request waits until the test answers it
   const request = vi.fn(() => {
     let onRelease = () => undefined as void;
     const s = {
@@ -15,10 +16,11 @@ function fakeApi() {
       fire: () => onRelease(),
     };
     sentinels.push(s);
-    return Promise.resolve(s);
+    if (!held) return Promise.resolve(s);
+    return new Promise<typeof s>(resolve => { answers.push(() => resolve(s)); });
   });
   Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true });
-  return { request, sentinels };
+  return { request, sentinels, answers };
 }
 
 function setVisibility(state: 'visible' | 'hidden') {
@@ -72,5 +74,34 @@ describe('Wake Lock during play (E7)', () => {
     Object.defineProperty(navigator, 'wakeLock', { value: { request: () => Promise.reject(new Error('NotAllowedError')) }, configurable: true });
     const refused = renderHook(() => useWakeLock(true));
     await waitFor(() => expect(refused.result.current).toBe('refused'));
+  });
+  it('asks once while a request is still pending, so no lock is left with no one to release it', async () => {
+    const { request, sentinels, answers } = fakeApi(true);
+    const { result, unmount } = renderHook(() => useWakeLock(true));
+    act(() => { setVisibility('hidden'); setVisibility('visible'); }); // locked and unlocked before the browser answered
+    expect(request).toHaveBeenCalledOnce();
+    await act(async () => { answers[0]!(); });
+    expect(result.current).toBe('held');
+    unmount();
+    expect(sentinels[0]!.release).toHaveBeenCalledOnce();
+  });
+  it('lets go at once a lock that arrives after the room is gone', async () => {
+    const { sentinels, answers } = fakeApi(true);
+    const { rerender } = renderHook(({ on }) => useWakeLock(on), { initialProps: { on: true } });
+    rerender({ on: false });
+    await act(async () => { answers[0]!(); });
+    expect(sentinels[0]!.release).toHaveBeenCalledOnce();
+  });
+  it('a page hidden while it asked is not shown as refused: it asks again when visible', async () => {
+    let calls = 0;
+    const request = vi.fn(() => (++calls === 1 ? Promise.reject(new Error('NotAllowedError')) : Promise.resolve({ release: () => Promise.resolve() })));
+    Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true });
+    const { result } = renderHook(() => useWakeLock(true));
+    act(() => { Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); });
+    await waitFor(() => expect(request).toHaveBeenCalledOnce());
+    await act(async () => { await Promise.resolve(); });
+    expect(result.current).toBe('off');
+    act(() => { setVisibility('visible'); });
+    await waitFor(() => expect(result.current).toBe('held'));
   });
 });

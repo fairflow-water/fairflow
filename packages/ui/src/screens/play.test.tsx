@@ -118,6 +118,43 @@ describe('S6 private turn', () => {
     act(() => { vi.advanceTimersByTime(3000); });
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(turn.options[1]!.pumps, null, false);
   });
+  it('a reconnection (a new clock offset) never skips the undo, fires the timer twice, or relabels a commit by hand', () => {
+    vi.useFakeTimers();
+    const run = (before: (r: (offset: number) => void) => void) => {
+      const opened = { ...turn, openedAt: new Date().toISOString() }; // each case's turn opens now
+      const onCommit = vi.fn(() => true);
+      const { rerender, unmount } = render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} clockOffsetMs={0} />);
+      const reconnect = (offset: number) => rerender(
+        <PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={onCommit} clockOffsetMs={offset} />);
+      before(reconnect);
+      unmount();
+      return onCommit;
+    };
+    // A: a reconnection inside the timer's undo window: the commit still waits out the window
+    const a = run(reconnect => {
+      act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
+      act(() => { reconnect(1); });
+      expect(screen.getByRole('button', { name: 'Undo' })).toBeTruthy();
+    });
+    expect(a).not.toHaveBeenCalled();
+    // B: undone after time is up, then a reconnection: the timer does not fire again
+    const b = run(reconnect => {
+      act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
+      act(() => { screen.getByRole('button', { name: 'Undo' }).click(); });
+      act(() => { reconnect(2); });
+      act(() => { vi.advanceTimersByTime(5000); });
+    });
+    expect(b).not.toHaveBeenCalled();
+    // C: a commit by hand in its undo window across the deadline and a reconnection: sent once, as the player's
+    const c = run(reconnect => {
+      act(() => { vi.advanceTimersByTime(decisionS * 1000 - 1000); });
+      act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => { reconnect(3); });
+      act(() => { vi.advanceTimersByTime(5000); });
+    });
+    expect(c).toHaveBeenCalledExactlyOnceWith(0, null, false);
+  });
   it("a commit by hand still in its undo window when the timer ends is sent once, as the player's", () => {
     vi.useFakeTimers();
     const onCommit = vi.fn(() => true);

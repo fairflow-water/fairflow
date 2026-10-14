@@ -99,6 +99,7 @@ def test_a_season_without_a_veto_records_neither_field():
         (AUTHORITY, "single", "proportional", "nothing_left"),  # nothing would be left to re-vote on
         (AUTHORITY, "closed", "egalitarian", "wrong_phase"),  # the vote is over
         (AUTHORITY, "tutorial", "utilitarian", "veto_not_in_tutorial"),  # the practice round is not scored
+        (AUTHORITY, "tiebreak", "proportional", "wrong_phase"),  # a tie is the Authority's to break, not to veto
     ],
 )
 def test_what_a_veto_needs(actor, setup, lens, code):
@@ -115,6 +116,11 @@ def test_what_a_veto_needs(actor, setup, lens, code):
             for role in ROLES:
                 g.submit(role, "vote", lens="proportional")
             g.submit(AUTHORITY, "close_vote")
+        elif setup == "tiebreak":  # one vote on each proposal: a tie
+            for role, x in zip(ROLES, ("proportional", "egalitarian", "capability"), strict=True):
+                g.submit(role, "vote", lens=x)
+            g.submit(AUTHORITY, "close_vote")
+            assert replay(g.events).phase == "tiebreak"
     before = list(g.events)
     assert refused(g, actor, "veto", lens=lens) == code
     assert g.events == before

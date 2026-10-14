@@ -270,7 +270,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Baseline tier in CI (`.github/workflows/balance.yml`): 50 games per cell on every merge to main; a failed criterion opens an issue and blocks nothing. |
 | E3b Table-mode fallback | Not started. A cohort-cut candidate. |
 | E6 Reduced Builder | Not started. A cohort-cut candidate. |
-| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms merged in PR #8 (ADR 0012, accepted by the maintainer, 2026-10-14). Not built: Wake Lock, service worker. |
+| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms merged in PR #8 (ADR 0012, accepted by the maintainer, 2026-10-14). Wake Lock during play (`useWakeLock`), taken again when the page comes back. Not built: service worker. |
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
@@ -309,7 +309,8 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - Persistent rooms (ADR 0012, accepted by the maintainer, 2026-10-14; merged in PR #8): one SQLite file, each move on disk before it is broadcast, a restart resumes every room whose record checks out, rooms deleted 24 h after the last move, the facilitator can continue a room from the start page.
    - **Deployment requirement:** the reverse proxy in front of the server must log no client IP addresses. The information sheet no longer mentions an IP log; if the proxy cannot be configured that way, the sheet must say so again (`packages/server/README.md`). Also exclude the store from backups and encrypt the disk.
    - Open: a seat cannot move to another phone; a pause longer than the TTL loses the game.
-   - Then: Wake Lock, a service worker, and interrupted-state tests in every phase.
+   - Done: Wake Lock during play, and interrupted-state checks in every phase (`e2e/reconnect.spec.ts`: a phone reloaded and asleep, the facilitator and the projector reloaded, a phone reloaded inside its undo window).
+   - Then: a service worker.
 7. **Cohort-cut items, decided at app pilot 1:**
    - E3b, table mode: port the Season Record to the TypeScript mirror, verified against Python-generated record vectors the same way season vectors are.
    - E6, reduced Builder: edit the Kelvara numbers with live loader checks.

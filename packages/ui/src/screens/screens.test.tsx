@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 // SPDX-License-Identifier: MIT
 // S2–S4 acceptance checks (blueprint §5.2) on engine-generated fixtures; no model number is typed here.
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import opening from '../fixtures/opening-public.json';
@@ -9,6 +9,8 @@ import { viewOf, type Climate as ClimateEvent, type PublicScenario, type RecordE
 import { Climate, sentence } from './Climate';
 import { Join } from './Join';
 import { LensVote, VETO_CLEARED } from './LensVote';
+import { LensVote } from './LensVote';
+import { NegotiationBar } from './NegotiationBar';
 
 afterEach(cleanup);
 const events = opening.events as unknown as RecordEvent[];
@@ -143,6 +145,47 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
     }
     render(<LensVote view={{ ...voting, tutorial: true }} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+describe('S4 negotiation bar (R20, ADR 0014)', () => {
+  const negotiation = scenario.session!.negotiationS!;
+  const meter = () => Number(screen.getByRole('meter', { name: 'Negotiation time left' }).getAttribute('aria-valuenow'));
+  it('starts at the record time of season.climate', () => {
+    const opened = events.find(e => e.type === 'season.climate')!;
+    expect(voting.voteOpenedAt).toBe(opened.t);
+  });
+  it('counts down on the server clock from the season length, and a reload continues it', () => {
+    vi.useFakeTimers();
+    const elapsedS = 20; // test input: the vote opened this long ago on the server
+    const offsetMs = 5000; // test input: the server's clock runs this far ahead of this device's
+    const openedAt = new Date(Date.now() + offsetMs - elapsedS * 1000).toISOString();
+    const props = { openedAt, season: 1, negotiationS: negotiation, clockOffsetMs: offsetMs };
+    const { unmount } = render(<NegotiationBar {...props} />);
+    expect(meter()).toBe(negotiation.seasons0to2 - elapsedS);
+    expect(screen.queryByTestId('negotiation-seconds')).toBeNull(); // seconds only in the last 30 (S4)
+    unmount();
+    act(() => { vi.advanceTimersByTime(3000); }); // the page reloads
+    render(<NegotiationBar {...props} />);
+    expect(meter()).toBe(negotiation.seasons0to2 - elapsedS - 3);
+    vi.useRealTimers();
+  });
+  it('is longer from season 3 and shows the seconds in the last 30', () => {
+    vi.useFakeTimers();
+    const openedAt = new Date().toISOString();
+    const { unmount } = render(<NegotiationBar openedAt={openedAt} season={3} negotiationS={negotiation} />);
+    expect(meter()).toBe(negotiation.from3);
+    unmount();
+    const late = new Date(Date.now() - (negotiation.seasons0to2 - 30) * 1000).toISOString();
+    render(<NegotiationBar openedAt={late} season={2} negotiationS={negotiation} />);
+    expect(screen.getByTestId('negotiation-seconds').textContent).toBe('30 s');
+    vi.useRealTimers();
+  });
+  it('shows on every screen while the vote is open, and not during a tie-break', () => {
+    for (const role of ['display', 'authority', scenario.schemes[0]?.id ?? '']) {
+      const { unmount } = render(<LensVote view={voting} scenario={scenario} role={role} onIntent={() => undefined} />);
+      expect(screen.getByRole('timer', { name: 'Time left to negotiate' })).toBeTruthy();
+      unmount();
+    }
+    render(<LensVote view={{ ...voting, phase: 'tiebreak' }} scenario={scenario} role="display" onIntent={() => undefined} />);
+    expect(screen.queryByRole('timer')).toBeNull();
   });
 });
 

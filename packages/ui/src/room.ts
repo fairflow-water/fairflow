@@ -8,7 +8,7 @@ export interface PublicScheme { id: string; name: string; seat: number; shape?: 
 export interface PublicLens { id: string; plainName: string }
 export interface PublicScenario {
   name: string; schemes: PublicScheme[]; lenses: PublicLens[];
-  session?: { decisionS?: number };
+  session?: { decisionS?: number; negotiationS?: { seasons0to2: number; from3: number } };
 }
 
 export interface RecordEvent {
@@ -73,6 +73,7 @@ export interface RoomView {
   phase: Phase;
   season: number;
   climate: Climate | null;
+  voteOpenedAt: string | null; // record time of this season's season.climate: the negotiation starts (R7, ADR 0014)
   proposals: string[];
   votes: Record<string, string>;
   leaders: string[];
@@ -101,7 +102,7 @@ export interface RoomView {
 }
 
 export const emptyView = (): RoomView => ({
-  phase: 'lobby', season: 0, climate: null, proposals: [], votes: {}, leaders: [], vetoed: null, vetoUsed: false, chosen: null, floorVotes: {},
+  phase: 'lobby', season: 0, climate: null, voteOpenedAt: null, proposals: [], votes: {}, leaders: [], vetoed: null, vetoUsed: false, chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
   tutorial: false, tutorialResult: null, seated: [], researchEnabled: false, joinedOn: {},
@@ -120,7 +121,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         break;
       case 'season.climate':
         v = {
-          ...emptyView(), phase: 'vote', season: e.season, climate: p as unknown as Climate,
+          ...emptyView(), phase: 'vote', season: e.season, climate: p as unknown as Climate, voteOpenedAt: e.t,
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
           tutorial: p['tutorial'] === true, seated: v.seated, researchEnabled: v.researchEnabled, joinedOn: v.joinedOn,

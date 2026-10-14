@@ -64,6 +64,8 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
   let open = facilitator.getByRole('button', { name: 'Open season 1', exact: true });
   for (let season = 1; ; season++) {
     await open.click();
+    // ADR 0014: the negotiation bar runs on the projector and the phones while the vote is open
+    for (const page of [display, ...phones]) await expect(page.getByRole('timer', { name: 'Time left to negotiate' })).toBeVisible();
     if (season === 2) {
       // R8 (ADR 0015): the table votes for the biggest harvest; the Authority vetoes it once, after confirming, and
       // every screen says so; the votes are cleared and the remaining lens is re-voted

@@ -83,7 +83,7 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
       {view.phase !== 'reveal' && (
         <Climate climate={view.climate} scenario={scenario} season={view.season} bands={view.mapBands} />
       )}
-      {(view.phase === 'vote' || view.phase === 'tiebreak') && <LensVote view={view} scenario={scenario} role={role} onIntent={onIntent} />}
+      {(view.phase === 'vote' || view.phase === 'tiebreak') && <LensVote view={view} scenario={scenario} role={role} onIntent={onIntent} clockOffsetMs={clockOffsetMs} />}
       {view.phase === 'floor_vote' && <FloorVote view={view} role={role} isPlayer={isPlayer} onIntent={onIntent} />}
       {view.phase === 'private' && (isPlayer && view.privateTurn && !view.myCommit
         ? <PrivateTurn key={view.season} turn={view.privateTurn} last={banner?.mine ?? null} demand={demand}

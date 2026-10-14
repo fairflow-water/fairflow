@@ -178,6 +178,10 @@ describe('S4 negotiation bar (R20, ADR 0014)', () => {
     expect(screen.getByTestId('negotiation-seconds').textContent).toBe('30 s');
     vi.useRealTimers();
   });
+  it('draws nothing for an unreadable start time', () => {
+    render(<NegotiationBar openedAt="not a time" season={1} negotiationS={negotiation} />);
+    expect(screen.queryByRole('timer')).toBeNull();
+  });
   it('shows on every screen while the vote is open, and not during a tie-break', () => {
     for (const role of ['display', 'authority', scenario.schemes[0]?.id ?? '']) {
       const { unmount } = render(<LensVote view={voting} scenario={scenario} role={role} onIntent={() => undefined} />);

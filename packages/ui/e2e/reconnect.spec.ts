@@ -3,7 +3,9 @@
 //
 // Reconnection in every phase (handoff §8 item 6, E7): one phone is reloaded, and separately put to sleep (its socket
 // cut, as a locked phone or lost Wi-Fi does) while the table moves on, in each phase of a game. After each, the phone
-// must show what it should for that phase. Each check is recorded as works / fails and the table is printed; the test
+// must show what it should for that phase. The facilitator and the projector are reloaded in each phase too (an
+// interrupted laptop or projector tab; the facilitator resumes the room from the start page), and a phone is reloaded
+// inside its commit's 3 s undo window. Each check is recorded as works / fails and the table is printed; the test
 // fails if any phase fails that is not listed in KNOWN with its issue.
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
@@ -72,14 +74,29 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
   };
   const nothing = () => Promise.resolve();
   const see = (locator: ReturnType<Page['getByText']>) => expect(locator.first()).toBeVisible({ timeout: BACK_MS });
+  /** The facilitator's tab is reloaded: it resumes the room from the start page (ADR 0012). */
+  const resumeFacilitator = async () => {
+    await facilitator.reload();
+    await facilitator.getByRole('button', { name: `Continue room ${code}` }).click();
+  };
+  /** Reload the facilitator and then the projector in this phase; each must show what the phase needs. */
+  const hosts = async (phase: string, facilitatorSees: () => Promise<void>, displaySees: () => Promise<void>) => {
+    await check(phase, 'facilitator reload', async () => { await resumeFacilitator(); await facilitatorSees(); });
+    if (await facilitator.getByRole('button', { name: `Continue room ${code}` }).isVisible()) await resumeFacilitator();
+    await check(phase, 'projector reload', async () => { await display.reload(); await displaySees(); });
+  };
 
   // ---- lobby
   await check('lobby', 'reload', () => reload(() => see(me.getByText(/Waiting for the facilitator to open season 1/))));
   await check('lobby', 'sleep', () => sleep(nothing, () => see(me.getByText(/Waiting for the facilitator/))));
+  await hosts('lobby', () => see(facilitator.getByRole('button', { name: 'Start the practice round' })),
+    () => see(display.getByText('Waiting for the facilitator to open season 1.')));
 
   // ---- practice round: vote, private turn, reveal
   await facilitator.getByRole('button', { name: 'Start the practice round' }).click();
   await check('practice vote', 'reload', () => reload(() => see(me.getByTestId('lens-utilitarian'))));
+  await hosts('practice vote', () => see(facilitator.getByRole('button', { name: 'Close the vote' })),
+    () => see(display.getByTestId('lens-utilitarian')));
   await check('practice vote', 'sleep', () => sleep(
     () => facilitator.getByTestId('lens-utilitarian').getByRole('button', { name: 'Propose' }).click(),
     () => see(me.getByTestId('lens-utilitarian').getByRole('button', { name: 'Vote' }))));
@@ -87,6 +104,7 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
   await facilitator.getByRole('button', { name: 'Close the vote' }).click();
   await see(others[0].getByRole('heading', { name: 'Your turn' }));
   await check('practice private turn', 'reload', () => reload(() => see(me.getByRole('heading', { name: 'Your turn' }))));
+  await hosts('practice private turn', () => see(facilitator.getByText(/Private turns/)), () => see(display.getByText(/Private turns/)));
   await check('practice private turn', 'sleep', () => sleep(
     () => others[0].getByRole('button', { name: 'Commit my turn' }).click(),
     () => see(me.getByRole('heading', { name: 'Your turn' }))));
@@ -94,6 +112,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
   await me.getByRole('button', { name: 'Commit my turn' }).click().catch(() => undefined);
   await see(display.getByRole('heading', { name: /Practice round: what happened/ }));
   await check('practice reveal', 'reload', () => reload(() => see(me.getByLabel(/Your scheme/))));
+  await hosts('practice reveal', () => see(facilitator.getByRole('button', { name: 'Open season 1', exact: true })),
+    () => see(display.getByRole('heading', { name: /Practice round: what happened/ })));
   await check('practice reveal', 'sleep', () => sleep(
     () => facilitator.getByRole('button', { name: 'Open season 1', exact: true }).click(),
     () => see(me.getByTestId('lens-proportional'))));
@@ -114,6 +134,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
         await facilitator.getByTestId(`lens-${lens}`).getByRole('button', { name: 'Propose' }).click();
       }
       await check('lens vote', 'reload', () => reload(() => see(me.getByTestId('lens-proportional').getByRole('button', { name: 'Vote' }))));
+      await hosts('lens vote', () => see(facilitator.getByRole('button', { name: 'Close the vote' })),
+        () => see(display.getByTestId('lens-proportional')));
       await check('lens vote', 'sleep', () => sleep(
         async () => {
           await others[0].getByTestId('lens-egalitarian').getByRole('button', { name: 'Vote' }).click();
@@ -126,6 +148,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
         .waitFor({ timeout: BACK_MS }).then(() => true, () => false);
       if (tieSeen) {
         await check('tie-break', 'reload', () => reload(() => see(me.getByTestId('lens-proportional'))));
+        await hosts('tie-break', () => see(facilitator.getByRole('button', { name: 'Break the tie' })),
+          () => see(display.getByTestId('lens-proportional')));
         await check('tie-break', 'sleep', () => sleep(
           () => facilitator.getByTestId('lens-proportional').getByRole('button', { name: 'Break the tie' }).click(),
           () => see(me.getByRole('heading', { name: /Your turn|Not enough for everyone's minimum/ }))));
@@ -140,6 +164,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
       await facilitator.getByRole('button', { name: 'Close the vote' }).click();
       await see(facilitator.getByRole('heading', { name: /Not enough for everyone's minimum/ }));
       await check('floor vote', 'reload', () => reload(() => see(me.getByRole('heading', { name: /Not enough for everyone's minimum/ }))));
+      await hosts('floor vote', () => see(facilitator.getByRole('button', { name: 'Close the vote' })),
+        () => see(display.getByRole('heading', { name: /Not enough for everyone's minimum/ })));
       await check('floor vote', 'sleep', () => sleep(
         () => facilitator.getByRole('button', { name: 'Close the vote' }).click(),
         () => see(me.getByRole('heading', { name: 'Your turn' }))));
@@ -153,8 +179,18 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
     }
 
     await see(me.getByRole('heading', { name: 'Your turn' }));
+    if (season === 3) {
+      // interrupted inside the 3 s undo window: nothing was sent, so the reloaded phone offers the turn again
+      await check('private turn', 'reload inside the undo window', async () => {
+        await me.getByRole('button', { name: 'Commit my turn' }).click();
+        await me.reload();
+        await see(me.getByRole('heading', { name: 'Your turn' }));
+        await expect(me.getByRole('button', { name: 'Commit my turn' })).toBeVisible({ timeout: BACK_MS });
+      });
+    }
     if (season === 2) {
       await check('private turn', 'reload', () => reload(() => see(me.getByRole('heading', { name: 'Your turn' }))));
+      await hosts('private turn', () => see(facilitator.getByText(/Private turns/)), () => see(display.getByText(/Private turns/)));
       await check('private turn', 'sleep across its own commit', () => sleep(
         async () => {
           await me.getByRole('button', { name: 'Commit my turn' }).click(); // committed just as the phone locks
@@ -184,6 +220,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
     if (await ended.isVisible()) break;
     if (season === 2) {
       await check('reveal', 'reload', () => reload(() => see(me.getByLabel(/Your scheme/))));
+      await hosts('reveal', () => see(facilitator.getByRole('button', { name: 'Open the next season' })),
+        () => see(display.getByRole('heading', { name: `Season ${season}: what happened` })));
       await check('reveal', 'sleep', () => sleep(() => next.click(), () => see(me.getByTestId('lens-proportional'))));
       if (await next.isVisible()) await next.click();
     } else {
@@ -197,6 +235,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
 
   // ---- game end, debrief, review
   await check('game end', 'reload', () => reload(() => see(me.getByText(/Your goal/))));
+  await hosts('game end', () => see(facilitator.getByRole('button', { name: /reveal who pumped/ })),
+    () => see(display.getByText(/The game lasted/)));
   await check('game end', 'sleep', () => sleep(
     () => facilitator.getByRole('button', { name: /reveal who pumped/ }).click(),
     () => see(me.getByRole('heading', { name: 'Debrief' }))));
@@ -204,6 +244,8 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
     await facilitator.getByRole('button', { name: /reveal who pumped/ }).click();
   }
   await check('debrief', 'reload', () => reload(() => see(me.getByRole('table', { name: /Each scheme/ }))));
+  await hosts('debrief', () => see(facilitator.getByRole('heading', { name: 'Debrief' })),
+    () => see(display.getByRole('heading', { name: 'Debrief' })));
   await check('debrief', 'sleep', () => sleep(nothing, () => see(me.getByRole('table', { name: /Each scheme/ }))));
   await me.getByRole('tab', { name: 'Review form' }).click();
   await me.getByRole('textbox').first().fill('a draft typed before the reload');

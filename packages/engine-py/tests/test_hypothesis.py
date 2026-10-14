@@ -166,6 +166,10 @@ class SeasonRecordMachine(RuleBasedStateMachine):
     def close_vote(self, actor):
         self._try(actor, "close_vote")
 
+    @rule(actor=actors, lens=st.sampled_from(LENSES))
+    def veto(self, actor, lens):  # R8, ADR 0015
+        self._try(actor, "veto", lens=lens)
+
     @rule(lens=st.sampled_from(LENSES))
     def break_tie(self, lens):
         self._try(AUTHORITY, "break_tie", lens=lens)
@@ -185,6 +189,10 @@ class SeasonRecordMachine(RuleBasedStateMachine):
     @rule(minute=st.floats(0, 120))
     def timebox(self, minute):
         self._try(AUTHORITY, "timebox", sessionMinute=minute)
+
+    @invariant()
+    def at_most_one_veto(self):  # R8: the Authority holds one veto per game
+        assert sum(e["type"] == "lens.vetoed" for e in self.game.events) <= 1
 
     @invariant()
     def record_replays_and_stays_sealed(self):

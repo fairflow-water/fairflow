@@ -41,6 +41,8 @@ The blueprint leaves open:
 - Should the veto instead come after the vote closes, against the winner only? That needs a held result between the tally and `lens.chosen`.
 - Clearing every vote, rather than only the votes for the vetoed lens: R8's "the remaining lenses are re-voted" is read as a full re-vote.
 - Should the practice round allow a veto that does not count against the game's one?
+- Is M3 read right? R8 gives the base game a veto that M3 gates behind a permit audit ("\[M3: after a permit audit\]"), as built. The module table (§2.8, "M3 Audit | Unlocks the Authority veto") and the action table (§4.3, "Audit \[M3\] … unlocks veto") could also be read as "no veto without M3".
+- After a veto the Authority can still propose a lens nobody had proposed, which then joins the re-vote. Should only "the remaining lenses" be re-voted, refusing new proposals?
 
 ## Consequences
 

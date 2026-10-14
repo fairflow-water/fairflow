@@ -129,6 +129,42 @@ def test_the_negotiation_is_longer_from_season_3(client: TestClient, clock: Cloc
     assert [c["payload"]["byTimeout"] for c in chosen(client, info["room"])] == [False, False, True]
 
 
+def test_the_last_short_season_has_the_short_negotiation(client: TestClient, clock: Clock) -> None:
+    """R20: 3:00 in seasons 0-2. Season 2 (LAST_SHORT_NEGOTIATION) still closes at the short length."""
+    info = open_room(client)
+    roles = roles_of(info)
+    with ExitStack() as stack:
+        sockets = everyone(client, stack, info)
+        for _ in range(LAST_SHORT_NEGOTIATION - 1):  # the seasons before it, closed by hand
+            act(sockets, "authority", {"intent": "start_season"})
+            act(sockets, "authority", {"intent": "propose", "lens": "proportional"})
+            act(sockets, "authority", {"intent": "close_vote"})
+            for r in roles:
+                commit(sockets, r)
+        act(sockets, "authority", {"intent": "start_season"})
+        clock.t = vote_opened(client, info["room"]) + length(LAST_SHORT_NEGOTIATION)
+        assert wait_for_phase(client, info["room"], PAST_VOTE) in PAST_VOTE
+    assert [c["payload"]["byTimeout"] for c in chosen(client, info["room"])][-1] is True
+
+
+def test_a_room_restored_mid_vote_after_a_proposal_keeps_the_deadline_from_the_screen_opening(tmp_path: Path) -> None:
+    """R7: "the negotiation timer starts when the lens screen opens": the record time of season.climate, however long
+    the table then took to propose, also for a room restored from the store (ADR 0012)."""
+    clock = Clock()
+    with TestClient(create_app(settings(tmp_path), now=clock)) as client:
+        info = open_room(client)
+        with ExitStack() as stack:
+            sockets = everyone(client, stack, info)
+            act(sockets, "authority", {"intent": "start_season"})
+            time.sleep(3 * TIMER_TICK_S)  # test input: the first proposal comes this long after the screen opened
+            act(sockets, "authority", {"intent": "propose", "lens": "proportional"})
+        start = vote_opened(client, info["room"])
+    clock.t = start + length(1) + TIMER_TICK_S  # restarted past the screen's deadline, before a proposal's would be
+    with TestClient(create_app(settings(tmp_path), now=clock)) as client:
+        assert wait_for_phase(client, info["room"], PAST_VOTE) in PAST_VOTE
+        assert chosen(client, info["room"])[-1]["payload"]["byTimeout"] is True
+
+
 def test_no_client_can_send_the_server_intent(client: TestClient) -> None:
     info = open_room(client)
     with ExitStack() as stack:

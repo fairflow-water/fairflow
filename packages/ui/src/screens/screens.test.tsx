@@ -178,6 +178,19 @@ describe('S4 negotiation bar (R20, ADR 0014)', () => {
     expect(screen.getByTestId('negotiation-seconds').textContent).toBe('30 s');
     vi.useRealTimers();
   });
+  it("starts full in a short season as in a long one: the fill is scaled to the season's own length", () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); // a still clock: no time passes between opening and drawing
+    try {
+      const openedAt = new Date().toISOString();
+      for (const season of [1, 3]) { // test input: a short season and a long one (R20)
+        const { unmount } = render(<NegotiationBar openedAt={openedAt} season={season} negotiationS={negotiation} />);
+        expect(screen.getByTestId('negotiation-fill').style.width, `season ${season}`).toBe('100%');
+        unmount();
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('draws nothing for an unreadable start time', () => {
     render(<NegotiationBar openedAt="not a time" season={1} negotiationS={negotiation} />);
     expect(screen.queryByRole('timer')).toBeNull();

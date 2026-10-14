@@ -130,6 +130,15 @@ def test_a_scenario_with_an_unusable_negotiation_time_does_not_load(negotiation)
     assert load.setup is None and any("negotiationS" in e for e in load.errors)
 
 
+def test_a_negotiation_time_given_as_true_does_not_load():
+    """JSON true is a number to Python (bool is an int subclass); a length of `true` seconds is refused like any
+    other non-number."""
+    scenario = copy.deepcopy(SCENARIO)
+    scenario["session"]["negotiationS"] = {**scenario["session"]["negotiationS"], "seasons0to2": True}
+    load = load_scenario(scenario, REGISTRY)
+    assert load.setup is None and any("negotiationS" in e for e in load.errors)
+
+
 def test_a_scenario_without_a_negotiation_time_loads_and_has_no_timer():
     scenario = copy.deepcopy(SCENARIO)
     del scenario["session"]["negotiationS"]

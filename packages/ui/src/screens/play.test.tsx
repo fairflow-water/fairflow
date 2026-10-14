@@ -247,6 +247,40 @@ describe('S6 private turn', () => {
     expect(onCommit).toHaveBeenCalledTimes(2);
     expect(onCommit).toHaveBeenLastCalledWith(0, null, true); // the timer's mark goes out again with it
   });
+  it('a resend after a sync that still cannot go out keeps saying the turn is kept', () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn(() => false); // the connection is down each time
+    const props = { turn, last: null, demand: null, decisionS: null, onCommit };
+    const { rerender } = render(<PrivateTurn {...props} resync={1} />);
+    act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+    act(() => { vi.advanceTimersByTime(UNDO_MS); });
+    rerender(<PrivateTurn {...props} resync={2} />);
+    expect(onCommit).toHaveBeenCalledTimes(2);
+    expect(screen.getByText(/Not connected. Your turn is kept/)).toBeTruthy();
+    expect(screen.queryByText('Sending your turn…')).toBeNull();
+  });
+  it('a phone asleep through the deadline that then reconnects still gets the undo window (R20)', () => {
+    vi.useFakeTimers();
+    const onCommit = vi.fn(() => true);
+    const props = { turn: { ...turn, openedAt: new Date().toISOString() }, last: null, demand: null, decisionS, onCommit };
+    const { rerender } = render(<PrivateTurn {...props} clockOffsetMs={0} />);
+    vi.setSystemTime(Date.now() + decisionS * 1000 + 500); // asleep past the deadline: no countdown tick ran
+    rerender(<PrivateTurn {...props} clockOffsetMs={1} />); // it wakes; the welcome brings a new clock offset
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByText(/Time is up\. Committing your current choice…/)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(UNDO_MS); });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(0, null, true);
+  });
+  it("after an undo once time is up, a commit by hand is shown as the player's, not the timer's", () => {
+    vi.useFakeTimers();
+    const opened = { ...turn, openedAt: new Date().toISOString() };
+    render(<PrivateTurn turn={opened} last={null} demand={null} decisionS={decisionS} onCommit={vi.fn(() => true)} />);
+    act(() => { vi.advanceTimersByTime(decisionS * 1000 + 500); });
+    act(() => { screen.getByRole('button', { name: 'Undo' }).click(); });
+    act(() => { screen.getByRole('button', { name: 'Commit my turn' }).click(); });
+    expect(screen.getByText(/^Committing…/)).toBeTruthy();
+    expect(screen.queryByText(/Time is up/)).toBeNull();
+  });
   it('is shown only to a scheme that has not committed; the projector waits', () => {
     const { unmount } = render(<Season view={privateS2} scenario={scenario} role="A" onIntent={() => undefined} />);
     expect(screen.getByRole('heading', { name: 'Your turn' })).toBeTruthy();

@@ -21,7 +21,7 @@ function useScenario(code: string): PublicScenario | null {
 function Live({ code, token, fallbackRole }: { code: string; token: string; fallbackRole: string }) {
   const scenario = useScenario(code);
   const room = useRoom(code, token);
-  useWakeLock(room.link !== 'gone' && room.view.phase !== 'ended'); // E7: the screen stays on until the game ends
+  useWakeLock(room.link !== 'gone'); // E7, blueprint §5.4: the screen stays on for the session, debrief included
   if (!scenario) return <p>Connecting…</p>;
   return (
     <>

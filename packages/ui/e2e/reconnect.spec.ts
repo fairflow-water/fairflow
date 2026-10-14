@@ -124,6 +124,7 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
   // ---- seasons until the game ends: a tie in season 1, a floor vote when one is offered, then plain seasons
   let floorSeen = false;
   let tieSeen = false;
+  let undoSeen = false;
   for (let season = 1; season < 20; season++) {
     await see(facilitator.getByTestId('lens-proportional'));
     const floorOffered = !floorSeen
@@ -180,6 +181,7 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
 
     await see(me.getByRole('heading', { name: 'Your turn' }));
     if (season === 3) {
+      undoSeen = true;
       // interrupted inside the 3 s undo window: nothing was sent, so the reloaded phone offers the turn again
       await check('private turn', 'reload inside the undo window', async () => {
         await me.getByRole('button', { name: 'Commit my turn' }).click();
@@ -227,6 +229,9 @@ test('a phone reloaded or asleep in every phase comes back to the right screen',
     } else {
       await next.click();
     }
+  }
+  if (!undoSeen) {
+    rows.push({ phase: 'private turn', check: 'reload inside the undo window', result: 'not reached', detail: 'the game ended before season 3' });
   }
   if (!tieSeen) rows.push({ phase: 'tie-break', check: 'reload and sleep', result: 'not reached', detail: 'no tie arose' });
   if (!floorSeen) {

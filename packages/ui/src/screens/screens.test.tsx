@@ -115,6 +115,15 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
     render(<LensVote view={one} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.queryByText(VETO_CLEARED)).toBeNull();
   });
+  it('the no_votes hint is for the Authority only: irrigation schemes and the projector do not close the vote', () => {
+    const others = scenario.lenses.map(l => l.id).filter(l => l !== target);
+    const two = { ...vetoed, proposals: others.slice(0, 2) }; // test input: several remain, no vote cast yet
+    for (const role of [scenario.schemes[0]?.id ?? '', 'display']) {
+      const { unmount } = render(<LensVote view={two} scenario={scenario} role={role} onIntent={() => undefined} />);
+      expect(screen.queryByText(VETO_CLEARED)).toBeNull();
+      unmount();
+    }
+  });
   it('the veto is spent for the game: the next season offers none', () => {
     const climateEvent = upTo.find(e => e.type === 'season.climate')!;
     const proposals = upTo.filter(e => e.type === 'lens.proposed');

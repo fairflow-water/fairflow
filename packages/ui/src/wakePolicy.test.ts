@@ -52,14 +52,29 @@ describe('when the screen is let go (E7)', () => {
     vi.useFakeTimers();
     const add = vi.spyOn(document, 'addEventListener');
     const remove = vi.spyOn(document, 'removeEventListener');
-    const { rerender, unmount } = renderHook(({ on }) => useIdle(on, IDLE_RELEASE_MS), { initialProps: { on: true } });
-    const added = add.mock.calls.length;
-    rerender({ on: false });
-    expect(remove.mock.calls.length).toBe(added);
-    rerender({ on: true });
-    unmount();
-    expect(remove.mock.calls.length).toBe(2 * added);
-    add.mockRestore();
-    remove.mockRestore();
+    try {
+      const { rerender, unmount } = renderHook(({ on }) => useIdle(on, IDLE_RELEASE_MS), { initialProps: { on: true } });
+      const added = add.mock.calls.length;
+      rerender({ on: false });
+      expect(remove.mock.calls.length).toBe(added);
+      rerender({ on: true });
+      unmount();
+      expect(remove.mock.calls.length).toBe(2 * added);
+    } finally { // a failed assertion must not leave the spies on document for later tests
+      add.mockRestore();
+      remove.mockRestore();
+    }
+  });
+  it('input after play resumes no longer starts an idle count: the capture listeners are really removed', () => {
+    vi.useFakeTimers();
+    try {
+      const { result, rerender } = renderHook(({ on }) => useIdle(on, IDLE_RELEASE_MS), { initialProps: { on: true } });
+      rerender({ on: false }); // test input: play resumes, so idle time stops counting
+      act(() => { document.dispatchEvent(new Event('pointerdown')); }); // test input: a tap during play
+      act(() => { vi.advanceTimersByTime(IDLE_RELEASE_MS); });
+      expect(result.current).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

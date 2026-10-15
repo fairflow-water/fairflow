@@ -14,7 +14,7 @@ SPDX-License-Identifier = "MIT"
 
 # Documentation, teaching content, scenarios and fixtures: CC BY 4.0
 [[annotations]]
-path = ["docs/**", "content/**", "packages/scenarios/**/*.json", "packages/engine/fixtures/**", "README.md", "CITATION.cff"]
+path = ["docs/**", "content/**", "packages/scenarios/**/*.json", "packages/engine/fixtures/**", "README.md", "CITATION.cff", "CLAUDE.md", ".claude/**"]
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Seleshi Yalew, IHE Delft, and Fairflow contributors"
 SPDX-License-Identifier = "CC-BY-4.0"

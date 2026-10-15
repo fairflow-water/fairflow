@@ -10,15 +10,15 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
 
 2026-10-15, main at `3754cd0` (green: CI, balance). The PR that adds this file also closes ADR 0015's season-1 question.
 
-## Merged (most recent first)
+## Merged (latest first)
 
 - #38: handoff §9 item 5. R10, the Authority hand-over, `treatment.assigned` and the service worker wait for a design session.
 - #37: only the Authority proposes a lens (R7). Closed #34.
 - #36: ADR 0015. At expiry a vetoed default gives way to the previous lens (tests only; the engine already did it).
 - #35: docs debt. The README names the balance harness, and "irrigation scheme" replaces "farm" in test docstrings and comments.
+- #29: blueprint §6.2 event table generated from `record.py`, with planned events in a separate "Not yet emitted" list.
 - #33: CI `timeout-minutes` on the engine, mirror and client jobs.
 - #32: ADR 0015 addition. Expiry during a re-vote skips a vetoed previous lens for the default.
-- #29: blueprint §6.2 event table generated from `record.py`, with planned events in a separate "Not yet emitted" list.
 - Earlier on 2026-10-14/15: #21 (veto, ADR 0015), #22 (negotiation timer, ADR 0014), #23, #24, #25, #26, #27, #28, #31.
 
 ## Open
@@ -52,4 +52,4 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
 1. The design session for §9 item 5. It needs the maintainer first.
 2. After the maintainer reads ADR 0016, merge #30 under the rule. It needs the maintainer first.
 3. Review the Dependabot PRs #5 and #7 under the merge rule.
-4. The remaining "farm" wording is in generated output: `analysis/privacy_leakage.py` reports and the ADR 0010 note in `balance.py`. It changes only with a regeneration.
+4. The remaining "farm" wording is in `packages/engine-py/analysis/privacy_leakage.py` and in the ADR 0010 note in `packages/engine-py/analysis/balance.py`. Their generated outputs carry it too (the `privacy_leakage_*.md` reports, `balance_kelvara.json`), so fixing it means editing the scripts and then regenerating. Scheme names such as "Tail-end Wheat Farms" are a separate question (handoff §8 item 8).

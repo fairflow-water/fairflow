@@ -273,11 +273,17 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E8 Balance harness | Done as `analysis/balance.py`: all six §9.2 criteria pass (`analysis/balance_kelvara.json`). Baseline tier in CI (`.github/workflows/balance.yml`): 50 games per cell on every merge to main; a failed criterion opens an issue and blocks nothing. |
 | E3b Table-mode fallback | Not started. A cohort-cut candidate. |
 | E6 Reduced Builder | Not started. A cohort-cut candidate. |
-| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms merged in PR #8 (ADR 0012, accepted by the maintainer, 2026-10-14). Wake Lock for the session (`useWakeLock`), taken again when the page comes back. Not built: service worker. |
+| E7 PWA and robustness | Started: the client reconnects by itself after a dropped socket (backoff; at once on page visible or back online; full resync), and gives up with a message on a 1008 refusal, e.g. after a server restart. Browser test cuts a socket mid-season. Persistent rooms merged in PR #8 (ADR 0012, accepted by the maintainer, 2026-10-14). Wake Lock for the session (`useWakeLock`), taken again when the page comes back; after the game it is let go once the review form is sent or after `session.wakeLockIdleReleaseMin` idle (`wakePolicy.ts`). The facilitator script's reminder covers phones without Wake Lock. Not built: service worker. |
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
 **Built since the epic table:** the Authority's veto and re-vote (R8; ADR 0015, accepted by the maintainer, 2026-10-14; PR #21). The server-timed negotiation (R7, R8, R20; ADR 0014, accepted 2026-10-14; PR #22): expiry applies the previous lens. In v1.0 there is no audit; when Module 3 ships, the permit audit becomes a further condition of the same `veto` intent.
+
+**Timing conventions set by the maintainer** (registry keys quote these rows):
+
+| Convention | Value |
+|---|---|
+| Wake Lock release after the game | review form sent or 30 min idle, whichever first (maintainer convention, 2026-10-15) |
 
 **Rules from §4 that are not implemented yet:**
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);

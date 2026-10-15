@@ -66,6 +66,9 @@
       "role": "how long after a phone's private-turn deadline the server commits the untouched default for a scheme that has not committed (ADR 0013); a timing convention, not a model parameter" },
     { "key": "session.lastShortNegotiationSeason", "default": 2, "unit": "season", "section": "R20",
       "quote": "Negotiation 3:00 from screen open in seasons 0–2 and 4:00 from season 3",
-      "role": "the last season negotiated at session.negotiationS.seasons0to2; from the next season on, session.negotiationS.from3 applies (ADR 0014); a timing rule, not a model parameter" }
+      "role": "the last season negotiated at session.negotiationS.seasons0to2; from the next season on, session.negotiationS.from3 applies (ADR 0014); a timing rule, not a model parameter" },
+    { "key": "session.wakeLockIdleReleaseMin", "default": 30, "unit": "min", "section": "handoff §7",
+      "sourceFile": "docs/handoff.md", "quote": "| Wake Lock release after the game | review form sent or 30 min idle, whichever first (maintainer convention, 2026-10-15) |",
+      "role": "after the game has ended, a device with no input for this long lets the screen lock (E7); a timing convention, not a model parameter" }
   ]
 }

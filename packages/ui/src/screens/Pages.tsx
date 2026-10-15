@@ -9,6 +9,7 @@ import { createRoom, hostStore, roomInfo, tokenStore, type CreatedRoom } from '.
 import type { PublicScenario } from '../room';
 import { useRoom } from '../useRoom';
 import { useWakeLock } from '../useWakeLock';
+import { IDLE_RELEASE_MS, screenStaysOn, useIdle } from '../wakePolicy';
 import { Join } from './Join';
 import { Season } from './Season';
 
@@ -21,7 +22,9 @@ function useScenario(code: string): PublicScenario | null {
 function Live({ code, token, fallbackRole }: { code: string; token: string; fallbackRole: string }) {
   const scenario = useScenario(code);
   const room = useRoom(code, token);
-  useWakeLock(room.link !== 'gone'); // E7, blueprint §5.4: the screen stays on for the session, debrief included
+  // E7, blueprint §5.4: the screen stays on for the session; after the game, until the form is sent or the device idles
+  const idle = useIdle(room.view.phase === 'ended', IDLE_RELEASE_MS);
+  useWakeLock(screenStaysOn({ link: room.link, phase: room.view.phase, review: room.view.review, idle }));
   if (!scenario) return <p>Connecting…</p>;
   return (
     <>

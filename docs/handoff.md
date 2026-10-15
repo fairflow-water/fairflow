@@ -275,8 +275,9 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
+**Built since the epic table:** the Authority's veto and re-vote (R8; ADR 0015, accepted by the maintainer, 2026-10-14; PR #21). In v1.0 there is no audit; when Module 3 ships, the permit audit becomes a further condition of the same `veto` intent.
+
 **Rules from §4 that are not implemented yet:**
-- Authority veto and re-vote (R8): built, ADR 0015 accepted by the maintainer (2026-10-14), PR #21;
 - the negotiation timer with timeout to the previous lens (R8, R20); only the private-turn timer exists;
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
 - Authority hand-over event (R3);

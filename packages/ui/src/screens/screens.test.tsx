@@ -99,12 +99,18 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
     expect(screen.queryAllByRole('button', { name: 'Propose' })).toHaveLength(0);
   });
   it('tells the Authority why the vote cannot close yet: the veto cleared every vote (no_votes)', () => {
-    const { unmount } = render(<LensVote view={vetoed} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    const others = scenario.lenses.map(l => l.id).filter(l => l !== target);
+    const two = { ...vetoed, proposals: others.slice(0, 2) }; // several remain: the engine refuses to close with no vote
+    const { unmount } = render(<LensVote view={two} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.getByText(VETO_CLEARED)).toBeTruthy();
     unmount();
     const voter = scenario.schemes[0]!.id;
-    const revoted = { ...vetoed, votes: { [voter]: vetoed.proposals[0]! } };
-    render(<LensVote view={revoted} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    const revoted = { ...two, votes: { [voter]: two.proposals[0]! } };
+    const again = render(<LensVote view={revoted} scenario={scenario} role="authority" onIntent={() => undefined} />);
+    expect(screen.queryByText(VETO_CLEARED)).toBeNull();
+    again.unmount();
+    const one = { ...vetoed, proposals: others.slice(0, 1) }; // one remains: close_vote takes it, nothing is refused
+    render(<LensVote view={one} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.queryByText(VETO_CLEARED)).toBeNull();
   });
   it('the veto is spent for the game: the next season offers none', () => {

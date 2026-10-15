@@ -93,7 +93,7 @@ export function LensVote({ view, scenario, role, onIntent }: LensVoteProps) {
           );
         })}
       </ul>
-      {isAuthority && view.phase === 'vote' && view.vetoed && Object.keys(view.votes).length === 0 && (
+      {isAuthority && view.phase === 'vote' && view.vetoed && view.proposals.length > 1 && Object.keys(view.votes).length === 0 && (
         <p className="hint">{VETO_CLEARED}</p>
       )}
       {isAuthority && view.phase === 'vote' && (

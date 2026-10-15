@@ -362,11 +362,11 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    Keep `FAIRFLOW_RESEARCH_ENABLED` unset until these are filled and ethics approval is given. Change the sheet's `version` whenever its text changes.
 3. **Cohort cut** (E3b, E6, and the §8.3 list): decided at app pilot 1.
 4. **Untracked `.zenodo.json`** at the repository root: its origin is unknown. Ask before committing or deleting it.
-5. **Design session with the maintainer after the weekend** (maintainer, 2026-10-15). These wait for it; do not build them before then:
+5. **Design session with the maintainer after the weekend** (maintainer, 2026-10-15). These wait for it; do not build them before then. The reason after each is the builder's context, not the maintainer's words:
    - R10's hand-over and prediction prompts. They assume a phone passed round the table, so room mode needs a design, and the prompt's metrics are unspecified.
-   - The Authority hand-over (R3). It overlaps with seat transfer, issue #9.
+   - The Authority hand-over (R3). It probably overlaps with seat transfer, issue #9.
    - `treatment.assigned` (R1). This is a research-design question.
-   - The service worker (E7). Caching carries risk for an online-only room app.
+   - The service worker (E7). Caching carries risk for the room app as built today, which is online only; the blueprint's offline install and table-mode fallback would need it.
 
 ## 10. How to work in this repository
 

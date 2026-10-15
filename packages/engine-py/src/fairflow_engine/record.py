@@ -568,11 +568,15 @@ class Game:
         """R8, R20 (ADR 0014): the server's negotiation deadline has passed with the vote still open. The previous
         season's lens applies (the scenario's default lens in season 1), whatever was proposed or voted: section 13 row
         9, "previous lens everywhere". A lens is chosen only by close_vote. `lens.chosen` records byTimeout and the votes
-        cast. Only the engine host may send this, for the season it timed."""
+        cast. ADR 0015 (an addition to R8, 2026-10-15): in a re-vote after a veto, a vetoed previous lens is skipped and
+        the scenario's default lens applies. Only the engine host may send this, for the season it timed."""
         self._need(actor == ENGINE, "not_engine", "only the server's timer ends a negotiation")
         self._need(s.phase == "vote", "wrong_phase", s.phase)
         self._need(season == s.season, "stale_timer", f"season {season}, now {s.season}")
-        self._choose(s, s.previousLens or self.setup.defaultLens, tally=dict(Counter(s.votes.values())), by_timeout=True)
+        lens = s.previousLens or self.setup.defaultLens
+        if lens == s.vetoed:
+            lens = self.setup.defaultLens
+        self._choose(s, lens, tally=dict(Counter(s.votes.values())), by_timeout=True)
 
     def _on_break_tie(self, s: State, actor: str, lens: str) -> None:
         self._need(actor == AUTHORITY, "not_authority", "only the Authority breaks a tie")

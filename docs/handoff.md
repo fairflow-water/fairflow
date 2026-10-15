@@ -258,7 +258,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (merged, PR #8) |
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
 | 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens always applies (scenario default in season 1), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
-| 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14) |
+| 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14); at expiry a vetoed previous lens gives way to the default (addition, 2026-10-15) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 

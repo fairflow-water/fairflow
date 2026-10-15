@@ -235,6 +235,7 @@ describe('S4 negotiation bar (R20, ADR 0014)', () => {
 });
 
 describe('S2 join (ADR 0011)', () => {
+  afterEach(() => { localStorage.clear(); }); // a kept linking code must not reach the next test
   const room = { room: 'ABCDE', freeRoles: ['A', 'B'], phase: 'lobby', scenario };
   it('course-only: shows no scheme until part 1 is given, asks no research question and no name', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...room, researchEnabled: false }))));
@@ -268,7 +269,6 @@ describe('S2 join (ADR 0011)', () => {
     await vi.waitFor(() => expect(onJoined).toHaveBeenCalledWith('t'));
     const body = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body)) as Record<string, unknown>;
     expect(body).toMatchObject({ role: 'A', participationAcknowledged: true, researchConsent: false, linkingCode: 'AB03' });
-    localStorage.clear();
     vi.unstubAllGlobals();
   });
 });

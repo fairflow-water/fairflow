@@ -126,4 +126,6 @@ class JoinRequest(BaseModel):
     researchConsent: bool | None
     infoSheetVersion: Annotated[str, Field(min_length=1, max_length=64)]
     presurveyComplete: bool
-    linkingCode: Annotated[str, Field(max_length=64)] | None = None  # R3 (ADR 0016, proposed); the engine checks its form
+    # R3 (ADR 0016, proposed). The wire bound only stops oversized input early (the same 64 as infoSheetVersion);
+    # the engine's LINKING_CODE_MAX is the bound that decides.
+    linkingCode: Annotated[str, Field(max_length=64)] | None = None

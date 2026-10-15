@@ -56,6 +56,8 @@ S2's "On the shared phone at the table: role assignment only, by linking code" d
 
 1. "Required when research is enabled" is read **per room**: every scheme brings a code, whatever its own research answer. Should a scheme that says no to research be excused?
 2. The warning tells the second holder that someone at the table chose the same code. Is that disclosure acceptable, or should the warning be worded without saying so?
+3. S2's acceptance criterion says "`player.joined` carries … pre-survey and code". The build follows §6.2 instead: the code goes in a separate `self` event, so the public `player.joined` never carries it. Is that the reading you want?
+4. R3's fallback is "paper on arrival". Decision 7 replaces it with the same page on the player's own phone on arrival, so a student without a phone has no path. Should the facilitator key a paper code in, and if so on which screen?
 
 ## Consequences
 

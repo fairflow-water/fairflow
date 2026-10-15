@@ -75,7 +75,7 @@ def test_what_a_code_may_be(role, code, expected):
     assert not g.events[1:]  # nothing was written: the join was refused whole
 
 
-def test_old_records_and_joins_without_the_field_still_work():
+def test_a_join_that_sends_no_linking_code_field_still_works():
     g = game()
     g.submit(
         ROLES[0],

@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
-"""R8, R20 (ADR 0014): the server's negotiation deadline. At expiry a single plurality leader is chosen; with no
-proposal, no vote or a tie, the previous season's lens applies (the scenario's default in season 1). `lens.chosen`
-records byTimeout either way."""
+"""R8, R20 (ADR 0014): the server's negotiation deadline. At expiry the previous season's lens applies (the scenario's
+default in season 1), whatever was proposed or voted: section 13 row 9, "previous lens everywhere". A lens is chosen
+only by close_vote. `lens.chosen` records byTimeout."""
 
 import copy
 
@@ -44,34 +44,27 @@ def test_after_the_practice_round_season_1_still_falls_back_to_the_default():
     assert expire(g)["payload"]["lens"] == g.setup.defaultLens
 
 
-def test_a_single_leader_at_expiry_is_chosen_with_its_tally():
-    g = new_game()
-    g.submit(AUTHORITY, "start_season")
-    for lens in ("egalitarian", "capability"):
-        g.submit(AUTHORITY, "propose", lens=lens)
-    g.submit("A", "vote", lens="capability")
-    g.submit("B", "vote", lens="capability")
-    g.submit("C", "vote", lens="egalitarian")
-    p = expire(g)["payload"]
-    assert (p["lens"], p["tally"], p["byTimeout"], p["tieBreak"]) == (
-        "capability",
-        {"capability": 2, "egalitarian": 1},
-        True,
-        False,
-    )
-
-
-@pytest.mark.parametrize("votes", [{}, {"A": "egalitarian", "B": "capability"}])
-def test_no_vote_or_a_tie_at_expiry_applies_the_previous_lens(votes):
+@pytest.mark.parametrize(
+    "proposals,votes",
+    [
+        (("egalitarian", "capability"), {"A": "capability", "B": "capability", "C": "egalitarian"}),  # a single leader
+        (("egalitarian", "capability"), {"A": "egalitarian", "B": "capability"}),  # a tie
+        (("egalitarian", "capability"), {}),  # proposals and no vote
+        (("egalitarian",), {}),  # one proposal, no vote: close_vote would take it, expiry does not
+    ],
+)
+def test_expiry_applies_the_previous_lens_whatever_was_proposed_or_voted(proposals, votes):
+    """Section 13 row 9, "previous lens everywhere": a lens is chosen only by close_vote; the votes cast are recorded."""
     g = new_game()
     play_season(g, lenses=("talmud",))
     g.submit(AUTHORITY, "start_season")
-    for lens in ("egalitarian", "capability"):
+    for lens in proposals:
         g.submit(AUTHORITY, "propose", lens=lens)
     for role, lens in votes.items():
         g.submit(role, "vote", lens=lens)
     p = expire(g)["payload"]
-    assert (p["lens"], p["byTimeout"], p["tally"]) == ("talmud", True, {lens: 1 for lens in votes.values()})
+    tally = {lens: list(votes.values()).count(lens) for lens in set(votes.values())}
+    assert (p["lens"], p["byTimeout"], p["tieBreak"], p["tally"]) == ("talmud", True, False, tally)
     assert replay(g.events).phase == "private"
 
 
@@ -80,7 +73,7 @@ def test_the_practice_round_times_out_too():
     g.submit(AUTHORITY, "start_tutorial")
     g.submit(AUTHORITY, "propose", lens="utilitarian")
     g.submit("A", "vote", lens="utilitarian")
-    assert expire(g)["payload"]["lens"] == "utilitarian"
+    assert expire(g)["payload"]["lens"] == g.setup.defaultLens  # no season precedes it: the scenario's default
     for role in ROLES:
         g.submit(role, "commit", pumps=0.0)
     assert any(e["type"] == "tutorial.resolved" for e in g.events)

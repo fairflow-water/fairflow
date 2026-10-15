@@ -43,10 +43,8 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
     return (
       <section aria-labelledby="join-title" className="join">
         <h1 id="join-title">Room {info.room}</h1>
-        <p role="status" className="notice">
-          You have joined. Note: someone at this table chose the same linking code as you ({linkingCode}). That is
-          allowed; if you can, use a code only you would make when you next answer a survey.
-        </p>
+        {/* the maintainer, 2026-10-15: only this; it does not say that anyone else holds the code */}
+        <p role="status" className="notice">Choose a different code.</p>
         <button type="button" onClick={() => onJoined(joined)}>Continue</button>
       </section>
     );

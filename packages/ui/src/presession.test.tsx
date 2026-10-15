@@ -79,7 +79,7 @@ describe('linking code (R3)', () => {
     expect(screen.queryByText('Choose your irrigation scheme')).toBeNull();
     expect(screen.getByRole('link', { name: 'Make your personal linking code first' }).getAttribute('href')).toBe('/pre');
   });
-  it('a duplicate code is accepted, and its holder is warned before going on', async () => {
+  it('a duplicate code is accepted, and its holder is told only to choose a different code', async () => {
     linkingStore.set(CODE);
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ room: 'ABCDE', freeRoles: ['A'], phase: 'lobby', scenario, researchEnabled: false })))
@@ -90,8 +90,8 @@ describe('linking code (R3)', () => {
     await screen.findByText(scenario.name);
     await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    expect(await screen.findByRole('status')).toBeTruthy();
-    expect(screen.getByText(/someone at this table chose the same linking code/)).toBeTruthy();
+    // the maintainer, 2026-10-15: the warning says only "choose a different code"; nothing about anyone else
+    expect((await screen.findByRole('status')).textContent).toBe('Choose a different code.');
     expect(onJoined).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onJoined).toHaveBeenCalledWith('t');

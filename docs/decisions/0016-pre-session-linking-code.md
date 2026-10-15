@@ -21,17 +21,17 @@ SPDX-License-Identifier: CC-BY-4.0
    - The recipe in `content/linking-code.json` is **placeholder wording**, from the blueprint's example. The maintainer decided that the recipe waits for the domain lead and the survey instruments, and the page shows it as a placeholder.
 2. **The code goes with the join.** On the day, `/join/{code}` on the same phone shows the kept code and sends it with the join. The join screen asks for nothing typed, so no name can be entered there.
 3. **Consent does not move.** It stays exactly as ADR 0011 defines it, on `/join/{code}`. Neither the consent text, nor its flow, nor its URL changes. `/pre` carries no consent.
-4. **Required only while research is enabled.**
-   - While research is enabled, every irrigation scheme must bring a code (`linking_code_needed`). A phone without one is sent to `/pre` before any scheme is shown.
+4. **Required from every seated player while research is enabled.**
+   - While research is enabled, every irrigation scheme must bring a code (`linking_code_needed`), whatever its own research answer: the requirement is per room, never only from consenting players (ADR 0011). A phone without one is sent to `/pre` before any scheme is shown.
    - In a course-only room the code is optional.
    - The Authority never gives one (`no_linking_code`).
-5. **Duplicate codes are allowed, with a warning.** A code already given in the room is recorded again. The server's join reply carries `warning: duplicate_linking_code`, and the second holder's phone says so before going on. The first holder and every other screen are told nothing.
+5. **Duplicate codes are allowed, with a warning.** A code already given in the room is recorded again. The server's join reply carries `warning: duplicate_linking_code`, and the second holder's phone shows only "Choose a different code." before going on; it does not say that anyone else holds the code. The first holder and every other screen are told nothing.
 6. **The record.**
    - The code is capitals and digits, 1 to `LINKING_CODE_MAX` characters (`bad_linking_code`). The bound is shared with the phone through `content/linking-code.json` `maxLength`, and a test keeps the two equal.
-   - The engine writes `linking.code {role, code}` with visibility `self` right after `player.joined`, so only that scheme's own projection carries it. `player.joined` is unchanged.
+   - The engine writes `linking.code {role, code}` with visibility `self` right after `player.joined`, so only that scheme's own projection carries it. `player.joined` is unchanged. The maintainer kept this separate `self` event over S2's wording that `player.joined` carries the code.
    - A join without a code writes no `linking.code` event. Old records replay unchanged.
    - §6.2's generated table now lists `linking.code`, and the event has left the "Not yet emitted" list.
-7. **The paper fallback** is the same page on arrival: the player makes the code on their own phone before joining.
+7. **A player without a phone** is not served here. R3's paper fallback is recorded as part of issue #9 (seat transfer): there the facilitator enters the code. A player with a phone but no code yet uses the same page on arrival.
 8. **Not built, waiting for the survey instruments (`content/surveys/`):**
    - the pre-survey itself;
    - `presurveyComplete`, which stays false;
@@ -52,12 +52,17 @@ S2's "On the shared phone at the table: role assignment only, by linking code" d
 - The room-mode reading is quoted from R2 above.
 - The recipe wording waits for the domain lead and is marked as a placeholder (decision 1).
 
+Second answers (2026-10-15), to the open questions of the first draft:
+
+- The linking code is required from every seated player whenever research is enabled, never only from consenting players (ADR 0011) (decision 4).
+- The duplicate warning says only "choose a different code" (decision 5).
+- The separate `self` event stays (decision 6).
+- The no-phone path is recorded as part of issue #9, where the facilitator enters the code; it is not built here (decision 7).
+
 ## Open questions
 
-1. "Required when research is enabled" is read **per room**: every scheme brings a code, whatever its own research answer. Should a scheme that says no to research be excused?
-2. The warning tells the second holder that someone at the table chose the same code. Is that disclosure acceptable, or should the warning be worded without saying so?
-3. S2's acceptance criterion says "`player.joined` carries … pre-survey and code". The build follows §6.2 instead: the code goes in a separate `self` event, so the public `player.joined` never carries it. Is that the reading you want?
-4. R3's fallback is "paper on arrival". Decision 7 replaces it with the same page on the player's own phone on arrival, so a student without a phone has no path. Should the facilitator key a paper code in, and if so on which screen?
+1. A duplicate is still recorded, and the player has already joined when "Choose a different code." appears. As built, the phone keeps the code it had, so the delayed post-test would see the duplicate again unless the player makes a new code on `/pre`. Should the warning clear the kept code, or link to `/pre`, or should the join itself be refused until another code is given?
+2. "Every seated player" is read as every irrigation scheme. The Authority's seat is the facilitator's and still gives no code (`no_linking_code`). Is that the reading you want?
 
 ## Consequences
 

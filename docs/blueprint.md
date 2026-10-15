@@ -471,6 +471,35 @@ Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every 
 
 **\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied` (R8's tie-break), `lens.vetoed` (R8's veto, ADR 0015), `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
 
+What `record.py` emits today, generated from its `_emit` calls (`?`: not always present):
+
+<!-- BEGIN generated event table: packages/engine-py/scripts/generate_event_table.py; do not edit by hand -->
+| Event | Actor | Visibility | Payload fields |
+|---|---|---|---|
+| `game.created` | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments`, `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
+| `player.joined` | the acting role | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
+| `research.consent` | the acting role | server | `role`, `researchConsent` |
+| `season.climate` | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
+| `lens.proposed` | the acting role | public | `lens`, `proposer` |
+| `lens.voted` | the acting role | public | `lens`, `voter` |
+| `lens.tied` | engine | public | `leaders`, `tally` |
+| `lens.vetoed` | the acting role | public | `lens` |
+| `lens.chosen` | authority or engine | public | `lens`, `tally`, `byTimeout`, `tieBreak`, `floorVoteNeeded`, `veto?`, `revote?` |
+| `lens.floorVoted` | the acting role | public | `rule`, `voter` |
+| `lens.floorRule` | engine | public | `rule`, `applied`, `tally`, `byTimeout` |
+| `allocation.issued` | engine | public | `lens`, `floorRule`, `Q`, `surplusToAquifer`, `adequacyBands` |
+| `private.opened` | the acting role | self | `role`, `cap`, `pumpCostPerMm3`, `wellsDry`, `actions`, `options`, `previewLimit`, `assumes` |
+| `action.played` | the acting role | sealed | `role`, `pumps`, `action`, `committedAt`, `autoCommitted?`, `autoCommittedBy?` |
+| `season.resolved` | engine | mixed | `public`, `sealed` |
+| `tutorial.resolved` | engine | mixed | `public`, `sealed` |
+| `game.timeboxed` | the acting role | public | `atSeason`, `sessionMinute` |
+| `game.ended` | engine | public | `T`, `nonce`, `deckOrder`, `truncated`, `seasonsPlayed`, `collectiveScore`, `cropFailureFlag`, `brief`, `authorityGoal` |
+| `goal.result` | the acting role | self | (built by `goal`) |
+| `debrief.opened` | the acting role | public | `perPlayer` |
+| `debrief.welfare` | engine | public | (built by `debrief_welfare(self.setup, self.events)`) |
+| `review.answer` | the acting role | self | `part`, `item`, `value` |
+<!-- END generated event table -->
+
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 
 **Sealing.** Commitments at creation, revealed at `game.ended`. In **table mode** the single device holds sealed fields in its IndexedDB and every projection, export and screen before `debrief.opened` omits them. In **room mode** the relay runs the engine and is the only holder of sealed fields: phones send *intents* (`pump 2`, `play drip`), the relay validates, sequences and applies them, stores the record, and sends each phone its own role's `self` projection plus the public views. Sealed data never leave the relay until `debrief.opened`, so there is no client-side key to manage and a reconnecting host learns nothing. (v2 proposed client-side encryption of `pumpsBy` and `action.played`; the technical review showed that host failover requires the full log and the key on every potential host, which breaks the promise. The relay-runs-the-engine design replaces it.) Public projections `view.season`, `view.map`, `view.reveal`, `view.debrief` are derived only from `public` fields, plus `sealed` fields after `debrief.opened` if `perPlayer` allows.

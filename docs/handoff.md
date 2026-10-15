@@ -218,7 +218,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | `server` | no projection, ever (ADR 0011) |
 
 **Event types emitted today:**
-- `game.created`, `player.joined`, `research.consent`;
+- `game.created`, `player.joined`, `research.consent`, `linking.code` (self; ADR 0016, proposed);
 - `season.climate`, `lens.proposed`, `lens.voted`, `lens.vetoed` (ADR 0015), `lens.tied`, `lens.chosen`, `lens.floorVoted`, `lens.floorRule`;
 - `allocation.issued`, `private.opened`, `action.played`;
 - `season.resolved`, `tutorial.resolved`;
@@ -226,7 +226,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - `debrief.opened`, `debrief.welfare`, `review.answer`.
 
 **Intents (`_on_*` in `record.py`):**
-- `join`, `start_tutorial`, `start_season`;
+- `join` (with an optional `linkingCode` from a scheme; ADR 0016, proposed), `start_tutorial`, `start_season`;
 - `propose` (Authority only, R7; issue #34, 2026-10-15), `vote`, `veto` (Authority, once per game, then a re-vote of the remaining lenses only; ADR 0015), `close_vote`, `break_tie`;
 - `floor_vote`, `close_floor_vote`;
 - `commit` (with `autoCommitted` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
@@ -238,7 +238,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 **Properties:**
 - `audit(setup, events)` recomputes every season and checks the commitments; an empty list means verified.
 - Replay is byte-exact.
-- Blueprint §6.2's event table is generated from `record.py`, the source of truth (maintainer, 2026-10-15): event, permitted role (from each handler's `actor` checks), visibility, and payload fields one level deep. After changing an `_emit` call, run `uv run python scripts/generate_event_table.py` in `packages/engine-py`; `tests/test_event_table.py` fails until you do. Planned events sit in a hand-written "Not yet emitted" list below the table; move a row out of it when the engine first emits that event.
+- Blueprint §6.2's event table is generated from `record.py`, the source of truth (maintainer, 2026-10-15): event, "Caused by" (the intents that reach it, followed through the calls, and who may send each, from the handler's `actor` checks), "Recorded actor", visibility, and payload fields one level deep. After changing an `_emit` call, run `uv run python scripts/generate_event_table.py` in `packages/engine-py`; `tests/test_event_table.py` fails until you do. Planned events sit in a hand-written "Not yet emitted" list below the table; move a row out of it when the engine first emits that event.
 
 ## 6. Decision records
 
@@ -259,6 +259,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
 | 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens applies (scenario default in season 1; after a veto of it, the default), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
 | 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14); at expiry a vetoed previous lens gives way to the default, and a vetoed default to the previous lens (additions, 2026-10-15); open: a vetoed default in season 1 |
+| 0016 | Pre-session flow in room mode: `/pre` keeps a personal linking code on the phone; the join sends it; `linking.code` (self); required from every seated scheme while research is enabled; a duplicate code refuses the join ("Choose a different code.", a link to `/pre`, the kept code cleared); consent stays at the join; no-phone path in issue #9 (proposed, draft PR #30) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 
@@ -289,7 +290,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
 - Authority hand-over event (R3);
 - `treatment.assigned` (R1);
-- `linking.code` (R3).
+- `linking.code` (R3): built in a draft PR with ADR 0016 (proposed), up to the survey instruments.
 
 ## 8. Next work, in recommended order
 

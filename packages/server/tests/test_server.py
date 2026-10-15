@@ -34,6 +34,8 @@ def join_body(role: str, device: str, research: bool | None = None, sheet: str =
         "researchConsent": research,
         "infoSheetVersion": sheet,
         "presurveyComplete": True,
+        # ADR 0016: a scheme brings a linking code while research is enabled (test input: one code per role)
+        **({"linkingCode": f"CODE{role.upper()}"} if research is not None else {}),
     }
 
 

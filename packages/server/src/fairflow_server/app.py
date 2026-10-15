@@ -196,6 +196,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
                     body.researchConsent,
                     body.infoSheetVersion,
                     body.presurveyComplete,
+                    body.linkingCode,
                 )
             except Rejection as e:
                 raise http_error(e) from None

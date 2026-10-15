@@ -41,7 +41,15 @@ test('a full game: open, join by link, vote, private turns, reveal, game end, de
         link.cut = async () => { await ws.close({ code: 1001, reason: 'no network' }); await server.close(); };
       });
     }
+    if (i === 1) {
+      // R3 (ADR 0016, proposed): the day before, this player makes a personal linking code on the same phone
+      await phone.goto('/pre');
+      await phone.getByRole('textbox', { name: 'Your personal linking code' }).fill('ab 03'); // test input: the recipe's example, typed loosely
+      await phone.getByRole('button', { name: 'Keep this code on this phone' }).click();
+      await expect(phone.getByText('Kept on this phone: AB03. Bring this phone to the session.')).toBeVisible();
+    }
     await phone.goto(`/join/${code}`);
+    if (i === 1) await expect(phone.getByText(/Your linking code, made before the session, goes with your join: AB03/)).toBeVisible();
     await phone.getByRole('checkbox', { name: /will take part/ }).check();
     await phone.getByRole('list').getByRole('button').first().click();
     await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();

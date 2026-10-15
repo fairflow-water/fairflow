@@ -41,6 +41,8 @@ TUTORIAL_LENSES = ("proportional", "utilitarian")  # R3 season 0: "two lenses (p
 TUTORIAL_CARD = "normal"  # R3 season 0: "normal year"
 REVIEW_PARTS = (1, 2, 3)  # §5.2 S10 "Parts 1–3 of the review form"
 REVIEW_ITEM = re.compile(r"[a-z0-9_.-]{1,40}")  # item ids come from content/review-form.json
+LINKING_CODE_MAX = 32  # input bound, not a model value: room for any recipe in content/linking-code.json (ADR 0016)
+LINKING_CODE = re.compile(rf"[A-Z0-9]{{1,{LINKING_CODE_MAX}}}")  # R3 §6.2: participant-made, normalised on the phone
 ONCE_PER_GAME = ("orchard", "drip")  # §4.3 Orchard "once", Drip "once"; Expand "repeatable"
 SCHEME_STATE = ("demandMm3", "capacityT", "price", "beta", "areaHa", "ky")  # what actions change (§2.2, §4.3)
 
@@ -398,11 +400,14 @@ class Game:
         researchConsent: bool | None,
         infoSheetVersion: str,
         presurveyComplete: bool,
+        linkingCode: str | None = None,
     ) -> None:
         """R2, R3, ADR 0011: a role is taken once, after part 1 (the information read, taking part) and, while research
         is enabled, a scheme's yes or no to research. The research answer goes to a `server` event that no projection
         returns; it is written for every scheme whatever the answer, so its presence says nothing. The Authority (the
-        facilitator) is not a research participant and gives no research answer."""
+        facilitator) is not a research participant and gives no research answer. R3, §6.2 (ADR 0016, proposed): a scheme
+        brings its personal linking code (required while research is enabled, optional otherwise), recorded in a `self`
+        event only its own projection carries; a code already given in the room refuses the join."""
         self._need(s.phase == "lobby", "wrong_phase", "players join before season 1")
         self._need(actor in [*self._scheme_roles(), AUTHORITY], "unknown_role", actor)
         self._need(actor not in s.players, "role_taken", actor)
@@ -413,6 +418,18 @@ class Game:
             self._need(isinstance(researchConsent, bool), "research_answer_needed", "answer yes or no to research")
         else:
             self._need(researchConsent is None, "research_not_asked", "no research answer is taken here")
+        if s.researchEnabled and actor != AUTHORITY:  # the maintainer, 2026-10-15: required while research is enabled
+            self._need(linkingCode is not None, "linking_code_needed", "make your linking code before joining")
+        if linkingCode is not None:
+            self._need(actor != AUTHORITY, "no_linking_code", "the facilitator gives no linking code")
+            self._need(
+                isinstance(linkingCode, str) and LINKING_CODE.fullmatch(linkingCode) is not None,
+                "bad_linking_code",
+                f"capitals and digits, 1 to {LINKING_CODE_MAX} characters",
+            )
+            # ADR 0016 (the maintainer, 2026-10-15): a code already given in this room refuses the join; nothing is recorded
+            given = [e["payload"]["code"] for e in self.events if e["type"] == "linking.code"]
+            self._need(linkingCode not in given, "duplicate_linking_code", "choose a different code")
         self._emit(
             "player.joined",
             actor,
@@ -427,6 +444,8 @@ class Game:
         )
         if asked:
             self._emit("research.consent", actor, "server", {"role": actor, "researchConsent": researchConsent})
+        if linkingCode is not None:
+            self._emit("linking.code", actor, "self", {"role": actor, "code": linkingCode})
 
     def _on_start_tutorial(self, s: State, actor: str) -> None:
         """R3: season 0, a facilitated practice round before season 1: a normal year, two lenses (proportional,

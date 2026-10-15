@@ -30,12 +30,14 @@ export const roomInfo = async (code: string): Promise<RoomInfo> => json<RoomInfo
 /** ADR 0011: part 1 (taking part), the research answer (null when not asked) and the information-sheet version read. */
 export interface Consent { infoSheetVersion: string; researchConsent: boolean | null }
 
-export async function joinRoom(code: string, role: string, deviceHash: string, consent: Consent): Promise<string> {
-  const r = await json<{ token: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/join`, {
+export async function joinRoom(
+  code: string, role: string, deviceHash: string, consent: Consent, linkingCode: string | null = null,
+): Promise<{ token: string }> {
+  const linking = linkingCode ? { linkingCode } : {}; // R3 (ADR 0016, proposed): only a code made before the session
+  return json<{ token: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ role, deviceHash, participationAcknowledged: true, ...consent, presurveyComplete: false }),
-  }));
-  return r.token;
+    body: JSON.stringify({ role, deviceHash, participationAcknowledged: true, ...consent, presurveyComplete: false, ...linking }),
+  })); // a duplicate linking code is refused: 'duplicate_linking_code' (ADR 0016)
 }
 
 /** A random per-device identifier, hashed (blueprint §6.2: a salted hash, never a device identifier). */

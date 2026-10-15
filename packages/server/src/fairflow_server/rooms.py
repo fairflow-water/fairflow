@@ -227,6 +227,7 @@ class RoomRegistry:
         research: bool | None,
         sheet: str,
         presurvey: bool,
+        linking_code: str | None = None,
     ) -> str:
         """R2–R3, ADR 0011: a free scheme role, recorded with part 1, the research answer (kept in a server-only
         event), the sheet version read and pre-survey status. Returns the role's token."""
@@ -244,6 +245,7 @@ class RoomRegistry:
             researchConsent=research,
             infoSheetVersion=sheet,
             presurveyComplete=presurvey,
+            linkingCode=linking_code,
         )
         token = secrets.token_urlsafe(32)
         self.record(room, before, {token_hash(token): role})

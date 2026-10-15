@@ -1,0 +1,11 @@
+{
+  "$comment": "CC BY 4.0 (see REUSE.toml). The personal linking code (blueprint R3, §6.2 linking.code, §6.3; ADR 0016, proposed). PLACEHOLDER wording from the blueprint's example ('mother's initials + birth month'); the maintainer decided (2026-10-15) that the recipe waits for the domain lead, with the survey instruments. maxLength is an input bound, not a model value; the engine's LINKING_CODE_MAX must equal it (packages/engine-py/tests/test_linking_code.py).",
+  "status": "placeholder",
+  "title": "Your personal linking code",
+  "intro": "Make a code only you can remake: it links your answers before, after and weeks after the session without your name. Nobody else can read it from the game.",
+  "recipe": "The initials of your mother's first and last name, then the month you were born as two digits.",
+  "example": "Mother Ana Bekele, born in March: AB03",
+  "placeholderNote": "Placeholder wording: the final recipe comes with the survey instruments.",
+  "maxLength": 32,
+  "presurveyPending": "The pre-session survey will appear here once the survey instruments are ready."
+}

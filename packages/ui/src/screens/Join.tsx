@@ -9,12 +9,15 @@
 import { useEffect, useState } from 'react';
 import sheet from '../../../../content/information-sheet.json';
 import { deviceHash, joinRoom, roomInfo, tokenStore, type RoomInfo } from '../api';
+import { linkingStore } from '../linking';
 
 export function Join({ code, onJoined }: { code: string; onJoined: (token: string) => void }) {
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
   const [research, setResearch] = useState<boolean | null>(null);
+  const [linkingCode] = useState(() => linkingStore.get()); // made before the session on this phone (R3)
+  const [duplicate, setDuplicate] = useState(false); // ADR 0016: the join was refused for a code already given
 
   useEffect(() => {
     roomInfo(code).then(setInfo, (e: unknown) => setError(e instanceof Error ? e.message : 'unknown_room'));
@@ -24,22 +27,37 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
 
   async function choose(role: string) {
     try {
-      const token = await joinRoom(code, role, await deviceHash(),
-        { infoSheetVersion: sheet.version, researchConsent: asked ? research : null });
+      const { token } = await joinRoom(code, role, await deviceHash(),
+        { infoSheetVersion: sheet.version, researchConsent: asked ? research : null }, linkingCode);
       tokenStore.set(code, token);
       onJoined(token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'join_failed');
+      if (e instanceof Error && e.message === 'duplicate_linking_code') {
+        linkingStore.clear(); // ADR 0016: no join under a code already given; a new one is made on /pre
+        setDuplicate(true);
+      } else setError(e instanceof Error ? e.message : 'join_failed');
     }
   }
 
   if (error) return <p role="alert" className="notice">This room could not be joined ({error}).</p>;
   if (!info) return <p>Opening room {code}…</p>;
-  const ready = taking && (!asked || research !== null);
+  if (duplicate) {
+    return (
+      <section aria-labelledby="join-title" className="join">
+        <h1 id="join-title">Room {info.room}</h1>
+        {/* the maintainer, 2026-10-15: only this; it does not say that anyone else holds the code */}
+        <p role="status" className="notice">Choose a different code.</p>
+        <p><a href="/pre">Make a different code</a></p>
+      </section>
+    );
+  }
+  const needsCode = asked && !linkingCode; // ADR 0016: a code is required while research is enabled
+  const ready = taking && (!asked || research !== null) && !needsCode;
   return (
     <section aria-labelledby="join-title" className="join">
       <h1 id="join-title">Room {info.room}</h1>
       <p>{info.scenario.name}</p>
+      {linkingCode && <p className="hint">Your linking code, made before the session, goes with your join: {linkingCode}</p>}
       <p className="hint">{sheet.summary}{asked && <> {sheet.summaryResearch}</>}</p>
       <details className="information-sheet">
         <summary>{sheet.title}</summary>
@@ -55,6 +73,10 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
           <label><input type="radio" name="research" checked={research === false} onChange={() => setResearch(false)} /> No</label>
           <p className="hint">To withdraw later you need the room code ({info.room}), your scheme and today’s date; the game shows them again at the end.</p>
         </fieldset>
+      )}
+      {needsCode && taking && research !== null && (
+        <p className="notice">This session links survey answers by a code you make yourself. <a href="/pre">Make your
+          personal linking code first</a>, on this phone, then come back to this page.</p>
       )}
       {ready && (
         <>

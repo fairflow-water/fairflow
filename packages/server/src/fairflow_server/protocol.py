@@ -116,7 +116,8 @@ INTENT: TypeAdapter[Intent] = TypeAdapter(Intent)
 
 class JoinRequest(BaseModel):
     """POST /rooms/{code}/join. deviceHash is a client-side salted hash, never a device identifier (blueprint §6.2).
-    ADR 0011: part 1 (taking part), the research answer (null when not asked) and the information-sheet version read."""
+    ADR 0011: part 1 (taking part), the research answer (null when not asked) and the information-sheet version read.
+    R3 (ADR 0016, proposed): a scheme's personal linking code, optional, recorded for that scheme's eyes only."""
 
     model_config = ConfigDict(extra="forbid", strict=True)
     role: str
@@ -125,3 +126,6 @@ class JoinRequest(BaseModel):
     researchConsent: bool | None
     infoSheetVersion: Annotated[str, Field(min_length=1, max_length=64)]
     presurveyComplete: bool
+    # R3 (ADR 0016, proposed). The wire bound only stops oversized input early (the same 64 as infoSheetVersion);
+    # the engine's LINKING_CODE_MAX is the bound that decides.
+    linkingCode: Annotated[str, Field(max_length=64)] | None = None

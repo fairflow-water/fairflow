@@ -451,6 +451,7 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 | `game.created` | game creation | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments` (`gameLength`, `deckOrder`), `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
 | `player.joined` | irrigation scheme or authority (`join`) | the sender | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
 | `research.consent` | irrigation scheme (join; asked only of schemes while research is enabled, ADR 0011) | the sender | server | `role`, `researchConsent` |
+| `linking.code` | irrigation scheme (join; the Authority gives none, ADR 0016) | the sender | self | `role`, `code` |
 | `season.climate` | authority (`start_tutorial`); authority (`start_season`) | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
 | `lens.proposed` | authority (`propose`) | the sender | public | `lens`, `proposer` |
 | `lens.voted` | irrigation scheme (`vote`) | the sender | public | `lens`, `voter` |
@@ -475,7 +476,6 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 **Not yet emitted.** Planned in the v3 design and not written by the engine yet, as the v3 table gave them; an event moves into the generated table above when `record.py` first emits it (`tests/test_event_table.py` keeps the two apart):
 
 - `treatment.assigned` (public): silentMode, universalisationNudge, secretBallot, authorityHandoverSeason, deliberation, assignedBy (facilitator \| random), randomisationSeed? — written before season 1 so analysis can recover arm membership
-- `linking.code` (self): role, code (participant-generated, e.g. mother's initials + birth month) — links pre-, post- and delayed-post surveys without identity; never stored with a name
 - `authority.handover` (public): from, to, season
 - `handover.accepted` (public): role, msSinceCommit (hand-over latency)
 - `prediction.answered` (public): role (the predictor), metric, predictedValue, actualValue filled at `season.resolved`
@@ -486,12 +486,15 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 
 Planned fields of events already emitted, and notes from the v3 table that the generated table does not carry (kept as the v3 table gave them):
 
+- `player.joined`: deviceId (salted hash); all before the role was shown; the survey answers live in `surveys.csv`, not the record. Records made before ADR 0011 carry `consentGiven` instead.
+- `lens.proposed`, `lens.voted`: msSinceOpen.
 - `action.played`: tokens \[{type, n}\], steal? \[M2\], cost.
 - `allocation.issued`: loss\[\] \[M3\], rotation? \[M2\].
 - `season.resolved`: public ecosystem?, coreStable?; sealed shapley?.
 - `game.timeboxed`: firedBy (facilitator); play ends after the current season; T is still unsealed and the hash still verifies.
 - `debrief.opened`: the moment sealed fields become readable; perPlayer false keeps pumpsBy sealed in every projection.
 - `research.consent`: never projected to any screen; read only by the research export (ADR 0011).
+- `linking.code`: participant-generated, e.g. mother's initials + birth month; links pre-, post- and delayed-post surveys without identity; never stored with a name.
 
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 

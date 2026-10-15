@@ -57,7 +57,7 @@ describe('api', () => {
     expect((await createRoom('default-basin')).room).toBe('ABCDE');
     expect((await roomInfo('ABCDE')).freeRoles).toEqual(['A']);
     const consent = { infoSheetVersion: 'v', researchConsent: null };
-    expect(await joinRoom('ABCDE', 'A', 'h'.repeat(64), consent)).toBe('t');
+    expect((await joinRoom('ABCDE', 'A', 'h'.repeat(64), consent)).token).toBe('t');
     expect(JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body))).toMatchObject(
       { participationAcknowledged: true, researchConsent: null, infoSheetVersion: 'v' });
     await expect(joinRoom('ABCDE', 'A', 'h'.repeat(64), consent)).rejects.toThrow('role_unavailable');

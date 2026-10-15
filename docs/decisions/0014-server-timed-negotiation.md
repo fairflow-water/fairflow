@@ -21,7 +21,7 @@ R8 and S4 name only expiry "with no proposal". §13 row 9 settles the rest: "Pre
 1. **The server holds the deadline.** The start is the record time `t` of the season's `season.climate`, the moment the lens screen opens for everyone. The deadline is the start plus `negotiationS.seasons0to2` up to the registry's `session.lastShortNegotiationSeason` (season 2) and plus `negotiationS.from3` after it. A restored room re-arms from the record (ADR 0012), and a deadline that passed while the server was down fires at once.
 2. **No grace.** In ADR 0013 the grace lets a connected phone's own timer commit first. No client closes a vote by itself, so the server closes it at the deadline itself. An Authority tap that arrives first wins; one that arrives after is refused as `wrong_phase`.
 3. **What expiry chooses.** A host-only engine intent, `timeout_vote {season}` (actor `engine`, not in the client protocol; a stale timer is refused). Expiry always applies the previous season's lens, or the scenario's default lens in season 1, whatever was proposed or voted: §13 row 9, "previous lens everywhere". A lens is chosen only by the Authority's `close_vote` (or its tie-break). `lens.chosen` records `byTimeout: true` and the votes cast. It is public, as the field already was.
-   - **After a veto (ADR 0015):** the rule is read literally. If the re-vote runs out of time, the previous lens applies even when it is the lens vetoed this season, and `lens.chosen` still names the veto. This case is an open question for the maintainer (below).
+   - **After a veto (ADR 0015, addition of 2026-10-15):** if the re-vote runs out of time and the previous lens is the one vetoed this season, the vetoed lens is skipped and the scenario's default lens applies. `lens.chosen` still names the veto.
 4. **The practice round is timed too,** with the season 0–2 length. Its fallback is the scenario's default lens, since no season precedes it.
 5. **The screens (S4).**
    - The projector, the phones and the facilitator show a bar that shrinks to the server's deadline, on the server's clock (`serverTime` in the welcome, ADR 0013), so a reload continues it.
@@ -35,7 +35,7 @@ R8 and S4 name only expiry "with no proposal". §13 row 9 settles the rest: "Pre
 - The season boundary of R20 lives in the registry (`session.lastShortNegotiationSeason`), with R20 quoted as its source.
 - Not raised in the answers: the practice round stays timed as built (decision 4), following R20's "seasons 0–2".
 
-**Open question:** should expiry during a veto re-vote skip a vetoed previous lens, for example by falling back to the scenario default? As built, the previous lens applies even then, and a test pins this.
+**Answered 2026-10-15:** expiry during a veto re-vote skips a vetoed previous lens and applies the scenario default (recorded in ADR 0015 as an addition to R8).
 
 ## Consequences
 

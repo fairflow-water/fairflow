@@ -46,6 +46,12 @@ The blueprint leaves open:
 - The veto screen explains a `no_votes` refusal (decision 8).
 - Not raised again: a practice-round veto stays refused (decision 5).
 
+## Addition to R8 (accepted by the maintainer, 2026-10-15)
+
+- **Expiry during the re-vote.** If the negotiation timer (ADR 0014) runs out during the re-vote after a veto, and the previous season's lens is the lens vetoed this season, the vetoed lens is skipped and the scenario's default lens applies. `lens.chosen` records `byTimeout`, `veto` and `revote` as usual.
+- A veto of any other lens leaves ADR 0014's rule unchanged: the previous lens applies.
+- **Open question (as built, pinned by a test):** if the vetoed lens is the scenario's default lens itself, the default still applies, because the decision names it as the fallback. Should a further fallback exist?
+
 ## Consequences
 
 - One more intent (`veto`, Authority only) and one more event type (`lens.vetoed`). The §6.2 table should list it when §6.2 is brought up to date (handoff §6).

@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: MIT
 """R8, R20 (ADR 0014): the server's negotiation deadline. At expiry the previous season's lens applies (the scenario's
 default in season 1), whatever was proposed or voted: section 13 row 9, "previous lens everywhere". A lens is chosen
-only by close_vote. `lens.chosen` records byTimeout."""
+only by close_vote. `lens.chosen` records byTimeout. After a veto, a vetoed previous lens gives way to the default
+(ADR 0015)."""
 
 import copy
 
@@ -68,18 +69,44 @@ def test_expiry_applies_the_previous_lens_whatever_was_proposed_or_voted(proposa
     assert replay(g.events).phase == "private"
 
 
-def test_expiry_during_a_veto_re_vote_applies_the_previous_lens_even_if_it_was_vetoed():
-    """ADR 0014 with ADR 0015: "previous lens everywhere" read literally. Last season's lens is vetoed this season, the
-    re-vote runs out of time, and the previous lens applies, vetoed or not; `lens.chosen` names the veto. Whether a
-    vetoed lens should be skipped at expiry is an open question for the maintainer (PR #22)."""
+def veto_then_expire(previous: str, proposals: tuple[str, ...], vetoed: str):
     g = new_game()
-    play_season(g, lenses=("egalitarian",))
+    play_season(g, lenses=(previous,))
     g.submit(AUTHORITY, "start_season")
-    for lens in ("egalitarian", "capability"):
+    for lens in proposals:
         g.submit(AUTHORITY, "propose", lens=lens)
-    g.submit(AUTHORITY, "veto", lens="egalitarian")
-    p = expire(g)["payload"]
-    assert (p["lens"], p["byTimeout"], p["tally"], p["veto"], p["revote"]) == ("egalitarian", True, {}, "egalitarian", True)
+    g.submit(AUTHORITY, "veto", lens=vetoed)
+    return g, expire(g)["payload"]
+
+
+def test_expiry_during_a_veto_re_vote_skips_a_vetoed_previous_lens_for_the_scenario_default():
+    """ADR 0015 addition to R8 (accepted by the maintainer, 2026-10-15): when the re-vote after a veto runs out of time
+    and the previous lens is the one vetoed, the scenario's default lens applies instead; `lens.chosen` names the veto."""
+    g, p = veto_then_expire("egalitarian", ("egalitarian", "capability"), "egalitarian")
+    assert g.setup.defaultLens != "egalitarian"  # test input: the scenario's default is not the vetoed lens
+    assert (p["lens"], p["byTimeout"], p["tally"], p["veto"], p["revote"]) == (
+        g.setup.defaultLens,
+        True,
+        {},
+        "egalitarian",
+        True,
+    )
+
+
+def test_expiry_after_a_veto_of_another_lens_still_applies_the_previous_lens():
+    """Only a vetoed previous lens is skipped: a veto of some other proposal leaves section 13 row 9 as it was."""
+    _, p = veto_then_expire("egalitarian", ("capability", "talmud"), "capability")
+    assert (p["lens"], p["veto"]) == ("egalitarian", "capability")
+
+
+def test_expiry_when_the_vetoed_lens_is_the_default_itself_applies_the_default():
+    """Pinned as built, an open question for the maintainer: the decision names the default as the fallback, so a
+    vetoed default lens still applies when the re-vote runs out of time."""
+    g0 = new_game()
+    default = g0.setup.defaultLens
+    other = next(lens for lens in ("egalitarian", "capability") if lens != default)  # test input
+    _, p = veto_then_expire(default, (default, other), default)
+    assert (p["lens"], p["veto"]) == (default, default)
 
 
 def test_the_practice_round_times_out_too():

@@ -11,9 +11,10 @@ import registry from '../../scenarios/parameters.json';
 import type { LinkStatus } from './api';
 
 const MIN_MS = 60_000; // milliseconds per minute
-export const IDLE_RELEASE_MS =
-  Number(registry.parameters.find(p => p.key === 'session.wakeLockIdleReleaseMin')?.default) * MIN_MS;
-const INPUT = ['pointerdown', 'keydown', 'touchstart'] as const; // what counts as someone at the device
+const idleMin = registry.parameters.find(p => p.key === 'session.wakeLockIdleReleaseMin')?.default;
+if (typeof idleMin !== 'number') throw new Error('registry: session.wakeLockIdleReleaseMin is missing'); // never NaN
+export const IDLE_RELEASE_MS = idleMin * MIN_MS;
+const INPUT = ['pointerdown', 'keydown', 'touchstart', 'wheel', 'input'] as const; // someone is at the device
 
 const ITEMS = form.parts.flatMap(p => p.items.map(i => i.id));
 
@@ -35,10 +36,10 @@ export function useIdle(active: boolean, ms: number): boolean {
     if (!active) { setIdle(false); return undefined; }
     let timer = setTimeout(() => setIdle(true), ms);
     const onInput = () => { clearTimeout(timer); setIdle(false); timer = setTimeout(() => setIdle(true), ms); };
-    for (const type of INPUT) document.addEventListener(type, onInput, { passive: true });
+    for (const type of INPUT) document.addEventListener(type, onInput, { capture: true, passive: true });
     return () => {
       clearTimeout(timer);
-      for (const type of INPUT) document.removeEventListener(type, onInput);
+      for (const type of INPUT) document.removeEventListener(type, onInput, { capture: true });
     };
   }, [active, ms]);
   return idle;

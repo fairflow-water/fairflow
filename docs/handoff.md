@@ -304,6 +304,7 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
 3. **Missing rules R8, R10, R20.**
    - Each rule needs an engine intent and event (with a visibility class), engine tests, a UI screen, a UI test and an e2e step.
    - The prediction prompt records `prediction.answered`, and its `actualValue` is filled at `season.resolved`.
+   - R10's hand-over and prediction prompts wait for the design session in §9 item 5.
 4. **Pre-session flow (R3, S2).**
    - A participant-generated linking code (`linking.code`, visibility `self`).
    - Pre-survey answers live outside the record (`surveys.csv`); `presurveyComplete` is currently always false.
@@ -319,7 +320,7 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - **Deployment requirement:** the reverse proxy in front of the server must log no client IP addresses. The information sheet no longer mentions an IP log; if the proxy cannot be configured that way, the sheet must say so again (`packages/server/README.md`). Also exclude the store from backups and encrypt the disk.
    - Open: a seat cannot move to another phone; a pause longer than the TTL loses the game.
    - Done: Wake Lock for the session (until the room is gone, debrief included; blueprint §5.4), and interrupted-state checks in every phase (`e2e/reconnect.spec.ts`: a phone reloaded and asleep, the facilitator and the projector reloaded (not put to sleep), a phone reloaded inside its undo window).
-   - Then: a service worker.
+   - Then: a service worker, after the design session in §9 item 5.
 7. **Cohort-cut items, decided at app pilot 1:**
    - E3b, table mode: port the Season Record to the TypeScript mirror, verified against Python-generated record vectors the same way season vectors are.
    - E6, reduced Builder: edit the Kelvara numbers with live loader checks.
@@ -361,6 +362,11 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    Keep `FAIRFLOW_RESEARCH_ENABLED` unset until these are filled and ethics approval is given. Change the sheet's `version` whenever its text changes.
 3. **Cohort cut** (E3b, E6, and the §8.3 list): decided at app pilot 1.
 4. **Untracked `.zenodo.json`** at the repository root: its origin is unknown. Ask before committing or deleting it.
+5. **Design session with the maintainer after the weekend** (maintainer, 2026-10-15). These wait for it; do not build them before then:
+   - R10's hand-over and prediction prompts. They assume a phone passed round the table, so room mode needs a design, and the prompt's metrics are unspecified.
+   - The Authority hand-over (R3). It overlaps with seat transfer, issue #9.
+   - `treatment.assigned` (R1). This is a research-design question.
+   - The service worker (E7). Caching carries risk for an online-only room app.
 
 ## 10. How to work in this repository
 

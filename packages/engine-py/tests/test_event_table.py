@@ -57,21 +57,19 @@ def test_an_unrecognised_role_check_stops_the_script():
 
 
 def test_a_changed_emit_changes_the_table():
-    """A drift is seen: a new field, a field made conditional, a new visibility and a new role check each change it."""
+    """A drift is seen: a new field, a field made conditional, a new visibility and a removed role check each change it."""
     base = gen.table(RECORD)
     added = RECORD.replace('{"lens": lens, "voter": actor}', '{"lens": lens, "voter": actor, "weight": 1}')
     optional = RECORD.replace('{"lens": lens}, season=s.season)', '{**({"lens": lens} if lens else {})}, season=s.season)')
     hidden = RECORD.replace('"lens.vetoed", actor, "public"', '"lens.vetoed", actor, "self"')
-    checked = RECORD.replace(
-        "    def _on_propose(self, s: State, actor: str, lens: str) -> None:\n",
-        "    def _on_propose(self, s: State, actor: str, lens: str) -> None:\n"
-        '        self._need(actor == AUTHORITY, "not_authority", "")\n',
+    unchecked = RECORD.replace(
+        '        self._need(actor == AUTHORITY, "not_authority", "only the Authority taps a proposed lens")\n', ""
     )
     for changed, expect in (
         (added, "weight"),
         (optional, "lens?"),
         (hidden, "self"),
-        (checked, "| `lens.proposed` | authority (`propose`)"),
+        (unchecked, "| `lens.proposed` | any seated role (no `actor` check) (`propose`)"),
     ):
         assert changed != RECORD
         out = gen.table(changed)

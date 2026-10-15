@@ -26,7 +26,8 @@ def test_keys_unique():
 
 @pytest.mark.parametrize("p", PARAMS, ids=lambda p: p["key"])
 def test_quote_is_verbatim_in_blueprint(p):
-    """Quotes come from docs/blueprint.md, or from the decision record named in `sourceFile`."""
+    """Quotes come from docs/blueprint.md, or from the file named in `sourceFile`: an ADR, or the handoff's
+    maintainer-conventions table."""
     source = (ROOT / p["sourceFile"]).read_text(encoding="utf-8") if "sourceFile" in p else BLUEPRINT
     for field in ("quote", "alsoQuote"):
         if field in p:

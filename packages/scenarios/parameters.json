@@ -1,5 +1,5 @@
 {
-  "$comment": "SPDX-License-Identifier: CC-BY-4.0 · Fairflow parameter registry: every admin-settable model parameter, its default and the verbatim blueprint text it comes from. CI (packages/engine-py/tests/test_registry.py) checks that each quote appears in docs/blueprint.md and that the default is printed in it. A null default means no source states one: the maintainer sets it, the engine never guesses. Entries with `sourceFile` quote that file (an ADR) instead of the blueprint.",
+  "$comment": "SPDX-License-Identifier: CC-BY-4.0 · Fairflow parameter registry: every admin-settable model parameter, its default and the verbatim blueprint text it comes from. CI (packages/engine-py/tests/test_registry.py) checks that each quote appears in docs/blueprint.md and that the default is printed in it. A null default means no source states one: the maintainer sets it, the engine never guesses. Entries with `sourceFile` quote that file instead of the blueprint: an ADR, or the maintainer's timing-conventions table in docs/handoff.md §7.",
   "blueprintVersion": "3.1",
   "parameters": [
     { "key": "indicators.survivalFloor", "default": 0.5, "unit": "adequacy (W/D)", "section": "§2.7", "quote": "mᵢ = 0.5",

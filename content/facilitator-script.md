@@ -9,6 +9,7 @@ the rest of the script is the domain lead's content (E9).
 
 ## Before season 0
 
-- Say: "Keep Fairflow open with your screen on until you have sent the review form. If your phone cannot keep the
-  screen on (iPhones before iOS 16.4), set Auto-Lock to Never for this session." (Blueprint §5.4: Wake Lock needs
-  iOS 16.4+; older iOS falls back to a facilitator reminder.)
+- Say: "Keep Fairflow open with your screen on until you have sent the review form. If your screen dims or locks
+  during the game (for example on iPhones before iOS 16.4), turn off Low Power Mode and set Auto-Lock to Never for
+  this session, then set it back afterwards." (Blueprint §5.4: Wake Lock needs iOS 16.4+; older iOS falls back to a
+  facilitator reminder.)

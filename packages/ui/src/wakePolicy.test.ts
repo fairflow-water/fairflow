@@ -48,4 +48,18 @@ describe('when the screen is let go (E7)', () => {
     act(() => { document.dispatchEvent(new Event('keydown')); }); // back at the device: the screen is wanted again
     expect(result.current).toBe(false);
   });
+  it('stops listening when play resumes or the page closes', () => {
+    vi.useFakeTimers();
+    const add = vi.spyOn(document, 'addEventListener');
+    const remove = vi.spyOn(document, 'removeEventListener');
+    const { rerender, unmount } = renderHook(({ on }) => useIdle(on, IDLE_RELEASE_MS), { initialProps: { on: true } });
+    const added = add.mock.calls.length;
+    rerender({ on: false });
+    expect(remove.mock.calls.length).toBe(added);
+    rerender({ on: true });
+    unmount();
+    expect(remove.mock.calls.length).toBe(2 * added);
+    add.mockRestore();
+    remove.mockRestore();
+  });
 });

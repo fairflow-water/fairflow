@@ -5,11 +5,11 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import opening from '../fixtures/opening-public.json';
+import registry from '../../../scenarios/parameters.json';
 import { viewOf, type Climate as ClimateEvent, type PublicScenario, type RecordEvent } from '../room';
 import { Climate, sentence } from './Climate';
 import { Join } from './Join';
 import { LensVote, VETO_CLEARED } from './LensVote';
-import { LensVote } from './LensVote';
 import { NegotiationBar } from './NegotiationBar';
 
 afterEach(cleanup);
@@ -145,6 +145,9 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
     }
     render(<LensVote view={{ ...voting, tutorial: true }} scenario={scenario} role="authority" onIntent={() => undefined} />);
     expect(screen.queryAllByRole('button', { name: 'Veto' })).toHaveLength(0);
+  });
+});
+
 describe('S4 negotiation bar (R20, ADR 0014)', () => {
   const negotiation = scenario.session!.negotiationS!;
   const meter = () => Number(screen.getByRole('meter', { name: 'Negotiation time left' }).getAttribute('aria-valuenow'));
@@ -166,6 +169,20 @@ describe('S4 negotiation bar (R20, ADR 0014)', () => {
     render(<NegotiationBar {...props} />);
     expect(meter()).toBe(negotiation.seasons0to2 - elapsedS - 3);
     vi.useRealTimers();
+  });
+  it("takes the last short season from the registry (R20: 3:00 in seasons 0–2, 4:00 from season 3)", () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); // a still clock: the meter shows the whole length
+    try {
+      const lastShort = Number(registry.parameters.find(p => p.key === 'session.lastShortNegotiationSeason')!.default);
+      const openedAt = new Date().toISOString();
+      const short = render(<NegotiationBar openedAt={openedAt} season={lastShort} negotiationS={negotiation} />);
+      expect(meter()).toBe(negotiation.seasons0to2);
+      short.unmount();
+      render(<NegotiationBar openedAt={openedAt} season={lastShort + 1} negotiationS={negotiation} />);
+      expect(meter()).toBe(negotiation.from3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('is longer from season 3 and shows the seconds in the last 30', () => {
     vi.useFakeTimers();

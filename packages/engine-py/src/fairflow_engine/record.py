@@ -563,6 +563,7 @@ class Game:
         self._need(lens in s.proposals, "not_proposed", lens)
         self._need(len(s.proposals) > 1, "nothing_left", "a veto needs another proposal to re-vote on")
         self._emit("lens.vetoed", actor, "public", {"lens": lens}, season=s.season)
+
     def _on_timeout_vote(self, s: State, actor: str, season: int) -> None:
         """R8, R20 (ADR 0014): the server's negotiation deadline has passed with the vote still open. The previous
         season's lens applies (the scenario's default lens in season 1), whatever was proposed or voted: section 13 row

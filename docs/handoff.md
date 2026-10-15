@@ -231,7 +231,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - `floor_vote`, `close_floor_vote`;
 - `commit` (with `autoCommitted` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
 - `timeout_private`, from the server's private-turn timer only (actor `engine`, not in the client protocol; ADR 0013);
-- `timeout_vote`, from the server's negotiation timer only (actor `engine`; ADR 0014, proposed).
+- `timeout_vote`, from the server's negotiation timer only (actor `engine`; ADR 0014).
 
 **Timeout marks (ADR 0013):** a timer's commit carries `autoCommitted: true` and `autoCommittedBy` (`phone` or `server`) on `action.played`. `project` withholds both from every viewer, the scheme itself included, until a per-player debrief.
 
@@ -257,7 +257,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0011 | Two-part consent; research answer in a `server` event; course-only by default |
 | 0012 | Persistent rooms in one SQLite file, deleted 24 h after the last move; course-only; proxy logs no IPs (merged, PR #8) |
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
-| 0014 | The server times the negotiation from `season.climate`; at expiry a plurality leader, else the previous lens; `byTimeout` (proposed, draft PR) |
+| 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens always applies (scenario default in season 1), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
 | 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
@@ -277,11 +277,10 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | E9 Content | Mostly not started (domain lead). The information sheet is a draft. |
 | v1.1+ (E11–E15) | Not started. |
 
-**Built since the epic table:** the Authority's veto and re-vote (R8; ADR 0015, accepted by the maintainer, 2026-10-14; PR #21). In v1.0 there is no audit; when Module 3 ships, the permit audit becomes a further condition of the same `veto` intent.
+**Built since the epic table:** the Authority's veto and re-vote (R8; ADR 0015, accepted by the maintainer, 2026-10-14; PR #21). The server-timed negotiation (R7, R8, R20; ADR 0014, accepted 2026-10-14; PR #22): expiry applies the previous lens. In v1.0 there is no audit; when Module 3 ships, the permit audit becomes a further condition of the same `veto` intent.
 
 **Rules from §4 that are not implemented yet:**
 - Authority veto and re-vote (R8);
-- the negotiation timer with timeout to the previous lens (R8, R20): built in a draft PR with ADR 0014 (proposed), waiting for the maintainer;
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
 - Authority hand-over event (R3);
 - `treatment.assigned` (R1);

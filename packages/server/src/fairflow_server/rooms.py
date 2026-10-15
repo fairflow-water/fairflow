@@ -25,7 +25,6 @@ from .settings import Settings
 from .store import Store, StoredRoom
 
 log = logging.getLogger("fairflow.server")
-LAST_SHORT_NEGOTIATION = 2  # R20 and session.negotiationS.seasons0to2: the short negotiation runs in seasons 0–2
 DISPLAY = "display"  # the projector / shared screen: sees the public projection only
 
 
@@ -58,8 +57,8 @@ class Room:
         return self.tokens.get(token_hash(token))
 
     def public_scenario(self) -> dict[str, Any]:
-        """What every screen may show about the basin: names, seats, shapes and lens plain names. No model numbers
-        (the engine sends those in events) and nothing private."""
+        """What every screen may show about the basin: names, seats, shapes and lens plain names. No model numbers (the
+        engine sends those in events) and nothing private."""
         return {
             "name": self.scenario.get("name"),
             "schemes": [{k: s[k] for k in PUBLIC_SCHEME_FIELDS if k in s} for s in self.scenario.get("schemes", [])],
@@ -84,19 +83,20 @@ class Room:
         start = datetime.fromisoformat(opened["t"]).timestamp()
         return opened["season"], start + decision + session.get("privateTurnGraceS", grace_default)
 
-    def vote_deadline(self) -> tuple[int, float] | None:
+    def vote_deadline(self, last_short: int) -> tuple[int, float] | None:
         """ADR 0014: while a season's vote is open, its season and the server's negotiation deadline (epoch seconds): the
         record time of the season's season.climate (R7: "the negotiation timer starts when the lens screen opens") plus
         the scenario's negotiationS for that season (R20: "3:00 from screen open in seasons 0–2 and 4:00 from season
-        3"). No grace: no client closes a vote by itself, so nothing has to be let in first. None when no vote is open
-        or the scenario sets no negotiation time."""
+        3"; the registry's session.lastShortNegotiationSeason is the last short season). No grace: no client closes a
+        vote by itself, so nothing has to be let in first. None when no vote is open or the scenario sets no
+        negotiation time."""
         negotiation = self.scenario.get("session", {}).get("negotiationS")
         state = self.game.state
         if negotiation is None or state.phase != "vote":
             return None
         opened = next(e for e in reversed(self.game.events) if e["type"] == "season.climate")
         start = datetime.fromisoformat(opened["t"]).timestamp()
-        length = negotiation["seasons0to2"] if opened["season"] <= LAST_SHORT_NEGOTIATION else negotiation["from3"]
+        length = negotiation["seasons0to2"] if opened["season"] <= last_short else negotiation["from3"]
         return opened["season"], start + length
 
     def free_roles(self) -> list[str]:

@@ -102,6 +102,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
         uvicorn_log.addFilter(NoClientAddress())
     registry = RoomRegistry(settings, now)
     grace_default: float = registry.registry["session.privateTurnGraceS"]  # ADR 0013
+    last_short: int = registry.registry["session.lastShortNegotiationSeason"]  # R20, ADR 0014
     connections: dict[str, list[Connection]] = {}
     locks: dict[str, asyncio.Lock] = {}
     timers: dict[str, asyncio.Task[None]] = {}  # room code → the timer of the open vote or private turn
@@ -228,7 +229,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
         """Start the timer of a vote (ADR 0014) or a private turn (ADR 0013) that has just opened: one per phase and
         season; called after every change."""
         for phase, intent, due in (
-            ("vote", "timeout_vote", room.vote_deadline()),
+            ("vote", "timeout_vote", room.vote_deadline(last_short)),
             ("private", "timeout_private", room.private_deadline(grace_default)),
         ):
             if due is None:

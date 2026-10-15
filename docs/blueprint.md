@@ -443,33 +443,33 @@ Schema rules: every player-editable numeric leaf is wrapped in `fields` with `so
 
 Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every event: `seq`, `t` (ISO-8601 device time), `season`, `actor`, `type`, typed `payload`, `visibility` (`public` | `self` | `sealed` | `mixed` | `server`; `server` events are returned by no projection, ADR 0011). Every numeric field is rounded to 1e-6 when the event is created. The scenario is embedded at `game.created`.
 
-Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/record.py`, the source of truth (handoff §5); run `packages/engine-py/scripts/generate_event_table.py` after changing one, and CI fails until the table matches. The permitted role is read from each handler's checks on the actor; `?` marks a field that is not always present.
+Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/record.py`, the source of truth (handoff §5); run `packages/engine-py/scripts/generate_event_table.py` after changing one, and CI fails until the table matches. "Caused by" names the intents that lead to each event and who may send them, read from each handler's checks on the actor; "Recorded actor" is the `actor` the event stores (`engine` when the engine writes it in response). `?` marks a field that is not always present.
 
 <!-- BEGIN generated event table: packages/engine-py/scripts/generate_event_table.py; do not edit by hand -->
-| Event | Permitted role | Visibility | Payload fields (one level deep) |
-|---|---|---|---|
-| `game.created` | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments` (`gameLength`, `deckOrder`), `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
-| `player.joined` | irrigation scheme or authority | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
-| `research.consent` | irrigation scheme (asked only of schemes while research is enabled; ADR 0011) | server | `role`, `researchConsent` |
-| `season.climate` | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
-| `lens.proposed` | any seated role (no `actor` check) | public | `lens`, `proposer` |
-| `lens.voted` | irrigation scheme | public | `lens`, `voter` |
-| `lens.tied` | engine | public | `leaders`, `tally` |
-| `lens.vetoed` | authority | public | `lens` |
-| `lens.chosen` | authority or engine | public | `lens`, `tally`, `byTimeout`, `tieBreak`, `floorVoteNeeded`, `veto?`, `revote?` |
-| `lens.floorVoted` | irrigation scheme | public | `rule`, `voter` |
-| `lens.floorRule` | engine | public | `rule`, `applied`, `tally`, `byTimeout` |
-| `allocation.issued` | engine | public | `lens`, `floorRule`, `Q`, `surplusToAquifer`, `adequacyBands` |
-| `private.opened` | each irrigation scheme (written by the engine) | self | `role`, `cap`, `pumpCostPerMm3`, `wellsDry`, `actions`, `options`, `previewLimit`, `assumes` |
-| `action.played` | irrigation scheme or the server's timer, for an irrigation scheme (ADR 0013) | sealed | `role`, `pumps`, `action`, `committedAt`, `autoCommitted?`, `autoCommittedBy?` |
-| `season.resolved` | engine | mixed | `public` (`allocable`, `pumpsTotalObserved`, `observedStockNext`, `aquiferFull`, `inflowLossNext`, `asAllocated`, `sustainabilityBand`, `bands`), `sealed` (`pumpsTotal`, `pumpCost`, `P`, `W`, `A`, `Y`, `dL`, `stockNext`, `spill`, `returnFlow`, `ePJ`, `eSE`, `gini`, `giniCorrected`, `F`, `S`, `triangle`, `welfare`, `roles`, `pumpsBy`, `L`, `lowRun`, `cropFailure`, `cropFailureFlag`, `actionCost`, `points`, `verdict`) |
-| `tutorial.resolved` | engine | mixed | `public` (`allocable`, `pumpsTotalObserved`, `observedStockNext`, `aquiferFull`, `inflowLossNext`, `asAllocated`, `sustainabilityBand`), `sealed` (`pumpsTotal`, `pumpCost`, `P`, `W`, `A`, `Y`, `dL`, `stockNext`, `spill`, `returnFlow`, `ePJ`, `eSE`, `gini`, `giniCorrected`, `F`, `S`, `triangle`, `welfare`, `roles`, `L`, `cropFailure`, `points`) |
-| `game.timeboxed` | authority | public | `atSeason`, `sessionMinute` |
-| `game.ended` | engine | public | `T`, `nonce`, `deckOrder`, `truncated`, `seasonsPlayed`, `collectiveScore`, `cropFailureFlag`, `brief`, `authorityGoal` |
-| `goal.result` | each irrigation scheme (written by the engine at game end) | self | (built by `goal`) |
-| `debrief.opened` | authority | public | `perPlayer` |
-| `debrief.welfare` | engine | public | (built by `debrief_welfare(self.setup, self.events)`) |
-| `review.answer` | irrigation scheme | self | `part`, `item`, `value` |
+| Event | Caused by (who may send the intent) | Recorded actor | Visibility | Payload fields (one level deep) |
+|---|---|---|---|---|
+| `game.created` | game creation | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments` (`gameLength`, `deckOrder`), `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
+| `player.joined` | irrigation scheme or authority (`join`) | the sender | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
+| `research.consent` | irrigation scheme (join; asked only of schemes while research is enabled, ADR 0011) | the sender | server | `role`, `researchConsent` |
+| `season.climate` | authority (`start_tutorial`); authority (`start_season`) | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
+| `lens.proposed` | any seated role (no `actor` check) (`propose`) | the sender | public | `lens`, `proposer` |
+| `lens.voted` | irrigation scheme (`vote`) | the sender | public | `lens`, `voter` |
+| `lens.tied` | authority (`close_vote`) | engine | public | `leaders`, `tally` |
+| `lens.vetoed` | authority (`veto`) | the sender | public | `lens` |
+| `lens.chosen` | authority (`close_vote`); the server's timer (`timeout_vote`); authority (`break_tie`) | authority or engine | public | `lens`, `tally`, `byTimeout`, `tieBreak`, `floorVoteNeeded`, `veto?`, `revote?` |
+| `lens.floorVoted` | irrigation scheme (`floor_vote`) | the sender | public | `rule`, `voter` |
+| `lens.floorRule` | authority (`close_floor_vote`) | engine | public | `rule`, `applied`, `tally`, `byTimeout` |
+| `allocation.issued` | authority (`close_vote`); the server's timer (`timeout_vote`); authority (`break_tie`); authority (`close_floor_vote`) | engine | public | `lens`, `floorRule`, `Q`, `surplusToAquifer`, `adequacyBands` |
+| `private.opened` | authority (`close_vote`); the server's timer (`timeout_vote`); authority (`break_tie`); authority (`close_floor_vote`) | the scheme concerned | self | `role`, `cap`, `pumpCostPerMm3`, `wellsDry`, `actions`, `options`, `previewLimit`, `assumes` |
+| `action.played` | irrigation scheme (`commit`); the server's timer (`timeout_private`) | the sender or the scheme concerned | sealed | `role`, `pumps`, `action`, `committedAt`, `autoCommitted?`, `autoCommittedBy?` |
+| `season.resolved` | irrigation scheme (`commit`); the server's timer (`timeout_private`) | engine | mixed | `public` (`allocable`, `pumpsTotalObserved`, `observedStockNext`, `aquiferFull`, `inflowLossNext`, `asAllocated`, `sustainabilityBand`, `bands`), `sealed` (`pumpsTotal`, `pumpCost`, `P`, `W`, `A`, `Y`, `dL`, `stockNext`, `spill`, `returnFlow`, `ePJ`, `eSE`, `gini`, `giniCorrected`, `F`, `S`, `triangle`, `welfare`, `roles`, `pumpsBy`, `L`, `lowRun`, `cropFailure`, `cropFailureFlag`, `actionCost`, `points`, `verdict`) |
+| `tutorial.resolved` | irrigation scheme (`commit`); the server's timer (`timeout_private`) | engine | mixed | `public` (`allocable`, `pumpsTotalObserved`, `observedStockNext`, `aquiferFull`, `inflowLossNext`, `asAllocated`, `sustainabilityBand`), `sealed` (`pumpsTotal`, `pumpCost`, `P`, `W`, `A`, `Y`, `dL`, `stockNext`, `spill`, `returnFlow`, `ePJ`, `eSE`, `gini`, `giniCorrected`, `F`, `S`, `triangle`, `welfare`, `roles`, `L`, `cropFailure`, `points`) |
+| `game.timeboxed` | authority (`timebox`) | the sender | public | `atSeason`, `sessionMinute` |
+| `game.ended` | irrigation scheme (`commit`); the server's timer (`timeout_private`); authority (`timebox`) | engine | public | `T`, `nonce`, `deckOrder`, `truncated`, `seasonsPlayed`, `collectiveScore`, `cropFailureFlag`, `brief`, `authorityGoal` |
+| `goal.result` | irrigation scheme (`commit`); the server's timer (`timeout_private`); authority (`timebox`) | the scheme concerned | self | (built by `goal`) |
+| `debrief.opened` | authority (`open_debrief`) | the sender | public | `perPlayer` |
+| `debrief.welfare` | authority (`open_debrief`) | engine | public | (built by `debrief_welfare(self.setup, self.events)`) |
+| `review.answer` | irrigation scheme (`review_answer`) | the sender | self | `part`, `item`, `value` |
 <!-- END generated event table -->
 
 **Not yet emitted.** Planned in the v3 design and not written by the engine yet, as the v3 table gave them; an event moves into the generated table above when `record.py` first emits it (`tests/test_event_table.py` keeps the two apart):
@@ -483,6 +483,15 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 - `event.drawn` (public): cardId, effect
 - `debrief.note` (public): promptId, role? (null for a table rule), text
 - `agent.rationale` (sealed): role, text (v2.0)
+
+Planned fields of events already emitted, and notes from the v3 table that the generated table does not carry (kept as the v3 table gave them):
+
+- `action.played`: tokens \[{type, n}\], steal? \[M2\], cost.
+- `allocation.issued`: loss\[\] \[M3\], rotation? \[M2\].
+- `season.resolved`: public ecosystem?, coreStable?; sealed shapley?.
+- `game.timeboxed`: firedBy (facilitator); play ends after the current season; T is still unsealed and the hash still verifies.
+- `debrief.opened`: the moment sealed fields become readable; perPlayer false keeps pumpsBy sealed in every projection.
+- `research.consent`: never projected to any screen; read only by the research export (ADR 0011).
 
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 

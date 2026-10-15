@@ -5,8 +5,9 @@ markers, by reading the `_emit` calls with `ast`: type, the role permitted to ca
 fields one level deep. `--check` exits 1 when the blueprint is out of date; tests/test_event_table.py runs the same
 comparison in CI.
 
-The permitted role comes from the emitting handler's `_need` checks on `actor`. Where the code cannot show it (a
-role written by the engine for a scheme, or a check made through a flag), ROLE_NOTES says it, with the reason. A field
+"Caused by" follows the calls from each `_on_<intent>` handler to the method that emits, and names who may send that
+intent from the handler's `_need` checks on `actor` (an unrecognised role check stops the script). Where a flag
+narrows it further, CAUSE_NOTES says so, with the reason. "Recorded actor" is the `actor` the event stores. A field
 marked `?` is present only sometimes. A payload built in another function is named by the expression that builds it.
 Planned events the engine does not emit yet are a hand-written list after the table, which the test keeps disjoint."""
 
@@ -25,19 +26,78 @@ END = "<!-- END generated event table -->"
 PLANNED = "**Not yet emitted.**"  # the hand-written list of planned events that follows the table
 
 SCHEME = "irrigation scheme"
-# (event, actor expression) -> the permitted role, where `_need` on `actor` does not show it; each with its reason
-ROLE_NOTES = {
-    ("research.consent", "actor"): f"{SCHEME} (asked only of schemes while research is enabled; ADR 0011)",
-    ("private.opened", "x.id"): f"each {SCHEME} (written by the engine)",
-    ("action.played", "role"): f"the server's timer, for an {SCHEME} (ADR 0013)",
-    ("goal.result", "goal['role']"): f"each {SCHEME} (written by the engine at game end)",
-}
-NEEDS = {  # an `actor` check in the handler -> the permitted role
+TIMER = "the server's timer"
+NEEDS = {  # a role check on `actor` in an intent handler -> who may send that intent
     "actor == AUTHORITY": "authority",
     "actor in self._scheme_roles()": SCHEME,
     "actor in [*self._scheme_roles(), AUTHORITY]": f"{SCHEME} or authority",
-    "actor == ENGINE": "engine",
+    "actor == ENGINE": TIMER,
 }
+# event -> who causes it, where the handler's checks do not show it; each with its reason
+CAUSE_NOTES = {
+    "research.consent": f"{SCHEME} (join; asked only of schemes while research is enabled, ADR 0011)",
+}
+
+
+def _role_check(text: str) -> bool:
+    """A `_need` test that limits who may send the intent (not one about the sender's own state)."""
+    return text.startswith(("actor ==", "actor !=", "actor in [", "actor in self._scheme_roles"))
+
+
+def _sender(handler: ast.FunctionDef) -> str:
+    for call in ast.walk(handler):
+        if isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) and call.func.attr == "_need":
+            check = ast.unparse(call.args[0])
+            if check in NEEDS:
+                return NEEDS[check]
+            if _role_check(check):
+                raise SystemExit(f"{handler.name}: role check {check!r} is not in NEEDS; add it")
+    return "any seated role (no `actor` check)"
+
+
+def _causes(tree: ast.Module) -> dict[str, list[str]]:
+    """For each function of record.py, the intents that reach it (`_on_<intent>` handlers and the methods they call,
+    followed through `self.<method>(...)`), each named by who may send it."""
+    funcs = {f.name: f for f in ast.walk(tree) if isinstance(f, ast.FunctionDef)}
+    calls = {
+        name: {
+            c.func.attr
+            for c in ast.walk(f)
+            if isinstance(c, ast.Call)
+            and isinstance(c.func, ast.Attribute)
+            and isinstance(c.func.value, ast.Name)
+            and c.func.value.id in ("self", "game")
+            and c.func.attr in funcs
+        }
+        for name, f in funcs.items()
+    }
+    out: dict[str, list[str]] = {name: [] for name in funcs}
+    for name, f in funcs.items():
+        if not name.startswith("_on_"):
+            continue
+        cause = f"{_sender(f)} (`{name[4:]}`)"
+        seen, todo = set(), [name]
+        while todo:
+            n = todo.pop()
+            if n in seen:
+                continue
+            seen.add(n)
+            out[n].append(cause)
+            todo += sorted(calls[n])
+    return out
+
+
+def _actor(node: ast.expr) -> list[str]:
+    """The `actor` the event records."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return [node.value]
+    if isinstance(node, ast.Name) and node.id == "AUTHORITY":
+        return ["authority"]
+    if isinstance(node, ast.IfExp):
+        return _actor(node.body) + _actor(node.orelse)
+    if ast.unparse(node) == "actor":
+        return ["the sender"]
+    return ["the scheme concerned"]
 
 
 @dataclass
@@ -50,6 +110,7 @@ class Field:
 @dataclass
 class Row:
     actors: list[str] = field(default_factory=list)
+    causes: list[str] = field(default_factory=list)
     visibility: list[str] = field(default_factory=list)
     sites: list[list[Field]] = field(default_factory=list)
 
@@ -62,26 +123,6 @@ def _module_tuples(tree: ast.Module) -> dict[str, list[str]]:
             if isinstance(target, ast.Name):
                 out[target.id] = [e.value for e in n.value.elts if isinstance(e, ast.Constant) and isinstance(e.value, str)]
     return out
-
-
-def _actor(kind: str, node: ast.expr, func: ast.FunctionDef) -> list[str]:
-    if isinstance(node, ast.Constant) and isinstance(node.value, str):
-        return [node.value]
-    if isinstance(node, ast.Name) and node.id == "AUTHORITY":
-        return ["authority"]
-    if isinstance(node, ast.IfExp):
-        return _actor(kind, node.body, func) + _actor(kind, node.orelse, func)
-    text = ast.unparse(node)
-    if (kind, text) in ROLE_NOTES:
-        return [ROLE_NOTES[(kind, text)]]
-    if text == "actor":
-        for call in ast.walk(func):
-            if isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) and call.func.attr == "_need":
-                check = ast.unparse(call.args[0])
-                if check in NEEDS:
-                    return [NEEDS[check]]
-        return ["any seated role (no `actor` check)"]
-    return [f"`{text}`"]
 
 
 def _keys(node: ast.expr | None, func: ast.FunctionDef, tuples: dict[str, list[str]]) -> list[str] | None:
@@ -140,6 +181,7 @@ def _fields(
 def _rows(source: str) -> dict[str, Row]:
     tree = ast.parse(source)
     tuples = _module_tuples(tree)
+    causes = _causes(tree)
     rows: dict[str, Row] = {}
     for func in [f for f in ast.walk(tree) if isinstance(f, ast.FunctionDef)]:
         for call in ast.walk(func):
@@ -149,9 +191,13 @@ def _rows(source: str) -> dict[str, Row]:
             if not (isinstance(kind, ast.Constant) and isinstance(kind.value, str)):
                 continue
             row = rows.setdefault(kind.value, Row())
-            for a in _actor(kind.value, call.args[1], func):
+            for a in _actor(call.args[1]):
                 if a not in row.actors:
                     row.actors.append(a)
+            reached = [CAUSE_NOTES[kind.value]] if kind.value in CAUSE_NOTES else causes[func.name] or ["game creation"]
+            for c in reached:
+                if c not in row.causes:
+                    row.causes.append(c)
             vis = call.args[2]
             v = vis.value if isinstance(vis, ast.Constant) else ast.unparse(vis)
             if v not in row.visibility:
@@ -184,9 +230,13 @@ def _payload(sites: list[list[Field]]) -> str:
 
 def table(source: str) -> str:
     """The generated markdown table for a record.py source text, in the order record.py first emits each type."""
-    lines = ["| Event | Permitted role | Visibility | Payload fields (one level deep) |", "|---|---|---|---|"]
+    lines = [
+        "| Event | Caused by (who may send the intent) | Recorded actor | Visibility | Payload fields (one level deep) |",
+        "|---|---|---|---|---|",
+    ]
     for kind, row in _rows(source).items():
-        lines.append(f"| `{kind}` | {' or '.join(row.actors)} | {' or '.join(row.visibility)} | {_payload(row.sites)} |")
+        cells = ["; ".join(row.causes), " or ".join(row.actors), " or ".join(row.visibility), _payload(row.sites)]
+        lines.append(f"| `{kind}` | " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
 
@@ -202,6 +252,8 @@ def current_block(blueprint: str) -> str | None:
 
 def planned(blueprint: str) -> list[str]:
     """Event types in the hand-written 'Not yet emitted' list that follows the generated table."""
+    if PLANNED not in blueprint:
+        return []
     after = blueprint.split(PLANNED, 1)[1]
     items = [line for line in after.splitlines()[1:] if line.strip()]
     out = []

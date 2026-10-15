@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
-"""ADR 0014: the server times the negotiation (R7, R8, R20). On a test clock: a vote still open at the deadline closes
-on what the table has, recorded byTimeout; a vote closed in time is left alone; the length follows the season; no
-client can send the server's intent; a restored room keeps the deadline its record implies."""
+"""ADR 0014: the server times the negotiation (R7, R8, R20). On a test clock: a vote still open at the deadline applies
+the previous lens (the scenario's default in season 1), recorded byTimeout; a vote closed in time is left alone; the
+length follows the season; no client can send the server's intent; a restored room keeps the deadline its record
+implies."""
 
 from __future__ import annotations
 
@@ -15,12 +16,26 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from test_private_timer import SESSION, SETTINGS, TIMER_TICK_S, Clock, act, commit, phase, record, roles_of, wait_for_phase
+from test_private_timer import (
+    REPO,
+    SESSION,
+    SETTINGS,
+    TIMER_TICK_S,
+    Clock,
+    act,
+    commit,
+    phase,
+    record,
+    roles_of,
+    wait_for_phase,
+)
 from test_server import connect, open_room
 from test_store import settings
 
 from fairflow_server.app import create_app
-from fairflow_server.rooms import LAST_SHORT_NEGOTIATION
+from fairflow_server.rooms import load_registry
+
+LAST_SHORT_NEGOTIATION: int = load_registry(SETTINGS)["session.lastShortNegotiationSeason"]  # R20, from the registry
 
 NEGOTIATION = SESSION["negotiationS"]
 # past the vote: a clock moved past the negotiation deadline is past the private turn's too, so its timer may follow
@@ -74,22 +89,22 @@ def test_an_open_vote_closes_at_the_deadline_on_the_previous_lens(client: TestCl
     assert (c["actor"], c["payload"]["lens"], c["payload"]["byTimeout"]) == ("engine", default, True)
 
 
-def test_a_leader_at_the_deadline_is_chosen(client: TestClient, clock: Clock) -> None:
+def test_a_leader_at_the_deadline_is_not_chosen_the_previous_lens_applies(client: TestClient, clock: Clock) -> None:
+    """Section 13 row 9, "previous lens everywhere" (ADR 0014): expiry applies the previous lens, in season 1 the
+    scenario's default, even with a proposal that has a vote; the votes cast are recorded."""
     info = open_room(client)
     roles = roles_of(info)
+    default = json.loads((REPO / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))["defaultLens"]
     with ExitStack() as stack:
         sockets = everyone(client, stack, info)
         act(sockets, "authority", {"intent": "start_season"})
-        act(sockets, "authority", {"intent": "propose", "lens": "egalitarian"})
-        act(sockets, roles[0], {"intent": "vote", "lens": "egalitarian"})
+        voted = next(lens for lens in ("egalitarian", "capability") if lens != default)  # test input: not the default
+        act(sockets, "authority", {"intent": "propose", "lens": voted})
+        act(sockets, roles[0], {"intent": "vote", "lens": voted})
         clock.t = vote_opened(client, info["room"]) + length(1)
         assert wait_for_phase(client, info["room"], PAST_VOTE) in PAST_VOTE
     [c] = chosen(client, info["room"])
-    assert (c["payload"]["lens"], c["payload"]["tally"], c["payload"]["byTimeout"]) == (
-        "egalitarian",
-        {"egalitarian": 1},
-        True,
-    )
+    assert (c["payload"]["lens"], c["payload"]["tally"], c["payload"]["byTimeout"]) == (default, {voted: 1}, True)
 
 
 def test_a_vote_closed_in_time_is_left_alone(client: TestClient, clock: Clock) -> None:

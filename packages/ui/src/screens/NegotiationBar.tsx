@@ -5,11 +5,13 @@
 // (ADR 0014): the record time of season.climate plus the scenario's negotiationS for the season (R20: 3:00 in seasons
 // 0–2, 4:00 from season 3), on the server's clock, so a reload continues it. At zero the server closes the vote.
 import { useEffect, useState } from 'react';
+import registry from '../../../scenarios/parameters.json';
 
 const MS = 1000; // layout: milliseconds per second
 const TICK_MS = 250; // layout: how often the bar is redrawn
 const SECONDS_SHOWN_FROM_S = 30; // §5.2 S4: "seconds only in the last 30"
-const LAST_SHORT_SEASON = 2; // R20 and session.negotiationS.seasons0to2: the short negotiation runs in seasons 0–2
+// R20: the last season negotiated at session.negotiationS.seasons0to2 (registry: session.lastShortNegotiationSeason)
+const LAST_SHORT_SEASON = Number(registry.parameters.find(p => p.key === 'session.lastShortNegotiationSeason')?.default);
 
 export interface NegotiationBarProps {
   openedAt: string;

@@ -515,7 +515,8 @@ class Game:
         return out
 
     def _on_propose(self, s: State, actor: str, lens: str) -> None:
-        """R7: lenses are proposed aloud; the record keeps lens and proposer."""
+        """R7: lenses are proposed aloud; the Authority taps them (issue #34). The record keeps lens and proposer."""
+        self._need(actor == AUTHORITY, "not_authority", "only the Authority taps a proposed lens")
         self._need(s.phase == "vote", "wrong_phase", s.phase)
         self._need(lens in [name for name, _ in self.setup.lenses], "lens_not_enabled", lens)
         self._need(not self._is_tutorial(s) or lens in self._tutorial_lenses(), "lens_not_in_tutorial", lens)

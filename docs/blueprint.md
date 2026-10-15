@@ -452,7 +452,7 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 | `player.joined` | irrigation scheme or authority (`join`) | the sender | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
 | `research.consent` | irrigation scheme (join; asked only of schemes while research is enabled, ADR 0011) | the sender | server | `role`, `researchConsent` |
 | `season.climate` | authority (`start_tutorial`); authority (`start_season`) | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
-| `lens.proposed` | any seated role (no `actor` check) (`propose`) | the sender | public | `lens`, `proposer` |
+| `lens.proposed` | authority (`propose`) | the sender | public | `lens`, `proposer` |
 | `lens.voted` | irrigation scheme (`vote`) | the sender | public | `lens`, `voter` |
 | `lens.tied` | authority (`close_vote`) | engine | public | `leaders`, `tally` |
 | `lens.vetoed` | authority (`veto`) | the sender | public | `lens` |

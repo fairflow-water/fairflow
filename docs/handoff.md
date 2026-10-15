@@ -227,7 +227,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 
 **Intents (`_on_*` in `record.py`):**
 - `join`, `start_tutorial`, `start_season`;
-- `propose`, `vote`, `veto` (Authority, once per game, then a re-vote of the remaining lenses only; ADR 0015), `close_vote`, `break_tie`;
+- `propose` (Authority only, R7; issue #34, 2026-10-15), `vote`, `veto` (Authority, once per game, then a re-vote of the remaining lenses only; ADR 0015), `close_vote`, `break_tie`;
 - `floor_vote`, `close_floor_vote`;
 - `commit` (with `autoCommitted` when the phone's own timer fired), `timebox`, `open_debrief`, `review_answer`;
 - `timeout_private`, from the server's private-turn timer only (actor `engine`, not in the client protocol; ADR 0013);

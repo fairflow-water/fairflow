@@ -92,7 +92,7 @@ def vote_of(strategy: str, role: str, climate: dict, history: list[dict]) -> str
 
 def action_of(strategy: str, opened: dict, pumps: float) -> str | None:
     """Selfish expansion: Expand when the marginal pump token still pays (pumping one more token raises points) and the
-    farm is not already at its pump cap, so the new area can be watered from its own wells."""
+    scheme is not already at its pump cap, so the new area can be watered from its own wells."""
     if strategy != "selfish" or "expand" not in opened["actions"]:
         return None
     levels = [(o["pumps"], o["points"]["none"]) for o in opened["options"] if o["points"] is not None]
@@ -108,7 +108,7 @@ def pumps_of(strategy: str, opened: dict, history: list[dict]) -> float:
         return 0.0  # reacts to the total the table sees (ADR 0004)
     known = [o for o in opened["options"] if o["points"] is not None]
     best = max(known, key=lambda o: (o["points"]["none"], -o["pumps"]))
-    # review E11: above the public limit there is no preview; a selfish farm still pumping profitably at the limit
+    # review E11: above the public limit there is no preview; a selfish scheme still pumping profitably at the limit
     # asks for its full capacity and lets the physical rationing decide
     if best is known[-1] and len(known) < len(opened["options"]) and len(known) > 1:
         return float(opened["options"][-1]["pumps"])
@@ -158,7 +158,7 @@ def play(setup: Any, seed: int, table: Sequence[str], force_lens: str | None = N
             o = opened[r]
             known = [x for x in o["options"] if x["points"] is not None]
             none = {round(x["pumps"]): x["points"]["none"] for x in known}
-            # a deficit season: more water would raise this farm's harvest (pumping one token raises its yield)
+            # a deficit season: more water would raise this scheme's harvest (pumping one token raises its yield)
             deficit = known[0]["yieldT"] + EPS < max(x["yieldT"] for x in known)
             profitable = none.get(1, none[0]) > none[0] + EPS
             profit_checks.append({"stock": stock, "role": r, "profitable": profitable, "deficit": deficit})

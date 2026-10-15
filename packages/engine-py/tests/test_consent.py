@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
-"""ADR 0011: part 1 (taking part) is required; a farm's research answer is required while research is enabled and
-refused otherwise; it goes to a `server` event that no projection returns, before or after the debrief."""
+"""ADR 0011: part 1 (taking part) is required; an irrigation scheme's research answer is required while research is
+enabled and refused otherwise; it goes to a `server` event that no projection returns, before or after the debrief."""
 
 import pytest
 from test_actions_goals import season

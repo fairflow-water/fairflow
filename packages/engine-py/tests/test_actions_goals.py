@@ -13,7 +13,7 @@ S33 = bp.section("### 3.3 Dynamic fixtures")
 
 
 def season(g, lens="proportional", pumps=None, actions=None):
-    """One season: the Authority proposes `lens`, every farm votes for it, then each commits."""
+    """One season: the Authority proposes `lens`, every irrigation scheme votes for it, then each commits."""
     g.submit(AUTHORITY, "start_season")
     g.submit(AUTHORITY, "propose", lens=lens)
     for r in ROLES:

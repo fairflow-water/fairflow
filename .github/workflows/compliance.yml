@@ -32,6 +32,8 @@ jobs:
   python-engine:
     name: Python engine (authoritative) · Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    # A hang ends here, not at GitHub's 6-hour default (issue #20). A CI convention: the job takes about 2 min.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -79,6 +81,8 @@ jobs:
   engine-mirror:
     name: TypeScript mirror reproduces the Python vectors · Node ${{ matrix.node }}
     runs-on: ubuntu-latest
+    # A hang ends here, not at GitHub's 6-hour default (issue #20). A CI convention: the job takes under 1 min.
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -104,6 +108,8 @@ jobs:
   client:
     name: Client (React PWA) · Node 22
     runs-on: ubuntu-latest
+    # A hang ends here, not at GitHub's 6-hour default (issue #20). A CI convention: the job takes under 1 min.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }

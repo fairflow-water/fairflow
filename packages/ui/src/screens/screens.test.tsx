@@ -149,6 +149,7 @@ describe('S4 Authority veto (R8, ADR 0015)', () => {
 });
 
 describe('S4 negotiation bar (R20, ADR 0014)', () => {
+  afterEach(() => { vi.useRealTimers(); }); // a failed fake-timer test leaves no fake clock to the next
   const negotiation = scenario.session!.negotiationS!;
   const meter = () => Number(screen.getByRole('meter', { name: 'Negotiation time left' }).getAttribute('aria-valuenow'));
   it('starts at the record time of season.climate', () => {

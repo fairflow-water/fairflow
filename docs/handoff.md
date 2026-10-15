@@ -280,7 +280,6 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 **Built since the epic table:** the Authority's veto and re-vote (R8; ADR 0015, accepted by the maintainer, 2026-10-14; PR #21). The server-timed negotiation (R7, R8, R20; ADR 0014, accepted 2026-10-14; PR #22): expiry applies the previous lens. In v1.0 there is no audit; when Module 3 ships, the permit audit becomes a further condition of the same `veto` intent.
 
 **Rules from §4 that are not implemented yet:**
-- Authority veto and re-vote (R8);
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
 - Authority hand-over event (R3);
 - `treatment.assigned` (R1);

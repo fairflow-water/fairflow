@@ -8,10 +8,11 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
 
 ## As of
 
-2026-10-15, main at `3754cd0` (green: CI, balance). The PR that adds this file also closes ADR 0015's season-1 question.
+2026-10-15, main at `6e0ab1b` (green: CI, balance). Nothing further is planned this week.
 
 ## Merged (latest first)
 
+- #39: ADR 0015 amendment (in season 1, with no previous lens, a vetoed default still applies at expiry; maintainer, 2026-10-15). It also added the `/save-state` command, `CLAUDE.md` importing this page, and this page.
 - #38: handoff §9 item 5. R10, the Authority hand-over, `treatment.assigned` and the service worker wait for a design session.
 - #37: only the Authority proposes a lens (R7). Closed #34.
 - #36: ADR 0015. At expiry a vetoed default gives way to the previous lens (tests only; the engine already did it).
@@ -23,10 +24,14 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
 
 ## Open
 
-- **#30 (draft)**: pre-session linking code, ADR 0016 (proposed). The maintainer reads ADR 0016 before it merges. It has the maintainer's three rounds of answers, including that a duplicate code refuses the join.
+- **#30 (draft, head `4b452d3`, green)**: pre-session linking code, ADR 0016 (proposed, no open questions). It waits for the maintainer to read ADR 0016 before it merges.
+  - It has all three rounds of answers. A code is required from every irrigation scheme while research is enabled; the Authority gives none. A duplicate code refuses the join: the phone shows "Choose a different code." with a link to `/pre` and the kept code is cleared. The separate `self` event stays. The no-phone path is in issue #9.
+  - Two notes from the last review are left for the maintainer's read:
+    1. After a refused join, `/pre` has no link back to the room, and the duplicate screen doesn't say to return to the join link.
+    2. The E5 row in handoff §7 still lists the linking code as not built.
 - **#5, #7**: Dependabot updates (npm group; server group). Not reviewed yet.
 - **Issue #9**: move a scheme's seat to another phone. It also holds the no-phone path for ADR 0016: the facilitator enters the code.
-- **Issue #20**: the server test suite stalls on the maintainer's machine. The maintainer attributes this to machine memory pressure, not the code. Reruns pass in about a minute. It stays open.
+- **Issue #20**: the server test suite stalls on the maintainer's machine. The maintainer attributes this to machine memory pressure, not the code (2026-10-15). The measured reruns of the local server step took 1 min 2.7 s and 1 min 14.0 s (comment on the issue). It stays open.
 
 ## Decisions (standing, beyond the ADRs)
 
@@ -39,7 +44,7 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
 
 ## Open questions (waiting on the maintainer)
 
-- ADR 0016: the maintainer's read before #30 merges.
+- ADR 0016: the maintainer's read before #30 merges, with the two review notes listed under Open.
 - Handoff §9 items 1–4:
   - the ADR 0004 privacy gate, options (a), (b) or (c);
   - the consent-text placeholders (ADR 0011);

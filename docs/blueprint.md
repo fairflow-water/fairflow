@@ -469,7 +469,7 @@ Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every 
 | review.answer | self | part, item, value |
 | agent.rationale | sealed | role, text (v2.0) |
 
-**\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied` (R8's tie-break), `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
+**\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied` (R8's tie-break), `lens.vetoed` (R8's veto, ADR 0015), `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
 
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 

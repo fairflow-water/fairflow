@@ -443,62 +443,46 @@ Schema rules: every player-editable numeric leaf is wrapped in `fields` with `so
 
 Append-only; state = `events.reduce(applyEvent, initialState(scenario))`. Every event: `seq`, `t` (ISO-8601 device time), `season`, `actor`, `type`, typed `payload`, `visibility` (`public` | `self` | `sealed` | `mixed` | `server`; `server` events are returned by no projection, ADR 0011). Every numeric field is rounded to 1e-6 when the event is created. The scenario is embedded at `game.created`.
 
-| type | visibility | payload |
-| --- | --- | --- |
-| game.created | public | gameId, scenario, mode, gameLength (SHA-256 commitment over a secret nonce), deckOrder (commitment), appVersion, engineVersion |
-| treatment.assigned | public | silentMode, universalisationNudge, secretBallot, authorityHandoverSeason, deliberation, assignedBy (facilitator \| random), randomisationSeed? — written before season 1 so analysis can recover arm membership |
-| linking.code | self | role, code (participant-generated, e.g. mother's initials + birth month) — links pre-, post- and delayed-post surveys without identity; never stored with a name |
-| player.joined | public | role, deviceId (salted hash), participationAcknowledged (part 1), infoSheetVersion, presurveyComplete (all before the role was shown; the survey answers live in `surveys.csv`, not the record). Records made before ADR 0011 carry `consentGiven` instead |
-| research.consent | server | role, researchConsent (yes \| no) — part 2, written for every farm while research is enabled (`game.created.researchEnabled`), never projected to any screen; read only by the research export (ADR 0011) |
-| authority.handover | public | from, to, season |
-| season.climate | public | card, inflow (after any GW–SW reduction), reserve, allocable, eventCard? |
-| lens.proposed | public | lens, proposer, msSinceOpen |
-| lens.voted | public | lens, voter, msSinceOpen |
-| lens.chosen | public | lens, tally, tieBreak?, veto?, revote?, byTimeout |
-| allocation.issued | public | lens, Q\[\], loss\[\] \[M3\], rotation? \[M2\], surplusToAquifer |
-| handover.accepted | public | role, msSinceCommit (hand-over latency) |
-| prediction.answered | public | role (the predictor), metric, predictedValue, actualValue filled at `season.resolved` |
-| action.played | sealed | role, tokens \[{type, n}\], pumps, steal? \[M2\], cost, committedAt, autoCommitted (ADR 0013) |
-| authority.acted | public | action, cost, budgetAfter \[M3\] |
-| event.drawn | public | cardId, effect |
-| season.resolved | mixed | public: pumpsTotal, ePJ, eSE {claimant, hectare, person}, giniStar, F {consumed, diverted}, S, aquifer, inflowNext, ecosystem?, welfare {UWF, PWF, SWF, EWF, CWF}, verdict {voted, satisfied, pumpingGap}, cropFailureFlag, coreStable?; sealed: W\[\], A\[\], Y\[\], dL\[\], L\[\], pumpsBy\[\], cropFailure\[\], shapley? |
-| game.timeboxed | public | firedBy (facilitator), atSeason, sessionMinute — play ends after the current season; T is still unsealed and the hash still verifies |
-| game.ended | public | T, nonce, deckOrder revealed, truncated, collectiveScore, cropFailureFlag, goals\[\] |
-| debrief.opened | public | perPlayer (true \| false) — the moment sealed fields become readable; perPlayer false keeps pumpsBy sealed in every projection |
-| debrief.note | public | promptId, role? (null for a table rule), text |
-| review.answer | self | part, item, value |
-| agent.rationale | sealed | role, text (v2.0) |
-
-**\[Incomplete; `packages/engine-py/src/fairflow_engine/record.py` is the source of truth (handoff §5).\]** The engine also emits `lens.tied` (R8's tie-break), `lens.vetoed` (R8's veto, ADR 0015), `lens.floorVoted` and `lens.floorRule` (ADR 0003), `private.opened`, `tutorial.resolved`, `goal.result` and `debrief.welfare`, which this table does not list. Of the rows above, `treatment.assigned`, `linking.code`, `authority.handover`, `authority.acted`, `handover.accepted`, `prediction.answered`, `event.drawn`, `debrief.note` and `agent.rationale` are not emitted yet. The table is kept as written.
-
-What `record.py` emits today, generated from its `_emit` calls (`?`: not always present):
+Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/record.py`, the source of truth (handoff §5); run `packages/engine-py/scripts/generate_event_table.py` after changing one, and CI fails until the table matches. The permitted role is read from each handler's checks on the actor; `?` marks a field that is not always present.
 
 <!-- BEGIN generated event table: packages/engine-py/scripts/generate_event_table.py; do not edit by hand -->
-| Event | Actor | Visibility | Payload fields |
+| Event | Permitted role | Visibility | Payload fields (one level deep) |
 |---|---|---|---|
-| `game.created` | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments`, `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
-| `player.joined` | the acting role | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
-| `research.consent` | the acting role | server | `role`, `researchConsent` |
+| `game.created` | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments` (`gameLength`, `deckOrder`), `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
+| `player.joined` | irrigation scheme or authority | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
+| `research.consent` | irrigation scheme (asked only of schemes while research is enabled; ADR 0011) | server | `role`, `researchConsent` |
 | `season.climate` | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
-| `lens.proposed` | the acting role | public | `lens`, `proposer` |
-| `lens.voted` | the acting role | public | `lens`, `voter` |
+| `lens.proposed` | any seated role (no `actor` check) | public | `lens`, `proposer` |
+| `lens.voted` | irrigation scheme | public | `lens`, `voter` |
 | `lens.tied` | engine | public | `leaders`, `tally` |
-| `lens.vetoed` | the acting role | public | `lens` |
+| `lens.vetoed` | authority | public | `lens` |
 | `lens.chosen` | authority or engine | public | `lens`, `tally`, `byTimeout`, `tieBreak`, `floorVoteNeeded`, `veto?`, `revote?` |
-| `lens.floorVoted` | the acting role | public | `rule`, `voter` |
+| `lens.floorVoted` | irrigation scheme | public | `rule`, `voter` |
 | `lens.floorRule` | engine | public | `rule`, `applied`, `tally`, `byTimeout` |
 | `allocation.issued` | engine | public | `lens`, `floorRule`, `Q`, `surplusToAquifer`, `adequacyBands` |
-| `private.opened` | the acting role | self | `role`, `cap`, `pumpCostPerMm3`, `wellsDry`, `actions`, `options`, `previewLimit`, `assumes` |
-| `action.played` | the acting role | sealed | `role`, `pumps`, `action`, `committedAt`, `autoCommitted?`, `autoCommittedBy?` |
-| `season.resolved` | engine | mixed | `public`, `sealed` |
-| `tutorial.resolved` | engine | mixed | `public`, `sealed` |
-| `game.timeboxed` | the acting role | public | `atSeason`, `sessionMinute` |
+| `private.opened` | each irrigation scheme (written by the engine) | self | `role`, `cap`, `pumpCostPerMm3`, `wellsDry`, `actions`, `options`, `previewLimit`, `assumes` |
+| `action.played` | irrigation scheme or the server's timer, for an irrigation scheme (ADR 0013) | sealed | `role`, `pumps`, `action`, `committedAt`, `autoCommitted?`, `autoCommittedBy?` |
+| `season.resolved` | engine | mixed | `public` (`allocable`, `pumpsTotalObserved`, `observedStockNext`, `aquiferFull`, `inflowLossNext`, `asAllocated`, `sustainabilityBand`, `bands`), `sealed` (`pumpsTotal`, `pumpCost`, `P`, `W`, `A`, `Y`, `dL`, `stockNext`, `spill`, `returnFlow`, `ePJ`, `eSE`, `gini`, `giniCorrected`, `F`, `S`, `triangle`, `welfare`, `roles`, `pumpsBy`, `L`, `lowRun`, `cropFailure`, `cropFailureFlag`, `actionCost`, `points`, `verdict`) |
+| `tutorial.resolved` | engine | mixed | `public` (`allocable`, `pumpsTotalObserved`, `observedStockNext`, `aquiferFull`, `inflowLossNext`, `asAllocated`, `sustainabilityBand`), `sealed` (`pumpsTotal`, `pumpCost`, `P`, `W`, `A`, `Y`, `dL`, `stockNext`, `spill`, `returnFlow`, `ePJ`, `eSE`, `gini`, `giniCorrected`, `F`, `S`, `triangle`, `welfare`, `roles`, `L`, `cropFailure`, `points`) |
+| `game.timeboxed` | authority | public | `atSeason`, `sessionMinute` |
 | `game.ended` | engine | public | `T`, `nonce`, `deckOrder`, `truncated`, `seasonsPlayed`, `collectiveScore`, `cropFailureFlag`, `brief`, `authorityGoal` |
-| `goal.result` | the acting role | self | (built by `goal`) |
-| `debrief.opened` | the acting role | public | `perPlayer` |
+| `goal.result` | each irrigation scheme (written by the engine at game end) | self | (built by `goal`) |
+| `debrief.opened` | authority | public | `perPlayer` |
 | `debrief.welfare` | engine | public | (built by `debrief_welfare(self.setup, self.events)`) |
-| `review.answer` | the acting role | self | `part`, `item`, `value` |
+| `review.answer` | irrigation scheme | self | `part`, `item`, `value` |
 <!-- END generated event table -->
+
+**Not yet emitted.** Planned in the v3 design and not written by the engine yet, as the v3 table gave them; an event moves into the generated table above when `record.py` first emits it (`tests/test_event_table.py` keeps the two apart):
+
+- `treatment.assigned` (public): silentMode, universalisationNudge, secretBallot, authorityHandoverSeason, deliberation, assignedBy (facilitator \| random), randomisationSeed? — written before season 1 so analysis can recover arm membership
+- `linking.code` (self): role, code (participant-generated, e.g. mother's initials + birth month) — links pre-, post- and delayed-post surveys without identity; never stored with a name
+- `authority.handover` (public): from, to, season
+- `handover.accepted` (public): role, msSinceCommit (hand-over latency)
+- `prediction.answered` (public): role (the predictor), metric, predictedValue, actualValue filled at `season.resolved`
+- `authority.acted` (public): action, cost, budgetAfter \[M3\]
+- `event.drawn` (public): cardId, effect
+- `debrief.note` (public): promptId, role? (null for a table rule), text
+- `agent.rationale` (sealed): role, text (v2.0)
 
 Pre-, immediate-post and delayed-post survey answers are not record events; they are rows in `surveys.csv` keyed by linking code, `phase` (`pre` | `post` | `delayed`) and `form` (A | B), so a record can be shared for replay without carrying survey data.
 

@@ -118,8 +118,8 @@ def test_expiry_when_the_vetoed_default_was_also_the_previous_lens_applies_it():
 
 
 def test_expiry_in_season_1_after_a_vetoed_default_applies_the_default():
-    """Pinned as built, an open question for the maintainer: season 1 has no previous season's lens, so the scenario
-    default applies (ADR 0014, "the default in season 1") although it was vetoed."""
+    """ADR 0015 (accepted by the maintainer, 2026-10-15, third decision): season 1 has no previous season's lens, so the
+    scenario default applies (ADR 0014, "the default in season 1") although it was vetoed."""
     g = new_game()
     default = g.setup.defaultLens
     other = next(lens for lens in ("egalitarian", "capability") if lens != default)  # test input

@@ -569,7 +569,8 @@ class Game:
         season's lens applies (the scenario's default lens in season 1), whatever was proposed or voted: section 13 row
         9, "previous lens everywhere". A lens is chosen only by close_vote. `lens.chosen` records byTimeout and the votes
         cast. ADR 0015 (an addition to R8, 2026-10-15): in a re-vote after a veto, a vetoed previous lens is skipped and
-        the scenario's default lens applies. Only the engine host may send this, for the season it timed."""
+        the scenario's default lens applies; a vetoed default gives way to the previous lens, so it applies only when
+        it was also the previous lens or in season 1. Only the engine host may send this, for the season it timed."""
         self._need(actor == ENGINE, "not_engine", "only the server's timer ends a negotiation")
         self._need(s.phase == "vote", "wrong_phase", s.phase)
         self._need(season == s.season, "stale_timer", f"season {season}, now {s.season}")

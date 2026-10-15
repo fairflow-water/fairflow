@@ -9,12 +9,14 @@
 import { useEffect, useState } from 'react';
 import sheet from '../../../../content/information-sheet.json';
 import { deviceHash, joinRoom, roomInfo, tokenStore, type RoomInfo } from '../api';
+import { linkingStore } from '../linking';
 
 export function Join({ code, onJoined }: { code: string; onJoined: (token: string) => void }) {
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
   const [research, setResearch] = useState<boolean | null>(null);
+  const [linkingCode] = useState(() => linkingStore.get()); // made before the session on this phone (R3)
 
   useEffect(() => {
     roomInfo(code).then(setInfo, (e: unknown) => setError(e instanceof Error ? e.message : 'unknown_room'));
@@ -25,7 +27,7 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
   async function choose(role: string) {
     try {
       const token = await joinRoom(code, role, await deviceHash(),
-        { infoSheetVersion: sheet.version, researchConsent: asked ? research : null });
+        { infoSheetVersion: sheet.version, researchConsent: asked ? research : null }, linkingCode);
       tokenStore.set(code, token);
       onJoined(token);
     } catch (e) {
@@ -40,6 +42,7 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
     <section aria-labelledby="join-title" className="join">
       <h1 id="join-title">Room {info.room}</h1>
       <p>{info.scenario.name}</p>
+      {linkingCode && <p className="hint">Your linking code, made before the session, goes with your join: {linkingCode}</p>}
       <p className="hint">{sheet.summary}{asked && <> {sheet.summaryResearch}</>}</p>
       <details className="information-sheet">
         <summary>{sheet.title}</summary>

@@ -59,6 +59,9 @@ jobs:
   room-server:
     name: Room server (FastAPI, WebSockets) · Python 3.12
     runs-on: ubuntu-latest
+    # Issue #20: a hang (seen once after every test had passed, where no per-test timeout reaches) ends the job here
+    # instead of at GitHub's 6-hour default. A CI convention: the job takes a few minutes.
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: packages/server

@@ -21,6 +21,7 @@ dev = [
     "ruff>=0.16",
     "mypy>=2",
     "httpx2>=2.13",
+    "pytest-timeout>=2.3",
 ]
 
 [tool.uv.sources]
@@ -31,6 +32,10 @@ packages = ["src/fairflow_server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Issue #20: a test that hangs fails after this many seconds and names itself, with every thread's stack, instead
+# of running until the CI job's own limit. A CI convention, not a model parameter: the slowest test takes about 4 s.
+timeout = 60
+timeout_method = "thread"  # works on Windows too (no SIGALRM there)
 
 [tool.coverage.run]
 source = ["fairflow_server"]

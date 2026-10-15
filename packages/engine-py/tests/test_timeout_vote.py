@@ -68,6 +68,20 @@ def test_expiry_applies_the_previous_lens_whatever_was_proposed_or_voted(proposa
     assert replay(g.events).phase == "private"
 
 
+def test_expiry_during_a_veto_re_vote_applies_the_previous_lens_even_if_it_was_vetoed():
+    """ADR 0014 with ADR 0015: "previous lens everywhere" read literally. Last season's lens is vetoed this season, the
+    re-vote runs out of time, and the previous lens applies, vetoed or not; `lens.chosen` names the veto. Whether a
+    vetoed lens should be skipped at expiry is an open question for the maintainer (PR #22)."""
+    g = new_game()
+    play_season(g, lenses=("egalitarian",))
+    g.submit(AUTHORITY, "start_season")
+    for lens in ("egalitarian", "capability"):
+        g.submit(AUTHORITY, "propose", lens=lens)
+    g.submit(AUTHORITY, "veto", lens="egalitarian")
+    p = expire(g)["payload"]
+    assert (p["lens"], p["byTimeout"], p["tally"], p["veto"], p["revote"]) == ("egalitarian", True, {}, "egalitarian", True)
+
+
 def test_the_practice_round_times_out_too():
     g = new_game()
     g.submit(AUTHORITY, "start_tutorial")

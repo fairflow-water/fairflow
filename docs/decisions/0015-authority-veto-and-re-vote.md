@@ -50,7 +50,8 @@ The blueprint leaves open:
 
 - **Expiry during the re-vote.** If the negotiation timer (ADR 0014) runs out during the re-vote after a veto, and the previous season's lens is the lens vetoed this season, the vetoed lens is skipped and the scenario's default lens applies. `lens.chosen` records `byTimeout`, `veto` and `revote` as usual.
 - A veto of any other lens leaves ADR 0014's rule unchanged: the previous lens applies.
-- **Open question (as built, pinned by a test):** if the vetoed lens is the scenario's default lens itself, the default still applies, because the decision names it as the fallback. Should a further fallback exist?
+- **Vetoed default (accepted by the maintainer, 2026-10-15, second decision).** If the vetoed lens is the scenario's default lens, expiry applies the previous season's lens. When that previous lens is the default itself, it applies: there is no further fallback. The engine already behaved this way; tests now cover both cases.
+- **Open question (as built, pinned by a test):** in season 1 there is no previous season's lens. If the default is vetoed there and the re-vote runs out of time, the default applies, as ADR 0014 gives it for season 1. Should a vetoed default in season 1 fall back to something else?
 
 ## Consequences
 

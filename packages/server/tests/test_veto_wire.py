@@ -27,7 +27,8 @@ def test_the_facilitator_vetoes_and_every_screen_is_told() -> None:
             for lens in ("proportional", "utilitarian"):
                 act(sockets, "authority", {"intent": "propose", "lens": lens})
             sockets[roles[0]].send_text(json.dumps({"intent": "veto", "lens": "utilitarian"}))
-            assert sockets[roles[0]].receive_json()["type"] == "rejected"  # only the Authority holds the veto
+            refusal = sockets[roles[0]].receive_json()
+            assert (refusal["type"], refusal["code"]) == ("rejected", "not_authority")  # only the Authority holds the veto
             sockets["authority"].send_text(json.dumps({"intent": "veto", "lens": "utilitarian"}))
             for who, ws in sockets.items():
                 msg = ws.receive_json()

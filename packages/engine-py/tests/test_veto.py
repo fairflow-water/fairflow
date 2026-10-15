@@ -141,7 +141,7 @@ def test_what_a_veto_needs(actor, setup, lens, code):
     assert g.events == before
 
 
-def test_a_veto_in_the_practice_round_is_refused_and_the_game_keeps_its_veto():
+def test_the_practice_round_does_not_spend_the_veto():
     g = tutorial(new_game())
     open_vote(g)
     g.submit(AUTHORITY, "veto", lens="egalitarian")

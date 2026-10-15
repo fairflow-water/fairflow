@@ -50,16 +50,20 @@ def test_a_malformed_code_is_refused_and_the_seat_stays_free(client: TestClient)
     assert role in client.get(f"/rooms/{code}").json()["freeRoles"]
 
 
-def test_a_duplicate_code_is_recorded_and_its_second_holder_is_warned(client: TestClient) -> None:
-    """The maintainer, 2026-10-15: duplicate codes are allowed, with a warning to the player who brings the second one;
-    the first holder is told nothing, and no other screen learns of it."""
+def test_a_duplicate_code_refuses_the_join(client: TestClient) -> None:
+    """ADR 0016 (the maintainer, 2026-10-15, third answer): a code already given in the room refuses the join with
+    `duplicate_linking_code`. No token, no player record, the seat stays free; the first holder is told nothing."""
     room = client.post("/rooms", json={"scenario": "default-basin"}).json()
     code = room["room"]
     first, second = client.get(f"/rooms/{code}").json()["freeRoles"][:2]
-    one = client.post(f"/rooms/{code}/join", json=join_body(first, "hash-1-0123") | {"linkingCode": CODE}).json()
-    two = client.post(f"/rooms/{code}/join", json=join_body(second, "hash-2-0123") | {"linkingCode": CODE}).json()
-    assert "warning" not in one
-    assert two["warning"] == "duplicate_linking_code"
+    one = client.post(f"/rooms/{code}/join", json=join_body(first, "hash-1-0123") | {"linkingCode": CODE})
+    two = client.post(f"/rooms/{code}/join", json=join_body(second, "hash-2-0123") | {"linkingCode": CODE})
+    assert one.status_code == 200 and "warning" not in one.json()
+    assert two.status_code == 409 and two.json()["detail"]["code"] == "duplicate_linking_code"
+    assert "token" not in two.text
+    assert second in client.get(f"/rooms/{code}").json()["freeRoles"]
     with ExitStack() as stack:
-        for role, token in ((first, one["token"]), (second, two["token"])):
-            assert sum(e["type"] == "linking.code" for e in synced(client, stack, code, token)) == 1, role
+        events = synced(client, stack, code, one.json()["token"])
+    joined = [e["payload"]["role"] for e in events if e["type"] == "player.joined"]
+    assert first in joined and second not in joined  # no player record under the duplicate
+    assert sum(e["type"] == "linking.code" for e in events) == 1

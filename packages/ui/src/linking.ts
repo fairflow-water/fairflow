@@ -20,4 +20,7 @@ export const linkingStore = {
   set(code: string): void {
     try { localStorage.setItem(KEY, code); } catch { /* storage unavailable: join without a code */ }
   },
+  clear(): void {
+    try { localStorage.removeItem(KEY); } catch { /* storage unavailable: nothing was kept */ }
+  },
 };

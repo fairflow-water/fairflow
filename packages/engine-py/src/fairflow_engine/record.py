@@ -407,7 +407,7 @@ class Game:
         returns; it is written for every scheme whatever the answer, so its presence says nothing. The Authority (the
         facilitator) is not a research participant and gives no research answer. R3, §6.2 (ADR 0016, proposed): a scheme
         brings its personal linking code (required while research is enabled, optional otherwise), recorded in a `self`
-        event only its own projection carries."""
+        event only its own projection carries; a code already given in the room refuses the join."""
         self._need(s.phase == "lobby", "wrong_phase", "players join before season 1")
         self._need(actor in [*self._scheme_roles(), AUTHORITY], "unknown_role", actor)
         self._need(actor not in s.players, "role_taken", actor)
@@ -427,6 +427,9 @@ class Game:
                 "bad_linking_code",
                 f"capitals and digits, 1 to {LINKING_CODE_MAX} characters",
             )
+            # ADR 0016 (the maintainer, 2026-10-15): a code already given in this room refuses the join; nothing is recorded
+            given = [e["payload"]["code"] for e in self.events if e["type"] == "linking.code"]
+            self._need(linkingCode not in given, "duplicate_linking_code", "choose a different code")
         self._emit(
             "player.joined",
             actor,

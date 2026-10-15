@@ -259,7 +259,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
 | 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens applies (scenario default in season 1; after a veto of it, the default), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
 | 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14); at expiry a vetoed previous lens gives way to the default, and a vetoed default to the previous lens (additions, 2026-10-15); open: a vetoed default in season 1 |
-| 0016 | Pre-session flow in room mode: `/pre` keeps a personal linking code on the phone; the join sends it; `linking.code` (self); required from every seated scheme while research is enabled; duplicates allowed, the holder told only "Choose a different code."; consent stays at the join; no-phone path in issue #9 (proposed, draft PR #30) |
+| 0016 | Pre-session flow in room mode: `/pre` keeps a personal linking code on the phone; the join sends it; `linking.code` (self); required from every seated scheme while research is enabled; a duplicate code refuses the join ("Choose a different code.", a link to `/pre`, the kept code cleared); consent stays at the join; no-phone path in issue #9 (proposed, draft PR #30) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 
@@ -290,7 +290,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 - hand-over screen and spoken prediction prompts (`prediction.answered`, R10);
 - Authority hand-over event (R3);
 - `treatment.assigned` (R1);
-- `linking.code` (R3): built in a draft PR with ADR 0016 (proposed), up to the survey instruments;
+- `linking.code` (R3): built in a draft PR with ADR 0016 (proposed), up to the survey instruments.
 
 ## 8. Next work, in recommended order
 

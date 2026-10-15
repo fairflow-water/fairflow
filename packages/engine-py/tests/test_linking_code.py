@@ -110,3 +110,17 @@ def test_the_authority_needs_no_code_while_research_is_enabled():
     g = game(research=True)
     join(g, AUTHORITY, None)
     assert g.events[-1]["type"] == "player.joined"
+
+
+def test_a_duplicate_code_refuses_the_join_and_records_nothing():
+    """ADR 0016 (the maintainer, 2026-10-15, third answer): a code already given in the room refuses the join. No
+    player record is made under it, the seat stays free, and the same player can join with another code."""
+    g = game(research=True)
+    join(g, ROLES[0], CODE, research=True)
+    before = list(g.events)
+    with pytest.raises(Rejection) as e:
+        join(g, ROLES[1], CODE, research=True)
+    assert e.value.code == "duplicate_linking_code"
+    assert g.events == before
+    join(g, ROLES[1], CODE + "1", research=True)  # test input: another code
+    assert [ev["payload"]["role"] for ev in g.events if ev["type"] == "player.joined"] == [ROLES[0], ROLES[1]]

@@ -24,8 +24,10 @@ SPDX-License-Identifier: CC-BY-4.0
 4. **Required from every seated player while research is enabled.**
    - While research is enabled, every irrigation scheme must bring a code (`linking_code_needed`), whatever its own research answer: the requirement is per room, never only from consenting players (ADR 0011). A phone without one is sent to `/pre` before any scheme is shown.
    - In a course-only room the code is optional.
-   - The Authority never gives one (`no_linking_code`).
-5. **Duplicate codes are allowed, with a warning.** A code already given in the room is recorded again. The server's join reply carries `warning: duplicate_linking_code`, and the second holder's phone shows only "Choose a different code." before going on; it does not say that anyone else holds the code. The first holder and every other screen are told nothing.
+   - "Every seated player" means every irrigation scheme. The Authority's seat is the facilitator's and gives none (`no_linking_code`); the maintainer confirmed this reading on 2026-10-15.
+5. **A duplicate code refuses the join.** A code already given in the room is refused (`duplicate_linking_code`). The engine checks it, so no event is written: there is no `player.joined` and no `linking.code` under the duplicate, the seat stays free, and the phone receives no token.
+   - The phone shows only "Choose a different code." with a link to `/pre`, and clears the kept code, so a new one is made there before joining again. It does not say that anyone else holds the code. The first holder and every other screen are told nothing.
+   - **Accepted disclosure.** The message appears only on a duplicate, so it still reveals that someone in the room holds that code. The maintainer accepted this as low risk in a facilitated room (2026-10-15).
 6. **The record.**
    - The code is capitals and digits, 1 to `LINKING_CODE_MAX` characters (`bad_linking_code`). The bound is shared with the phone through `content/linking-code.json` `maxLength`, and a test keeps the two equal.
    - The engine writes `linking.code {role, code}` with visibility `self` right after `player.joined`, so only that scheme's own projection carries it. `player.joined` is unchanged. The maintainer kept this separate `self` event over S2's wording that `player.joined` carries the code.
@@ -48,21 +50,25 @@ S2's "On the shared phone at the table: role assignment only, by linking code" d
 
 - Consent stays as ADR 0011 defines it. Only the URL could move, and it does not (decision 3).
 - The linking code is required only when research is enabled (decision 4).
-- Duplicate codes are allowed, with a warning (decision 5).
+- Duplicate codes are allowed, with a warning (decision 5). Superseded by the third answers below: a duplicate now refuses the join.
 - The room-mode reading is quoted from R2 above.
 - The recipe wording waits for the domain lead and is marked as a placeholder (decision 1).
 
 Second answers (2026-10-15), to the open questions of the first draft:
 
 - The linking code is required from every seated player whenever research is enabled, never only from consenting players (ADR 0011) (decision 4).
-- The duplicate warning says only "choose a different code" (decision 5).
+- The duplicate warning says only "choose a different code" (decision 5). The wording stands; what follows it changed in the third answers.
 - The separate `self` event stays (decision 6).
 - The no-phone path is recorded as part of issue #9, where the facilitator enters the code; it is not built here (decision 7).
 
+Third answers (2026-10-15), to the open questions of the second draft:
+
+- A duplicate code refuses the join. The phone shows "Choose a different code.", links to `/pre` and clears the kept code, and no player record is made under the duplicate. The disclosure the message implies is accepted as low risk in a facilitated room (decision 5).
+- The Authority seat gives no code; every irrigation scheme does (decision 4).
+
 ## Open questions
 
-1. A duplicate is still recorded, and the player has already joined when "Choose a different code." appears. As built, the phone keeps the code it had, so the delayed post-test would see the duplicate again unless the player makes a new code on `/pre`. Should the warning clear the kept code, or link to `/pre`, or should the join itself be refused until another code is given?
-2. "Every seated player" is read as every irrigation scheme. The Authority's seat is the facilitator's and still gives no code (`no_linking_code`). Is that the reading you want?
+None at the time of writing. The ADR stays proposed until the maintainer has read it.
 
 ## Consequences
 

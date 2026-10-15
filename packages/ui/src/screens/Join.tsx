@@ -17,7 +17,7 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
   const [taking, setTaking] = useState(false);
   const [research, setResearch] = useState<boolean | null>(null);
   const [linkingCode] = useState(() => linkingStore.get()); // made before the session on this phone (R3)
-  const [joined, setJoined] = useState<string | null>(null); // a token held back while a warning is read
+  const [duplicate, setDuplicate] = useState(false); // ADR 0016: the join was refused for a code already given
 
   useEffect(() => {
     roomInfo(code).then(setInfo, (e: unknown) => setError(e instanceof Error ? e.message : 'unknown_room'));
@@ -27,25 +27,27 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
 
   async function choose(role: string) {
     try {
-      const { token, warning } = await joinRoom(code, role, await deviceHash(),
+      const { token } = await joinRoom(code, role, await deviceHash(),
         { infoSheetVersion: sheet.version, researchConsent: asked ? research : null }, linkingCode);
       tokenStore.set(code, token);
-      if (warning === 'duplicate_linking_code') setJoined(token); // ADR 0016: allowed, with a word first
-      else onJoined(token);
+      onJoined(token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'join_failed');
+      if (e instanceof Error && e.message === 'duplicate_linking_code') {
+        linkingStore.clear(); // ADR 0016: no join under a code already given; a new one is made on /pre
+        setDuplicate(true);
+      } else setError(e instanceof Error ? e.message : 'join_failed');
     }
   }
 
   if (error) return <p role="alert" className="notice">This room could not be joined ({error}).</p>;
   if (!info) return <p>Opening room {code}…</p>;
-  if (joined) {
+  if (duplicate) {
     return (
       <section aria-labelledby="join-title" className="join">
         <h1 id="join-title">Room {info.room}</h1>
         {/* the maintainer, 2026-10-15: only this; it does not say that anyone else holds the code */}
         <p role="status" className="notice">Choose a different code.</p>
-        <button type="button" onClick={() => onJoined(joined)}>Continue</button>
+        <p><a href="/pre">Make a different code</a></p>
       </section>
     );
   }

@@ -79,21 +79,24 @@ describe('linking code (R3)', () => {
     expect(screen.queryByText('Choose your irrigation scheme')).toBeNull();
     expect(screen.getByRole('link', { name: 'Make your personal linking code first' }).getAttribute('href')).toBe('/pre');
   });
-  it('a duplicate code is accepted, and its holder is told only to choose a different code', async () => {
+  it('a duplicate code refuses the join: "Choose a different code.", a link to /pre, and the kept code cleared', async () => {
     linkingStore.set(CODE);
+    const refused = { detail: { code: 'duplicate_linking_code', message: '' } };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ room: 'ABCDE', freeRoles: ['A'], phase: 'lobby', scenario, researchEnabled: false })))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ token: 't', role: 'A', warning: 'duplicate_linking_code' })));
+      .mockResolvedValueOnce(new Response(JSON.stringify(refused), { status: 409 }));
     vi.stubGlobal('fetch', fetchMock);
     const onJoined = vi.fn();
     render(<Join code="ABCDE" onJoined={onJoined} />);
     await screen.findByText(scenario.name);
     await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    // the maintainer, 2026-10-15: the warning says only "choose a different code"; nothing about anyone else
+    // the maintainer, 2026-10-15: only this text; nothing about anyone else
     expect((await screen.findByRole('status')).textContent).toBe('Choose a different code.');
+    expect(screen.getByRole('link', { name: 'Make a different code' }).getAttribute('href')).toBe('/pre');
+    expect(linkingStore.get()).toBeNull(); // the kept code is cleared
+    expect(localStorage.length).toBe(0); // and no role token was kept: the join was refused
     expect(onJoined).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(onJoined).toHaveBeenCalledWith('t');
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 });

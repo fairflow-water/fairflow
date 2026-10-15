@@ -187,10 +187,6 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
             raise http_error(e) from None
         async with locks.setdefault(room.code, asyncio.Lock()):
             before = len(room.game.events)
-            # ADR 0016 (the maintainer, 2026-10-15): a duplicate linking code is allowed; its second holder is warned
-            duplicate = body.linkingCode is not None and any(
-                e["type"] == "linking.code" and e["payload"]["code"] == body.linkingCode for e in room.game.events
-            )
             try:
                 token = registry.join(
                     code,
@@ -206,7 +202,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
                 raise http_error(e) from None
             log.info("joined room=%s role=%s", room.code, body.role)
             await broadcast(room, before)
-        return {"token": token, "role": body.role} | ({"warning": "duplicate_linking_code"} if duplicate else {})
+        return {"token": token, "role": body.role}
 
     async def send_projection(room: Room, conn: Connection, full: bool) -> None:
         events = project(room.game.events, _viewer(conn.role))

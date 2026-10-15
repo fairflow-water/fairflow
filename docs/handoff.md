@@ -326,7 +326,8 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
 8. **Documentation debt:**
    - blueprint §7.1 and §1.4 still describe a TS-first architecture and table mode in v1.0; marked superseded in part, pointing to ADR 0002 and ADR 0005 (PR #24, merged 2026-10-15);
    - §6.2 event table: done. It is generated from `record.py` and replaces the hand-written table, with the planned events in a separate "Not yet emitted" list (maintainer, 2026-10-15; PRs #24 and #29).
-   - README lists the balance harness as "planned", but it exists.
+   - README listed the balance harness as "planned"; fixed 2026-10-15.
+   - "farm" wording in code: fixed in test docstrings and `balance.py` comments (2026-10-15). It remains where it feeds generated files: `analysis/privacy_leakage.py` (its reports) and the ADR 0010 note in `balance.py`'s output. Those change only with a regeneration.
    - Checked against the code and the registry on 2026-10-12 and confirmed; each is marked superseded in the blueprint, pointing to the decision record, not rewritten (draft PR, 2026-10-13):
      - **§6.1 scenario example** still shows the pre-Kelvara basin. The shipped `default-basin.json` differs in:
        - the name: "Kelvara basin (hypothetical)", not "Fairflow default basin";

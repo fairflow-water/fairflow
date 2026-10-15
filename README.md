@@ -34,7 +34,9 @@ See [`CITATION.cff`](CITATION.cff) (GitHub shows a "Cite this repository" button
 - `packages/ui`: the web client (React).
 - `packages/scenarios`: the Kelvara scenario and the sourced parameter registry.
 
-Planned, not yet created: a balance harness, a scenario builder, a research-data repository (per approved cohort).
+The balance harness is `packages/engine-py/analysis/balance.py`; CI runs it on every merge to main (`.github/workflows/balance.yml`).
+
+Planned, not yet created: a scenario builder, a research-data repository (per approved cohort).
 
 ## Setting up REUSE locally
 

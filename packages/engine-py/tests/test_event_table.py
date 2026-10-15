@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
 # SPDX-License-Identifier: MIT
 """Blueprint §6.2: the generated event table (scripts/generate_event_table.py) matches what record.py emits. If an
-event, its visibility, its permitted role or its payload fields change, this fails until the script is run again. The
+event, its visibility, what causes it or its payload fields change, this fails until the script is run again. The
 hand-written "Not yet emitted" list stays apart from it: an event leaves the list when record.py first emits it."""
 
 import re

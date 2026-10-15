@@ -25,6 +25,7 @@ def join(g: Game, role: str, answer: bool | None, acknowledged: bool = True) -> 
         researchConsent=answer,
         infoSheetVersion=SHEET,
         presurveyComplete=False,
+        linkingCode="AB03" if answer is not None else None,  # ADR 0016 (test input): needed while research is enabled
     )
 
 

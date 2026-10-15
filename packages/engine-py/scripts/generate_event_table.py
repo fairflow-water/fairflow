@@ -36,6 +36,7 @@ NEEDS = {  # a role check on `actor` in an intent handler -> who may send that i
 # event -> who causes it, where the handler's checks do not show it; each with its reason
 CAUSE_NOTES = {
     "research.consent": f"{SCHEME} (join; asked only of schemes while research is enabled, ADR 0011)",
+    "linking.code": f"{SCHEME} (join; the Authority gives none, ADR 0016)",
 }
 
 

@@ -32,13 +32,13 @@ export interface Consent { infoSheetVersion: string; researchConsent: boolean | 
 
 export async function joinRoom(
   code: string, role: string, deviceHash: string, consent: Consent, linkingCode: string | null = null,
-): Promise<string> {
+): Promise<{ token: string; warning?: string }> {
   const linking = linkingCode ? { linkingCode } : {}; // R3 (ADR 0016, proposed): only a code made before the session
-  const r = await json<{ token: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/join`, {
+  const r = await json<{ token: string; warning?: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ role, deviceHash, participationAcknowledged: true, ...consent, presurveyComplete: false, ...linking }),
   }));
-  return r.token;
+  return r; // a warning: 'duplicate_linking_code' (ADR 0016)
 }
 
 /** A random per-device identifier, hashed (blueprint §6.2: a salted hash, never a device identifier). */

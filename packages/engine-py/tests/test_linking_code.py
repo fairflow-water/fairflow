@@ -16,17 +16,17 @@ from fairflow_engine.record import LINKING_CODE_MAX
 CODE = "AB03"  # test input: a participant-made code (blueprint §6.2 example: mother's initials + birth month)
 
 
-def game() -> Game:
-    return Game.create(setup(), "c", "room", {"appVersion": "test"}, clock(), nonce(0))
+def game(research: bool = False) -> Game:
+    return Game.create(setup(), "c", "room", {"appVersion": "test"}, clock(), nonce(0), researchEnabled=research)
 
 
-def join(g: Game, role: str, code: str | None) -> None:
+def join(g: Game, role: str, code: str | None, research: bool | None = None) -> None:
     g.submit(
         role,
         "join",
         deviceHash=f"h-{role}",
         participationAcknowledged=True,
-        researchConsent=None,
+        researchConsent=research,
         infoSheetVersion=SHEET,
         presurveyComplete=False,
         linkingCode=code,
@@ -50,7 +50,8 @@ def test_a_scheme_s_code_is_recorded_for_its_own_eyes_only():
     assert audit(g.setup, g.events) == []
 
 
-def test_a_code_is_optional_and_without_one_nothing_is_written():
+def test_a_code_is_optional_in_a_course_only_room_and_without_one_nothing_is_written():
+    """The maintainer, 2026-10-15: required only when research is enabled."""
     g = game()
     join(g, ROLES[0], None)
     assert g.events[-1]["type"] == "player.joined"
@@ -91,3 +92,21 @@ def test_old_records_and_joins_without_the_field_still_work():
 def test_the_engine_and_the_phone_share_one_length_bound():
     content = Path(__file__).resolve().parents[3] / "content" / "linking-code.json"
     assert json.loads(content.read_text(encoding="utf-8"))["maxLength"] == LINKING_CODE_MAX
+
+
+@pytest.mark.parametrize("answer", [True, False])
+def test_while_research_is_enabled_a_scheme_needs_a_code_whatever_its_research_answer(answer):
+    """The maintainer, 2026-10-15: required only when research is enabled. Read per room, so every scheme gives one,
+    whatever its own research answer (an open question in ADR 0016)."""
+    g = game(research=True)
+    with pytest.raises(Rejection) as e:
+        join(g, ROLES[0], None, research=answer)
+    assert e.value.code == "linking_code_needed"
+    join(g, ROLES[0], CODE, research=answer)
+    assert g.events[-1]["type"] == "linking.code"
+
+
+def test_the_authority_needs_no_code_while_research_is_enabled():
+    g = game(research=True)
+    join(g, AUTHORITY, None)
+    assert g.events[-1]["type"] == "player.joined"

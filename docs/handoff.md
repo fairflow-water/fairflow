@@ -238,7 +238,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 **Properties:**
 - `audit(setup, events)` recomputes every season and checks the commitments; an empty list means verified.
 - Replay is byte-exact.
-- Blueprint §6.2's event table is generated from `record.py`, the source of truth (maintainer, 2026-10-15): event, permitted role (from each handler's `actor` checks), visibility, and payload fields one level deep. After changing an `_emit` call, run `uv run python scripts/generate_event_table.py` in `packages/engine-py`; `tests/test_event_table.py` fails until you do. Planned events sit in a hand-written "Not yet emitted" list below the table; move a row out of it when the engine first emits that event.
+- Blueprint §6.2's event table is generated from `record.py`, the source of truth (maintainer, 2026-10-15): event, "Caused by" (the intents that reach it, followed through the calls, and who may send each, from the handler's `actor` checks), "Recorded actor", visibility, and payload fields one level deep. After changing an `_emit` call, run `uv run python scripts/generate_event_table.py` in `packages/engine-py`; `tests/test_event_table.py` fails until you do. Planned events sit in a hand-written "Not yet emitted" list below the table; move a row out of it when the engine first emits that event.
 
 ## 6. Decision records
 
@@ -259,7 +259,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
 | 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens applies (scenario default in season 1; after a veto of it, the default), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
 | 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14); at expiry a vetoed previous lens gives way to the default, and a vetoed default to the previous lens (additions, 2026-10-15); open: a vetoed default in season 1 |
-| 0016 | Pre-session flow in room mode: `/pre` keeps a personal linking code on the phone; the join sends it; `linking.code` (self) (proposed, draft PR) |
+| 0016 | Pre-session flow in room mode: `/pre` keeps a personal linking code on the phone; the join sends it; `linking.code` (self); required while research is enabled; duplicates allowed with a warning; consent stays at the join (proposed, draft PR #30) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 

@@ -15,34 +15,51 @@ SPDX-License-Identifier: CC-BY-4.0
 - **§6.3:** survey answers are not record events. They are rows in `surveys.csv`, keyed by linking code. Linking codes are hashed with a per-cohort salt before research export.
 - **Room mode (ADR 0005, ADR 0012):** a room is opened at the session and deleted 24 h after its last move. A link sent the day before therefore cannot point at a room. S2 was written for table mode, where the shared phone joins players "by linking code".
 
-## Decision (as built in the draft)
+## Decision (as built in the draft, with the maintainer's answers of 2026-10-15)
 
-1. **A page with no room, `/pre`.** The link sent the day before opens it on the player's own phone. It shows the recipe for the code (`content/linking-code.json`, working wording from the blueprint's example) and keeps the normalised code on that phone, in local storage. Nothing is sent anywhere, because no room exists yet.
-2. **The code goes with the join.** On the day, `/join/{code}` on the same phone shows the kept code and sends it with the join. The join screen still asks for nothing typed, so no name can be entered there.
-3. **The record.**
-   - The engine's `join` takes an optional `linkingCode`, from irrigation schemes only (`no_linking_code` for the Authority).
-   - The code is capitals and digits, 1 to `LINKING_CODE_MAX` characters (`bad_linking_code`). That bound is an input bound shared with the phone (`content/linking-code.json` `maxLength`), and a test keeps the two equal.
+1. **A page with no room, `/pre`.** The link sent the day before opens it on the player's own phone. It shows the recipe for the code and keeps the normalised code on that phone, in local storage. Nothing is sent anywhere, because no room exists yet.
+   - The recipe in `content/linking-code.json` is **placeholder wording**, from the blueprint's example. The maintainer decided that the recipe waits for the domain lead and the survey instruments, and the page shows it as a placeholder.
+2. **The code goes with the join.** On the day, `/join/{code}` on the same phone shows the kept code and sends it with the join. The join screen asks for nothing typed, so no name can be entered there.
+3. **Consent does not move.** It stays exactly as ADR 0011 defines it, on `/join/{code}`. Neither the consent text, nor its flow, nor its URL changes. `/pre` carries no consent.
+4. **Required only while research is enabled.**
+   - While research is enabled, every irrigation scheme must bring a code (`linking_code_needed`). A phone without one is sent to `/pre` before any scheme is shown.
+   - In a course-only room the code is optional.
+   - The Authority never gives one (`no_linking_code`).
+5. **Duplicate codes are allowed, with a warning.** A code already given in the room is recorded again. The server's join reply carries `warning: duplicate_linking_code`, and the second holder's phone says so before going on. The first holder and every other screen are told nothing.
+6. **The record.**
+   - The code is capitals and digits, 1 to `LINKING_CODE_MAX` characters (`bad_linking_code`). The bound is shared with the phone through `content/linking-code.json` `maxLength`, and a test keeps the two equal.
    - The engine writes `linking.code {role, code}` with visibility `self` right after `player.joined`, so only that scheme's own projection carries it. `player.joined` is unchanged.
    - A join without a code writes no `linking.code` event. Old records replay unchanged.
-4. **The paper fallback** is the same page on arrival: the player makes the code on their own phone before joining.
-5. **Not built, waiting for the survey instruments (`content/surveys/`):**
+   - §6.2's generated table now lists `linking.code`, and the event has left the "Not yet emitted" list.
+7. **The paper fallback** is the same page on arrival: the player makes the code on their own phone before joining.
+8. **Not built, waiting for the survey instruments (`content/surveys/`):**
    - the pre-survey itself;
    - `presurveyComplete`, which stays false;
    - R3's "nobody sees a role card before the pre-survey closes";
    - `surveys.csv`.
+
    The page shows a placeholder where the pre-survey will go.
 
-## Questions for the maintainer
+## The room-mode reading of "role assignment by linking code"
 
-1. **Consent's place.** S2 puts the information sheet and two-part consent on the pre-session page, the day before. As built, consent stays at the join (ADR 0011), and the consent text and its flow are untouched. Should consent move to `/pre`? If so, the join would have to carry the consent made the day before, and ADR 0011 would change.
-2. **Required or optional.** As built, a scheme may join without a code. Should a code be required whenever research is enabled, or always?
-3. **Duplicate codes in one room** are accepted. Refusing a duplicate would tell a player that someone else at the table chose the same code. Is accepting them right?
-4. **"Role assignment by linking code"** (S2) is a table-mode step. In room mode each player picks a free scheme on their own phone, as before. Is that reading right?
-5. **The recipe.** The working wording uses the blueprint's example (mother's initials plus birth month). Does the domain lead keep that, with the instruments?
+S2's "On the shared phone at the table: role assignment only, by linking code" describes table mode, where one phone passes round the table. In room mode the blueprint itself gives the join: **R2**, "Room mode: join by code, pick a free role." Each player therefore picks a free irrigation scheme on their own phone, after part 1 of consent, and the linking code goes with that join (decision 2). It does not assign the role.
+
+## Maintainer's answers (2026-10-15)
+
+- Consent stays as ADR 0011 defines it. Only the URL could move, and it does not (decision 3).
+- The linking code is required only when research is enabled (decision 4).
+- Duplicate codes are allowed, with a warning (decision 5).
+- The room-mode reading is quoted from R2 above.
+- The recipe wording waits for the domain lead and is marked as a placeholder (decision 1).
+
+## Open questions
+
+1. "Required when research is enabled" is read **per room**: every scheme brings a code, whatever its own research answer. Should a scheme that says no to research be excused?
+2. The warning tells the second holder that someone at the table chose the same code. Is that disclosure acceptable, or should the warning be worded without saying so?
 
 ## Consequences
 
-- One more event type, `linking.code` (self). The §6.2 table already lists it. The generated table in draft PR #29 would gain its row when both are merged.
+- One more event type, `linking.code` (self). §6.2's generated table (PR #29) carries its row, and the event has left the "Not yet emitted" list.
 - The phone keeps the code in local storage across sessions, so the delayed post-test can reuse it. A shared or borrowed phone would keep it too; the page says to bring "this phone".
 - Research export (§6.3), with hashing by a per-cohort salt, is still not built.
 

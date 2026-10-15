@@ -26,6 +26,7 @@ describe('linking code (R3)', () => {
   });
   it('the pre-session page keeps the code on this phone and says the survey is not ready', async () => {
     render(<PreSession />);
+    expect(screen.getByText(recipe.placeholderNote)).toBeTruthy(); // the recipe waits for the domain lead
     expect(screen.getByText(recipe.recipe)).toBeTruthy();
     expect(screen.getByText(recipe.presurveyPending)).toBeTruthy();
     await userEvent.type(screen.getByRole('textbox', { name: recipe.title }), 'ab 03');
@@ -68,5 +69,31 @@ describe('linking code (R3)', () => {
     await vi.waitFor(() => expect(onJoined).toHaveBeenCalledWith('t'));
     const body = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body)) as Record<string, unknown>;
     expect('linkingCode' in body).toBe(false);
+  });
+  it('while research is enabled, a phone with no code is sent to make one before any scheme is shown', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ room: 'ABCDE', freeRoles: ['A'], phase: 'lobby', scenario, researchEnabled: true }))));
+    render(<Join code="ABCDE" onJoined={() => undefined} />);
+    await screen.findByText(scenario.name);
+    await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
+    await userEvent.click(screen.getByRole('radio', { name: 'No' }));
+    expect(screen.queryByText('Choose your irrigation scheme')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Make your personal linking code first' }).getAttribute('href')).toBe('/pre');
+  });
+  it('a duplicate code is accepted, and its holder is warned before going on', async () => {
+    linkingStore.set(CODE);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ room: 'ABCDE', freeRoles: ['A'], phase: 'lobby', scenario, researchEnabled: false })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: 't', role: 'A', warning: 'duplicate_linking_code' })));
+    vi.stubGlobal('fetch', fetchMock);
+    const onJoined = vi.fn();
+    render(<Join code="ABCDE" onJoined={onJoined} />);
+    await screen.findByText(scenario.name);
+    await userEvent.click(screen.getByRole('checkbox', { name: /will take part/ }));
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    expect(await screen.findByRole('status')).toBeTruthy();
+    expect(screen.getByText(/someone at this table chose the same linking code/)).toBeTruthy();
+    expect(onJoined).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onJoined).toHaveBeenCalledWith('t');
   });
 });

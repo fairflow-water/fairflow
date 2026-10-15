@@ -17,6 +17,7 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
   const [taking, setTaking] = useState(false);
   const [research, setResearch] = useState<boolean | null>(null);
   const [linkingCode] = useState(() => linkingStore.get()); // made before the session on this phone (R3)
+  const [joined, setJoined] = useState<string | null>(null); // a token held back while a warning is read
 
   useEffect(() => {
     roomInfo(code).then(setInfo, (e: unknown) => setError(e instanceof Error ? e.message : 'unknown_room'));
@@ -26,10 +27,11 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
 
   async function choose(role: string) {
     try {
-      const token = await joinRoom(code, role, await deviceHash(),
+      const { token, warning } = await joinRoom(code, role, await deviceHash(),
         { infoSheetVersion: sheet.version, researchConsent: asked ? research : null }, linkingCode);
       tokenStore.set(code, token);
-      onJoined(token);
+      if (warning === 'duplicate_linking_code') setJoined(token); // ADR 0016: allowed, with a word first
+      else onJoined(token);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'join_failed');
     }
@@ -37,7 +39,20 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
 
   if (error) return <p role="alert" className="notice">This room could not be joined ({error}).</p>;
   if (!info) return <p>Opening room {code}…</p>;
-  const ready = taking && (!asked || research !== null);
+  if (joined) {
+    return (
+      <section aria-labelledby="join-title" className="join">
+        <h1 id="join-title">Room {info.room}</h1>
+        <p role="status" className="notice">
+          You have joined. Note: someone at this table chose the same linking code as you ({linkingCode}). That is
+          allowed; if you can, use a code only you would make when you next answer a survey.
+        </p>
+        <button type="button" onClick={() => onJoined(joined)}>Continue</button>
+      </section>
+    );
+  }
+  const needsCode = asked && !linkingCode; // ADR 0016: a code is required while research is enabled
+  const ready = taking && (!asked || research !== null) && !needsCode;
   return (
     <section aria-labelledby="join-title" className="join">
       <h1 id="join-title">Room {info.room}</h1>
@@ -58,6 +73,10 @@ export function Join({ code, onJoined }: { code: string; onJoined: (token: strin
           <label><input type="radio" name="research" checked={research === false} onChange={() => setResearch(false)} /> No</label>
           <p className="hint">To withdraw later you need the room code ({info.room}), your scheme and today’s date; the game shows them again at the end.</p>
         </fieldset>
+      )}
+      {needsCode && taking && research !== null && (
+        <p className="notice">This session links survey answers by a code you make yourself. <a href="/pre">Make your
+          personal linking code first</a>, on this phone, then come back to this page.</p>
       )}
       {ready && (
         <>

@@ -20,6 +20,7 @@ export function PreSession() {
       <p>{recipe.intro}</p>
       <p>{recipe.recipe}</p>
       <p className="hint">{recipe.example}</p>
+      <p className="hint"><em>{recipe.placeholderNote}</em></p>
       <label htmlFor="linking-code">{recipe.title}</label>
       <input id="linking-code" type="text" autoComplete="off" autoCapitalize="characters" value={draft}
         onChange={e => setDraft(e.target.value)} />

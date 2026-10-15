@@ -406,7 +406,8 @@ class Game:
         is enabled, a scheme's yes or no to research. The research answer goes to a `server` event that no projection
         returns; it is written for every scheme whatever the answer, so its presence says nothing. The Authority (the
         facilitator) is not a research participant and gives no research answer. R3, §6.2 (ADR 0016, proposed): a scheme
-        may bring its personal linking code, recorded in a `self` event only its own projection carries."""
+        brings its personal linking code (required while research is enabled, optional otherwise), recorded in a `self`
+        event only its own projection carries."""
         self._need(s.phase == "lobby", "wrong_phase", "players join before season 1")
         self._need(actor in [*self._scheme_roles(), AUTHORITY], "unknown_role", actor)
         self._need(actor not in s.players, "role_taken", actor)
@@ -417,6 +418,8 @@ class Game:
             self._need(isinstance(researchConsent, bool), "research_answer_needed", "answer yes or no to research")
         else:
             self._need(researchConsent is None, "research_not_asked", "no research answer is taken here")
+        if s.researchEnabled and actor != AUTHORITY:  # the maintainer, 2026-10-15: required while research is enabled
+            self._need(linkingCode is not None, "linking_code_needed", "make your linking code before joining")
         if linkingCode is not None:
             self._need(actor != AUTHORITY, "no_linking_code", "the facilitator gives no linking code")
             self._need(

@@ -8,6 +8,7 @@ import opening from '../fixtures/opening-public.json';
 import registry from '../../../scenarios/parameters.json';
 import { viewOf, type Climate as ClimateEvent, type PublicScenario, type RecordEvent } from '../room';
 import { Climate, sentence } from './Climate';
+import { linkingStore } from '../linking';
 import { Join } from './Join';
 import { LensVote, VETO_CLEARED } from './LensVote';
 import { NegotiationBar } from './NegotiationBar';
@@ -250,6 +251,7 @@ describe('S2 join (ADR 0011)', () => {
     vi.unstubAllGlobals();
   });
   it('research enabled: a yes or no is needed, nothing is pre-selected, and the answer is sent', async () => {
+    linkingStore.set('AB03'); // ADR 0016 (test input): while research is enabled a scheme brings its linking code
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ...room, researchEnabled: true })))
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: 't', role: 'A' })));
@@ -265,7 +267,8 @@ describe('S2 join (ADR 0011)', () => {
     await userEvent.click(screen.getAllByRole('button')[0]!);
     await vi.waitFor(() => expect(onJoined).toHaveBeenCalledWith('t'));
     const body = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body)) as Record<string, unknown>;
-    expect(body).toMatchObject({ role: 'A', participationAcknowledged: true, researchConsent: false });
+    expect(body).toMatchObject({ role: 'A', participationAcknowledged: true, researchConsent: false, linkingCode: 'AB03' });
+    localStorage.clear();
     vi.unstubAllGlobals();
   });
 });

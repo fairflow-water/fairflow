@@ -48,3 +48,18 @@ def test_a_malformed_code_is_refused_and_the_seat_stays_free(client: TestClient)
     r = client.post(f"/rooms/{code}/join", json=join_body(role, "hash-x-0123") | {"linkingCode": "ab 03"})
     assert r.status_code >= 400 and "bad_linking_code" in r.text
     assert role in client.get(f"/rooms/{code}").json()["freeRoles"]
+
+
+def test_a_duplicate_code_is_recorded_and_its_second_holder_is_warned(client: TestClient) -> None:
+    """The maintainer, 2026-10-15: duplicate codes are allowed, with a warning to the player who brings the second one;
+    the first holder is told nothing, and no other screen learns of it."""
+    room = client.post("/rooms", json={"scenario": "default-basin"}).json()
+    code = room["room"]
+    first, second = client.get(f"/rooms/{code}").json()["freeRoles"][:2]
+    one = client.post(f"/rooms/{code}/join", json=join_body(first, "hash-1-0123") | {"linkingCode": CODE}).json()
+    two = client.post(f"/rooms/{code}/join", json=join_body(second, "hash-2-0123") | {"linkingCode": CODE}).json()
+    assert "warning" not in one
+    assert two["warning"] == "duplicate_linking_code"
+    with ExitStack() as stack:
+        for role, token in ((first, one["token"]), (second, two["token"])):
+            assert sum(e["type"] == "linking.code" for e in synced(client, stack, code, token)) == 1, role

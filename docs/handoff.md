@@ -348,12 +348,13 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    - the facilitator big-screen view (S11);
    - the hash-proof display;
    - the JOSS paper at the tag.
-10. **Community-scheme scenarios and meeting mode (ADR 0017, accepted by the maintainer, 2026-10-29; blueprint §2.9, §5.5).** After v1.1. In order:
+10. **Community-scheme scenarios and meeting mode (ADR 0017, accepted by the maintainer, 2026-10-29; blueprint §2.9, §5.5).** After v1.1. Tracked in issue #61. In order:
    - the regression guard (PR #49): Kelvara's games and UI fixtures must stay unchanged;
    - Modules 2–5 (item 9);
    - the scenario fields `layout`, `source` and `setting`, recharge by card and the recognition vote, with defaults that leave Kelvara unchanged;
-   - the hypothetical community scheme in its three source variants, and the three new criteria, reported first;
+   - the Kelvara scheme case: one of Kelvara's irrigation schemes split into reaches plus an expansion area, in three source variants. No second hypothetical place (maintainer, 2026-10-29). The three new criteria are reported first;
    - table mode, then meeting mode with the "what would each rule have done?" replay;
+   - a scenario choice on the start page (the Kelvara basin, the Kelvara scheme case, later Melka Chefe); the default stays the Kelvara basin;
    - the Melka Chefe preset, from flagged fieldwork values, once their release is agreed in writing.
 
 ## 9. Waiting on the maintainer (do not decide these)

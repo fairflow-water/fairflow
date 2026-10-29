@@ -219,6 +219,8 @@ A scenario declares three settings. A scenario that leaves one out gets the Kelv
 - **Groundwater:** no river cards. The aquifer is the shared stock, and the lenses divide what may be pumped in a season.
 - **Conjunctive:** both, as in Kelvara.
 
+**The test case.** Scheme mode is built and tested on one of Kelvara's own irrigation schemes, split into reaches plus an expansion area, so Kelvara stays the one hypothetical case. Melka Chefe is a real case (amended 2026-10-29).
+
 **One engine** serves both layouts; the basin is the layout with one off-take per scheme along the river. **The ADR 0004 privacy gate** is rerun on any new display, since delivery per reach may reveal more than the basin view does.
 
 **Recharge.** Where the aquifer is on, a climate card may carry the season's natural recharge rₜ. It **replaces r₀** in the §2.6 gain (that formula with rₜ in place of r₀), and is never added to it. Without a card value, rₜ = r₀. In a groundwater scheme, spill above full leaves as discharge to downstream users. If a surface scheme's seepage is found to feed wells someone uses, the scenario switches the aquifer on for those seats. Without a river, the captured water is discharge lost to downstream users, reported in S and, with M5 on, against M5.

@@ -25,3 +25,7 @@ The pre-session linking code (#30, ADR 0016) is a draft awaiting the maintainer'
 - `/save-state` and this state page were added.
 
 #30 was updated to the maintainer's third answers (a duplicate linking code refuses the join; the Authority gives no code) and stays a draft at `4b452d3`. It waits for the maintainer's read of ADR 0016, with two review notes. Issue #20 records the maintainer's attribution of the local stall to memory pressure, with the rerun times. The design-session items (handoff §9 item 5) are unchanged.
+
+## 2026-10-29 5047e5b
+
+ADR 0017 adds community-scheme scenarios and meeting mode. The maintainer accepted it and it is merged (#48). The blueprint carries it (#50), a regression guard protects the basin game (#49), and an amendment puts the scheme-mode test case inside Kelvara (#62). The build pipeline is tracked in issue #61 (#51–#60); nothing in it is built yet. The Melka Chefe field collection plan was reviewed and updated outside the repo. #30 still waits for the maintainer's ADR 0016 read.

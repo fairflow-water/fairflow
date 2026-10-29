@@ -25,7 +25,8 @@ NONCE = "f" * 32  # fixture input: a fixed nonce so the file is reproducible
 SHEET = json.loads((bp.ROOT / "content" / "information-sheet.json").read_text(encoding="utf-8"))["version"]  # ADR 0011
 
 
-def main() -> None:
+def build() -> dict[str, str]:
+    """Each fixture's file name and text, as main() writes them to OUT; tests/test_ui_fixtures_current.py compares them."""
     scenario = json.loads((bp.ROOT / "packages" / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
     setup = load_scenario(scenario, bp.registry()).setup
     assert setup is not None
@@ -102,7 +103,6 @@ def main() -> None:
     practice.submit(AUTHORITY, "close_vote")
     for i, s in enumerate(setup.schemes):
         practice.submit(s.id, "commit", pumps=setup.basin.pump.cap if i == 0 else 0.0)
-    OUT.mkdir(parents=True, exist_ok=True)
     played = g.events[: len(totals.events) - 2]  # the game as it ended, before debrief.opened and debrief.welfare
     stages = (
         ("opening", opening),
@@ -111,6 +111,7 @@ def main() -> None:
         ("totals", totals.events),
         ("tutorial", practice.events),
     )
+    out: dict[str, str] = {}
     for stage, events in stages:
         for name, viewer in (("public", "public"), ("A", "A")):
             data = {
@@ -118,9 +119,16 @@ def main() -> None:
                 "scenario": public_scenario,
                 "events": project(events, viewer),
             }
-            text = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
-            (OUT / f"{stage}-{name}.json").write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
-    print(f"wrote {', '.join(f'{n}-*' for n, _ in stages)} fixtures to {OUT}")
+            out[f"{stage}-{name}.json"] = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
+    return out
+
+
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    files = build()
+    for name, text in files.items():
+        (OUT / name).write_text(text, encoding="utf-8", newline="\n")  # LF on every platform
+    print(f"wrote {len(files)} fixtures to {OUT}")
 
 
 if __name__ == "__main__":

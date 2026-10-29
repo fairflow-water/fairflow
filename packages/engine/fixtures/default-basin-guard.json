@@ -1,0 +1,2066 @@
+{
+ "generatedBy": "packages/engine-py/scripts/generate_regression_guard.py",
+ "scenario": "default-basin",
+ "seeds": [
+  0,
+  2
+ ],
+ "games": [
+  {
+   "table": [
+    "principled:utilitarian",
+    "principled:utilitarian",
+    "principled:utilitarian"
+   ],
+   "T": 5,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.668976,
+   "cropFailure": true,
+   "goals": {
+    "A": true,
+    "B": false,
+    "C": false
+   },
+   "lenses": [
+    "utilitarian",
+    "utilitarian",
+    "utilitarian",
+    "utilitarian",
+    "utilitarian"
+   ],
+   "spill": 11.895,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:utilitarian",
+    "principled:utilitarian",
+    "principled:utilitarian"
+   ],
+   "T": 6,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.668138,
+   "cropFailure": true,
+   "goals": {
+    "A": true,
+    "B": false,
+    "C": false
+   },
+   "lenses": [
+    "utilitarian",
+    "utilitarian",
+    "utilitarian",
+    "utilitarian",
+    "utilitarian",
+    "utilitarian"
+   ],
+   "spill": 14.37,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:egalitarian",
+    "principled:egalitarian",
+    "principled:egalitarian"
+   ],
+   "T": 5,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.902266,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": false,
+    "C": true
+   },
+   "lenses": [
+    "egalitarian",
+    "egalitarian",
+    "egalitarian",
+    "egalitarian",
+    "egalitarian"
+   ],
+   "spill": 11.895,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:egalitarian",
+    "principled:egalitarian",
+    "principled:egalitarian"
+   ],
+   "T": 6,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.90795,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": false,
+    "C": true
+   },
+   "lenses": [
+    "egalitarian",
+    "egalitarian",
+    "egalitarian",
+    "egalitarian",
+    "egalitarian",
+    "egalitarian"
+   ],
+   "spill": 14.145,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:proportional",
+    "principled:proportional",
+    "principled:proportional"
+   ],
+   "T": 5,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.999259,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional"
+   ],
+   "spill": 12.55854,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:proportional",
+    "principled:proportional",
+    "principled:proportional"
+   ],
+   "T": 6,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.999315,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional"
+   ],
+   "spill": 15.007602,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:capability",
+    "principled:capability",
+    "principled:capability"
+   ],
+   "T": 5,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.785439,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": true,
+    "C": false
+   },
+   "lenses": [
+    "capability",
+    "capability",
+    "capability",
+    "capability",
+    "capability"
+   ],
+   "spill": 14.212038,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:capability",
+    "principled:capability",
+    "principled:capability"
+   ],
+   "T": 6,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.802715,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": true,
+    "C": false
+   },
+   "lenses": [
+    "capability",
+    "capability",
+    "capability",
+    "capability",
+    "capability",
+    "capability"
+   ],
+   "spill": 16.971194,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:sufficientarian",
+    "principled:sufficientarian",
+    "principled:sufficientarian"
+   ],
+   "T": 5,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.947243,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": true,
+    "C": false
+   },
+   "lenses": [
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian"
+   ],
+   "spill": 12.165,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:sufficientarian",
+    "principled:sufficientarian",
+    "principled:sufficientarian"
+   ],
+   "T": 6,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.939507,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": true,
+    "C": false
+   },
+   "lenses": [
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian",
+    "sufficientarian"
+   ],
+   "spill": 14.487,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "selfish",
+    "selfish",
+    "selfish"
+   ],
+   "T": 5,
+   "finalStock": 13.469743,
+   "reachedReserveSeason": null,
+   "belowLowSeason": 5,
+   "minStock": 13.469743,
+   "collectiveScore": 0.846316,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "capability",
+    "utilitarian",
+    "capability",
+    "capability",
+    "capability"
+   ],
+   "spill": 0.0,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 17.006863,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 17.006863,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 17.006863,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.821363,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.821363,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 19.821363,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 18.251287,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 18.251287,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 18.251287,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.771225,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.771225,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.771225,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "selfish",
+    "selfish",
+    "selfish"
+   ],
+   "T": 6,
+   "finalStock": 13.940106,
+   "reachedReserveSeason": null,
+   "belowLowSeason": 3,
+   "minStock": 13.06092,
+   "collectiveScore": 0.870269,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "capability",
+    "capability",
+    "capability",
+    "capability",
+    "utilitarian",
+    "capability"
+   ],
+   "spill": 0.0,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.089156,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.089156,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.089156,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 15.298026,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 15.298026,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 15.298026,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 13.947361,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 13.947361,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 13.947361,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 13.06092,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 13.06092,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 13.06092,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 15.21892,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 15.21892,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 15.21892,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:proportional",
+    "selfish",
+    "conditional"
+   ],
+   "T": 5,
+   "finalStock": 14.89999,
+   "reachedReserveSeason": null,
+   "belowLowSeason": 5,
+   "minStock": 14.89999,
+   "collectiveScore": 0.831459,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional"
+   ],
+   "spill": 3.53677,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 18.212708,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 18.212708,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 18.212708,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.420367,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.420367,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 19.420367,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "principled:proportional",
+    "selfish",
+    "conditional"
+   ],
+   "T": 6,
+   "finalStock": 15.127484,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 15.127484,
+   "collectiveScore": 0.831691,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": false,
+    "C": true
+   },
+   "lenses": [
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional"
+   ],
+   "spill": 0.929062,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.151245,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.151245,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.151245,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 15.903602,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 15.903602,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 15.903602,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.637341,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.637341,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 16.637341,
+     "role": "C",
+     "profitable": false,
+     "deficit": true
+    },
+    {
+     "stock": 18.980846,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 18.980846,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 18.980846,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "conditional",
+    "conditional",
+    "conditional"
+   ],
+   "T": 5,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.999259,
+   "cropFailure": false,
+   "goals": {
+    "A": false,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional"
+   ],
+   "spill": 12.55854,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  },
+  {
+   "table": [
+    "conditional",
+    "conditional",
+    "conditional"
+   ],
+   "T": 6,
+   "finalStock": 20.0,
+   "reachedReserveSeason": null,
+   "belowLowSeason": null,
+   "minStock": 20.0,
+   "collectiveScore": 0.999315,
+   "cropFailure": false,
+   "goals": {
+    "A": true,
+    "B": true,
+    "C": true
+   },
+   "lenses": [
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional",
+    "proportional"
+   ],
+   "spill": 15.007602,
+   "profitChecks": [
+    {
+     "stock": 20,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": false,
+     "deficit": false
+    },
+    {
+     "stock": 20.0,
+     "role": "A",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "B",
+     "profitable": true,
+     "deficit": true
+    },
+    {
+     "stock": 20.0,
+     "role": "C",
+     "profitable": true,
+     "deficit": true
+    }
+   ]
+  }
+ ]
+}

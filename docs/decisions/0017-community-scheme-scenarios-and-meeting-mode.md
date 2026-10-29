@@ -42,7 +42,7 @@ A scenario that leaves a setting out gets Kelvara's value. This is how the curre
 - **Position relative to the canal matters too** (maintainer, 2026-10-29). A parcel may lie above the canal water surface, level with it, or below it, and this is collected per parcel:
   - parcels **above** the canal must lift water with a motor or by hand. The cost is the existing pumping-cost mechanic, applied to a canal lift, so gravity users and lift users of one reach face different costs for the same water;
   - parcels **below** the canal can breach or cut the bank and let water run onto their land. This is a form of M2 Steal: it takes water from the reaches below, and the repair is charged to the M3 maintenance budget.
-- **Order matters physically.** Water reaches each reach after the losses upstream of it (M3 conveyance, applied reach by reach), and in dry years rotation serves the tail last (M2).
+- **Order matters physically.** M3 conveyance applies as §2.8 writes it: each reach's own share loses λ, and λ may differ by reach (lining and condition are collected per reach). In dry years rotation serves the tail last (M2), and the head can take first (M2 Steal). Losses accumulating along the canal are not adopted here; if a case needs them, that is a further decision.
 - **Recognition of the expansion area is the table's choice.** It is a vote with three options, modelled on the floor-rule vote (ADR 0003):
   - **not recognised**: no allocation. The expansion area can still take water at an off-take outside the plan (M2 Steal) or pump, where the source allows it;
   - **recognised in full**: its stated demand enters the lenses like any reach's;
@@ -59,10 +59,14 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 - **Groundwater.** There are no river cards. The aquifer is the shared stock, and the existing pumping dilemma (ADR 0008) becomes the core. The lenses divide what may be pumped in a season instead of river water.
 - **Conjunctive.** Both apply, as in Kelvara, at scheme scale.
 
-**Recharge, where the aquifer is on.** Two terms, either or both of which a scenario can use. This follows the maintainer's answer, "can be both":
-- **Rainfall recharge by climate card.** Each card can carry a recharge volume, so a dry year recharges less. In a groundwater scheme this is how the season's luck reaches the players. Kelvara gives none, so its behaviour is unchanged.
-- **Capture.** ADR 0009's gain, G(B) = min(r₀, κ·(B₀ − B_observed)), stays capture-consistent: what the aquifer gains is taken from natural discharge. With a river in the game, the river loses it next season, as now. Without one, the captured water is discharge lost to **downstream users** (springs, baseflow, wetlands). It is recorded against M5 and the sustainability dial, not created from nothing.
+**Recharge, where the aquifer is on.** The maintainer's answer was "can be both". So the season's natural recharge can vary by climate card, and the gain keeps ADR 0009's capture form. The two are one flow, never added together:
+- **The season's natural recharge rₜ.** A climate card may carry its own recharge volume, so a dry year recharges less. It **replaces r₀ for that season**; it is not added to the gain. A scenario that gives no card recharge has rₜ = r₀ every season, which is Kelvara's case, so Kelvara is unchanged. In a groundwater scheme this is how the season's luck reaches the players.
+- **The gain stays ADR 0009's.** G = min(rₜ, κ·max(0, B₀ − B_observed)), where rₜ caps the gain as r₀ does now. What the aquifer gains is taken from natural discharge, so nothing is credited twice:
+  - with a river in the game, the river loses G next season, as now;
+  - without one, the captured water is discharge lost to **downstream users** (springs, baseflow, wetlands). It is reported in the sustainability dial and, when M5 is on, against M5, as ADR 0009 reports the river loss.
 - Return-flow recharge (ADR 0007) and spill above full apply as now. In a groundwater scheme, spill leaves the game as discharge to downstream users.
+
+**Where the aquifer is off (surface).** M3 seepage and the return flow that would recharge an aquifer leave the game as drainage to downstream users. They are reported in the sustainability dial and, when M5 is on, against M5. If a case later shows that the seepage feeds wells someone uses, the scenario switches the aquifer on for those seats.
 
 ### 4. Meeting mode, for farmers and extension workers
 
@@ -89,7 +93,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 - Every new scenario field is optional, and its default reproduces today's behaviour exactly. `default-basin` does not change.
 - A regression test is added before any engine change: Kelvara's record vectors, UI fixtures and balance results must come out unchanged.
-- The §9.2 balance criteria apply to every scenario. Scheme mode adds three criteria. At first they are **reported, not gated**: the maintainer sets their pass marks after seeing the first harness runs on the hypothetical scheme (maintainer, 2026-10-29), as ADR 0010 did for the human baselines:
+- The §9.2 balance criteria apply to every scenario. Scheme mode adds three criteria. At first they are **reported, not gated**: the maintainer sets their pass marks after seeing the first harness runs on the hypothetical scheme (maintainer, 2026-10-29), as ADR 0010 left the all-principled ranking reported and not gated:
   - **position matters:** under some lens, the tail and the expansion area get visibly less of what they were allocated, and some lens narrows that gap;
   - **recognition matters:** the expansion area's share differs across the vote's options and across lenses;
   - **steal has a price:** taking at the head pays privately, and costs the table when monitoring is on.
@@ -108,7 +112,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 ## Consequences
 
 - Scenario schema 3.x gains `layout`, `source` and `setting`, recharge by card, and the recognition vote's settings. The registry gains the scheme parameters, each with a source.
-- One new public event is needed for the recognition vote, and perhaps one for its result. They are to be added to §6.2 through the generated table, after acceptance.
+- One new public event is needed for the recognition vote, and perhaps one for its result. They reach §6.2 through the generated table when they are built.
 - Build order:
   1. this ADR;
   2. M2–M5 (v1.1);
@@ -120,11 +124,11 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 ## Open questions
 
-None. The maintainer answered the three questions of the proposal on 2026-10-29: the expansion seat votes, the vote is held once and reopened on an event, the new criteria are reported before they are gated, and research stays off in meeting mode until approval.
+None. The maintainer answered the proposal's open questions on 2026-10-29: the expansion seat votes, the vote is held once and reopened on an event, the new criteria are reported before they are gated, and research stays off in meeting mode until approval.
 
 ## Sources
 
 - Blueprint §2.5 (E_PJ), §2.8 (M2–M6), §5.3 (lens cards), §9.2 (balance criteria), R2, R8.
-- ADR 0001, ADR 0003, ADR 0004, ADR 0007, ADR 0008, ADR 0009, ADR 0011.
+- ADR 0001, ADR 0003, ADR 0004, ADR 0007, ADR 0008, ADR 0009, ADR 0010, ADR 0011.
 - Molden & Gates 1990, the equity indicator behind E_PJ, as cited in blueprint §2.5.
 - The maintainer's fieldwork plan for Melka Chefe (not in this repository).

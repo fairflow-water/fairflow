@@ -86,14 +86,14 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 ### 5. Scenarios
 
-- The default community scheme is **hypothetical**, like Kelvara: typical literature values, each with a source, or labelled conventions. Variants exist for each source type.
+- **The scheme-mode test case lies inside Kelvara** (amended by the maintainer, 2026-10-29). Kelvara is the one hypothetical case, and Melka Chefe is a real one. Scheme mode is therefore built, balanced and tested on one of Kelvara's own irrigation schemes, split into head, middle and tail reaches plus an expansion area, with variants for each source type. No second hypothetical place is made. Which Kelvara scheme to use is chosen when the scenario is built. Its reach values are sourced or labelled conventions, consistent with that scheme's basin values.
 - **Melka Chefe** is a labelled real-case preset (`surface`, `scheme`), built only from collected, flagged values (measured, derived, literature or assumed, as the fieldwork plan specifies) once the data exist and their release is agreed in writing.
 
 ### 6. The basin game is not compromised
 
 - Every new scenario field is optional, and its default reproduces today's behaviour exactly. `default-basin` does not change.
 - A regression test is added before any engine change: Kelvara's record vectors, UI fixtures and balance results must come out unchanged.
-- The §9.2 balance criteria apply to every scenario. Scheme mode adds three criteria. At first they are **reported, not gated**: the maintainer sets their pass marks after seeing the first harness runs on the hypothetical scheme (maintainer, 2026-10-29), as ADR 0010 left the all-principled ranking reported and not gated:
+- The §9.2 balance criteria apply to every scenario. Scheme mode adds three criteria. At first they are **reported, not gated**: the maintainer sets their pass marks after seeing the first harness runs on the Kelvara scheme case (maintainer, 2026-10-29), as ADR 0010 left the all-principled ranking reported and not gated:
   - **position matters:** under some lens, the tail and the expansion area get visibly less of what they were allocated, and some lens narrows that gap;
   - **recognition matters:** the expansion area's share differs across the vote's options and across lenses;
   - **steal has a price:** taking at the head pays privately, and costs the table when monitoring is on.
@@ -102,7 +102,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 ### 7. Evaluation
 
-1. **The balance harness** on the hypothetical community scheme in all three source variants, with no tuning of the table mix.
+1. **The balance harness** on the Kelvara scheme case in all three source variants, with no tuning of the table mix.
 2. **Against observation, for Melka Chefe.** Does the model, run with the rules in use, reproduce the measured adequacy by reach and the measured 1 − CV of adequacy? That second quantity is the E_PJ dial's measure (Molden & Gates 1990).
 3. **Meeting mode** in a pilot with WUA members and extension workers. The pilot checks:
    - the session length;
@@ -117,7 +117,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
   1. this ADR;
   2. M2–M5 (v1.1);
   3. the regression guard;
-  4. the hypothetical community scheme in three source variants;
+  4. the Kelvara scheme case in three source variants;
   5. table mode, then meeting mode;
   6. the Melka Chefe preset after fieldwork.
 - **A symbol clash to settle before any scenario file uses it.** The fieldwork plan uses κ for a vulnerability weight, while κ is the aquifer coefficient in ADR 0008 and ADR 0009.

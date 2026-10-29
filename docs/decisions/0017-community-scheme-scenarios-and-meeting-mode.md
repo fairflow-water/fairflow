@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0017: Community-scheme scenarios and meeting mode
 
-- Status: **proposed** (draft PR). The direction and the answers below come from the maintainer, 2026-10-29. Nothing is built.
+- Status: **accepted by the maintainer, 2026-10-29** (PR #48). The direction and the answers below come from the maintainer, 2026-10-29. Nothing is built yet.
 - After v1.1: it depends on Modules 2 to 5 and on table mode (E3b).
 
 ## Context
@@ -47,6 +47,8 @@ A scenario that leaves a setting out gets Kelvara's value. This is how the curre
   - **not recognised**: no allocation. The expansion area can still take water at an off-take outside the plan (M2 Steal) or pump, where the source allows it;
   - **recognised in full**: its stated demand enters the lenses like any reach's;
   - **recognised in part**: up to a floor. The floor's size is a sourced value or a labelled convention.
+  - **Who votes:** every seat, including the expansion area's own (maintainer, 2026-10-29). It is a claimant like the others; the reaches can still outvote it.
+  - **When:** once, early in the game. It is reopened only when an event card or the scheme manager (the Authority) calls it (maintainer, 2026-10-29). This keeps rounds short, within the blueprint's limit of 11 minutes of decisions per season.
 - **The claim basis.** The vote sets the claim basis for the expansion area only. Reaches inside the command area keep stated demand, as in the basin. The debrief adds one flip: a replay with every reach on designed command area instead of demand.
 
 ### 3. The three source types
@@ -73,7 +75,10 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 - **"What would each rule have done?"** After each season, the table can see the same season replayed under every enabled lens. The engine already replays seasons with a lens forced (the balance harness does this), so this adds a view, not a mechanic. The maintainer chose this for meeting mode, 2026-10-29.
 - **Flexible rounds.** The facilitator may shorten rounds or turn off the score display. The classroom timetable (ADR 0001) is unchanged.
 - **Language.** English first; Amharic later (maintainer, 2026-10-29).
-- **Research stays off.** ADR 0011's consent was written for course students. A community setting needs its own consent text and ethics approval before research mode can be enabled there, and the fieldwork plan's data-release agreement must be signed first.
+- **Research stays off until approval** (maintainer, 2026-10-29). Meeting mode works fully as a facilitation tool without research. ADR 0011's consent was written for course students. Research can be enabled in a community setting only after three things exist:
+  - its own consent text;
+  - ethics approval (for example through Wollo University, as the fieldwork plan proposes);
+  - the signed data-release agreement.
 
 ### 5. Scenarios
 
@@ -84,7 +89,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 - Every new scenario field is optional, and its default reproduces today's behaviour exactly. `default-basin` does not change.
 - A regression test is added before any engine change: Kelvara's record vectors, UI fixtures and balance results must come out unchanged.
-- The §9.2 balance criteria apply to every scenario. Scheme mode adds three criteria, whose thresholds the maintainer sets:
+- The §9.2 balance criteria apply to every scenario. Scheme mode adds three criteria. At first they are **reported, not gated**: the maintainer sets their pass marks after seeing the first harness runs on the hypothetical scheme (maintainer, 2026-10-29), as ADR 0010 did for the human baselines:
   - **position matters:** under some lens, the tail and the expansion area get visibly less of what they were allocated, and some lens narrows that gap;
   - **recognition matters:** the expansion area's share differs across the vote's options and across lenses;
   - **steal has a price:** taking at the head pays privately, and costs the table when monitoring is on.
@@ -115,9 +120,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 ## Open questions
 
-1. **The recognition vote's rules.** Does the expansion seat vote on its own recognition? Is the vote held once per game, or can it be reopened each season?
-2. **The scheme-mode balance thresholds** (decision 6).
-3. **Meeting mode's research and consent route.** Who approves it, and when?
+None. The maintainer answered the three questions of the proposal on 2026-10-29: the expansion seat votes, the vote is held once and reopened on an event, the new criteria are reported before they are gated, and research stays off in meeting mode until approval.
 
 ## Sources
 

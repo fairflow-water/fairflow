@@ -39,6 +39,9 @@ A scenario that leaves a setting out gets Kelvara's value. This is how the curre
   - The parcel-level data allow other groupings (WUA blocks or outlet groups, or user types) to be tested in the balance harness before a case is fixed.
 - **The Authority** is the scheme manager: the WUA or the irrigation office, holding the fee income and the maintenance budget (M3).
 - **M5** is **the river and downstream users**. The mechanics are the same as in §2.8, and the reserve is read as the release past the headworks.
+- **Position relative to the canal matters too** (maintainer, 2026-10-29). A parcel may lie above the canal water surface, level with it, or below it, and this is collected per parcel:
+  - parcels **above** the canal must lift water with a motor or by hand. The cost is the existing pumping-cost mechanic, applied to a canal lift, so gravity users and lift users of one reach face different costs for the same water;
+  - parcels **below** the canal can breach or cut the bank and let water run onto their land. This is a form of M2 Steal: it takes water from the reaches below, and the repair is charged to the M3 maintenance budget.
 - **Order matters physically.** Water reaches each reach after the losses upstream of it (M3 conveyance, applied reach by reach), and in dry years rotation serves the tail last (M2).
 - **Recognition of the expansion area is the table's choice.** It is a vote with three options, modelled on the floor-rule vote (ADR 0003):
   - **not recognised**: no allocation. The expansion area can still take water at an off-take outside the plan (M2 Steal) or pump, where the source allows it;

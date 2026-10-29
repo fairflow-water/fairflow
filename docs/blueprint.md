@@ -55,6 +55,8 @@ Live raster processing or WaPOR API calls on the device; shapefile upload in the
 | v1.2 (weeks 10–16) | Real-geography presets (Mwea, Balotra) from the WaPOR authoring pipeline; Omo–Gibe preset with policy cards; ET-scaled seasonal demand; Module 6 side payments; treatment assignment; localisation to Amharic and Hindi | Authoring pipeline reproduces the two papers' indicator values for their study years |
 | v2.0 (weeks 17–26) | Agent layer: scripted agents in CI, Concordia seat filling and synthetic cohorts; research export schema frozen; EquiNex Policy Simulator consumes `@fairflow/engine` | Agents complete 100 unattended games without engine rejection; export schema frozen (any human–agent comparison is a research output, not a gate) |
 
+**\[ADR 0017\]** After v1.1, because they need Modules 2–5 and table mode, Fairflow adds **community-scheme scenarios** (§2.9): a single community irrigation scheme fed by surface water, groundwater or both. It also adds **meeting mode** (§5.5), for farmers and extension workers. Melka Chefe is the first real-case preset, built only after fieldwork. The basin game is unchanged (§9.2).
+
 ### 1.5 Definition of done (every release, for the parts it delivers)
 
 - Engine passes every reference vector in §3 to two decimals for every lens shipped, and every property test in §9.1.
@@ -186,6 +188,39 @@ with sᵢ = min(Aᵢ, 1) floored at 0.01 and mᵢ = 0.5. PWF is the Atkinson (19
 | Core stability (a posteriori) | v(C) = production of coalition C sharing Σ\_{i∈C} Qᵢ optimally; in core if no coalition's realised production < v(C) | Ambec & Sprumont 2002; Madani et al. 2014 BASI (degenerates to CV of shares when minimal rights are zero) |
 | Shapley column | φᵢ over v(C) | Dinar & Hogarth 2015 |
 
+### 2.9 Community-scheme scenarios \[ADR 0017\]
+
+A scenario declares three settings. A scenario that leaves one out gets the Kelvara value, so the default basin is unchanged:
+
+| Setting | Options | Kelvara |
+| --- | --- | --- |
+| `layout` | `basin`: irrigation schemes along a river · `scheme`: units of one community scheme | `basin` |
+| `source` | `surface` · `groundwater` · `conjunctive` | `conjunctive` |
+| `setting` | `classroom` · `meeting` (§5.5) | `classroom` |
+
+**The scheme layout:**
+- **Seats** are the scheme's reaches (head, middle, tail) in canal order, plus an **expansion area** outside the designed command area. Tenure (owners and tenants) goes into the role cards and private goals. M6 side payments can carry rent.
+- **The Authority** is the scheme manager (the WUA or the irrigation office), holding the fee income and the M3 maintenance budget.
+- **M5** is the river and downstream users: the same mechanics, with R read as the release past the headworks.
+- **Position along the canal:**
+  - M3 conveyance applies to each reach's own share, as in §2.8, with λ by reach;
+  - M2 rotation serves the tail last in dry years, and M2 Steal lets the head take first.
+- **Position relative to the canal:**
+  - parcels above the water surface lift water at a cost, through the pumping-cost mechanic;
+  - parcels below it can breach the bank, which is a form of M2 Steal repaired from the M3 budget.
+- **Recognition of the expansion area** is a vote modelled on the floor-rule vote (ADR 0003):
+  - **The options:** not recognised (no allocation; it can still take water outside the plan or pump, where the source allows), recognised in full (its stated demand enters the lenses), or recognised in part (up to a floor, sourced or a labelled convention).
+  - **Who votes:** every seat, the expansion area's own included.
+  - **When:** once, early in the game, reopened only by an event card or the Authority.
+  - **Claim basis:** the vote sets it for the expansion area only. The reaches keep stated demand. The debrief adds one flip: every reach on designed command area instead of demand.
+
+**Source types** use the existing mechanics with parts switched off:
+- **Surface:** the river cards and M2–M3; no aquifer. Seepage and return flow leave as drainage to downstream users, reported in S and, with M5 on, against M5. Pumping can be switched on for seats that have wells or lift pumps.
+- **Groundwater:** no river cards. The aquifer is the shared stock, and the lenses divide what may be pumped in a season.
+- **Conjunctive:** both, as in Kelvara.
+
+**Recharge.** Where the aquifer is on, a climate card may carry the season's natural recharge rₜ. It **replaces r₀** in the §2.6 gain, G = min(rₜ, κ·max(0, B₀ − B)), and is never added to it. Without a card value, rₜ = r₀. Without a river, the captured water is discharge lost to downstream users, reported in S and, with M5 on, against M5.
+
 ## 3. Reference vectors and fixtures
 
 Computed from §2 for the Kelvara basin (§2.2; ADR 0007, ADR 0008, ADR 0009) by an independent reference implementation, `packages/engine-py/analysis/reference_model.py`, written from this specification without importing the engine. §3.1 and §3.2 use the v1 reduction of §2.6: **β = 1, r₀ = 0, no pumping, no actions** (and no aquifer capacity). Allocations Q, adequacies A, yields Y, E\_PJ and E\_SE do not depend on β, so the tables are the allocation truth for every version and the scoring truth (F, S) for the v1 reduction only. The dynamic fixtures of §3.3 and the cross-checks of §3.4 use the full scenario: β = 0.90 / 0.60 / 0.75, r₀ = 1, ρ = 0.6, B₀ = B\_max = 20, B\_low = 15, B\_res = 10, pump capacity 0.5 × D, cost fᵢ(2 + 0.8·max(0, 1 − B/B₀)) per Mm³ on the observed level, natural gain min(r₀, κ(B₀ − B)) replacing r₀ (κ = 0.1; ADR 0009), so a full aquifer gains nothing naturally and next season's river inflow falls by exactly what the aquifer gains, one season per year. Values are rounded only for printing (two decimals, tonnes as integers). E\_SE per claimant. Wet year (AW = 20): every lens gives Q = 6.25 / 9.00 / 3.40, 1.35 Mm³ to the aquifer, A = 1, ΣY = 16,500 t, E\_PJ = 1.00, E\_SE = 0.63, F = 1.00, S = 0.93.
@@ -260,7 +295,7 @@ Full Kelvara scenario; proportional lens unless stated; one season is one year.
 ### 4.1 Setup
 
 - **R1.** A game is created from a scenario and a play mode; the scenario fixes every parameter of §2 and the module flags. **\[v3\]** The treatment arm (silent mode, universalisation nudge, Authority hand-over season) is written as a `treatment.assigned` event before season 1, with who assigned it.
-- **R2.** Roles: one player per scheme (3–5), one Basin Authority, \[M5\] one Voice of the River. Table mode: roles in seat order on one phone, the Authority holds the phone in every public phase. Room mode: join by code, pick a free role.
+- **R2.** Roles: one player per scheme (3–5), one Basin Authority, \[M5\] one Voice of the River. Table mode: roles in seat order on one phone, the Authority holds the phone in every public phase. Room mode: join by code, pick a free role. **\[ADR 0017\]** In a community-scheme scenario the seats are the reaches plus an expansion area, and the Authority is the scheme manager (§2.9).
 - **R3.** **\[v3\]** Consent, pre-survey and the personal linking code are completed before the session on the player's own phone (QR sent the day before; paper on arrival for anyone who has not). Nobody sees a role card before the pre-survey closes. Season 0 is a facilitated tutorial budgeted at 10 minutes: normal year, two lenses (proportional, utilitarian), one practice private turn with pump cost 0, nothing scored; it is an engine mode, not a separate screen set. The facilitator plays the Authority for seasons 0–2 and hands over; the hand-over is an event.
 - **R4.** T \~ Uniform{5, 6}, sealed by hash of a secret nonce at creation, revealed after season T or at a time-box. Deck 1 W / 3 N / 2 D, shuffled at creation, order sealed the same way.
 - **R5.** B₀, B\_res, \[M3\] budget 0, livelihood 0.
@@ -380,6 +415,18 @@ The split is roughly 65 minutes of play, 25 of debrief, 15 of deliberation and 1
 ### 5.4 Accessibility, localisation, robustness
 
 WCAG 2.1 AA contrast; numbers ≥ 14 px (16 px, 1.5 line height for Devanagari and Ethiopic, fonts subset); targets ≥ 48 px; `prefers-reduced-motion` end states; screen-reader focus moves to the role button at each hand-over with the role announced; `aria-valuetext` on the stepper in Mm³ and points; timers from timestamps with a Wake Lock for the session (Screen Wake Lock API needs iOS 16.4+; older iOS falls back to a facilitator reminder); no haptics on iOS Safari (`navigator.vibrate` is unsupported), so every haptic cue has a visual twin; the room-mode QR carries only a short-lived upload token, never game state; confirm or 3 s undo on Commit and Close the vote; battery warning at 20 %; export to a second phone offered after every season carries public projections and the encrypted private payloads only, so a mid-game export cannot leak who pumped. Amharic and Hindi are left-to-right; a right-to-left locale would need a decision on the upstream-left river convention.
+
+### 5.5 Meeting mode \[ADR 0017\]
+
+For farmers and extension workers in a meeting or brainstorming setting. The classroom timetable (§5.0, ADR 0001) is unchanged.
+
+- **Devices:** no personal phones are needed. One shared screen carries the game, the facilitator enters each seat's choice, and paper cards are the fallback. This needs table mode and the facilitator-entered path.
+- **Presentation:** water in turns, hours or cubes, in local units the scenario names. Lens cards use plain names and pictures (§5.3), and the facilitator speaks the prompts.
+- **Roles:** farmers play their own reach or user type; extension workers play the scheme manager, or swap.
+- **"What would each rule have done?":** after each season, the table can see the same season replayed under every enabled lens.
+- **Rounds:** the facilitator may shorten them or hide the score.
+- **Language:** English first; Amharic later.
+- **Research is off** until there is a community consent text, ethics approval and a signed data-release agreement (§10.4).
 
 ## 6. Data specification
 
@@ -688,6 +735,13 @@ Three tiers: **baseline** on every merge (the shipped scenarios, 200 games per c
 | Human baselines | selfish tables score below principled tables; the 55–75 % band for principled tables cannot hold for proportional tables, which reach the score's maximum by construction, and is indicative only for the other lenses (ADR 0010) | communication raises cooperation in commons dilemmas (Ostrom, Gardner & Walker 1994; Balliet 2010); the levels are not calibration targets |
 | Timing | decisions per season × durations measured in the week-1 paper pilot ≤ 11 minutes; season 0 ≤ 10 |  |
 
+**\[ADR 0017\]** The criteria above apply to every scenario. A regression guard (`tests/test_regression_guard.py`) keeps the Kelvara results unchanged while scheme mode is built. Community-scheme scenarios add three criteria. They are reported first and gated only after the maintainer has seen the first runs:
+- **position matters:** under some lens, the tail and the expansion area get visibly less of what they were allocated, and some lens narrows that gap;
+- **recognition matters:** the expansion area's share differs across the vote's options and across lenses;
+- **steal has a price:** taking at the head pays privately and costs the table when monitoring is on.
+
+For a real case, the model is also compared with measured adequacy by reach and with the measured 1 − CV of adequacy (the E\_PJ measure).
+
 A scenario failing a criterion ships only with the failing criterion shown in the Builder as a warning ("in this basin the lens barely matters").
 
 ### 9.3 Pilots
@@ -736,6 +790,7 @@ The comparison condition for a second cohort is *vote* versus *rotating fixed ru
 - **Ethics review**: protocol submitted in build week 1, covering the pre-session survey, the linking code, the delayed post-test and the deliberation sheets; approval before the first cohort is uncertain, so the first cohort is course-only unless approval arrives; the research dataset starts with the first approved cohort.
 - **Storage**: records on devices until exported; relay and research server in the EU; pseudonymous under GDPR Art. 4(5).
 - **Agents** (v2.0): players told before play when a role is machine-played; rationales shown at debrief.
+- **Meeting mode** (§5.5, ADR 0017): research is off in a community setting until it has its own consent text, ethics approval and a signed data-release agreement. ADR 0011's consent was written for course students.
 - **Publication**: the frozen export schema, the engine and the codebook are published with the first paper so results reproduce from records.
 
 ## 11. Theoretical grounding and audit trail

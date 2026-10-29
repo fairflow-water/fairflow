@@ -388,6 +388,8 @@ PYTHONIOENCODING=utf-8 uv run pytest -q
 ```sh
 uv run python scripts/generate_vectors.py      # TS mirror golden vectors (packages/engine/fixtures)
 uv run python scripts/generate_ui_fixture.py   # UI fixtures (packages/ui/src/fixtures)
+uv run python scripts/generate_regression_guard.py   # ADR 0017 guard: whole Kelvara games (packages/engine/fixtures);
+                                                    # only for an intended basin change, said in the PR
 uv run python analysis/reference_model.py      # prints the §3 values from the independent reference model;
                                                # carry them into blueprint §3, then the engine tests compare
 uv run python analysis/balance.py 50 > analysis/balance_kelvara.json   # §9.2 (about 4 min)

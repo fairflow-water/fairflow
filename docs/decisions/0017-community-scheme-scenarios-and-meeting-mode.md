@@ -124,7 +124,7 @@ The basin model is already conjunctive. Each source type uses the existing mecha
 
 ## Open questions
 
-None. The maintainer answered the proposal's open questions on 2026-10-29: the expansion seat votes, the vote is held once and reopened on an event, the new criteria are reported before they are gated, and research stays off in meeting mode until approval.
+None. The maintainer answered the proposal's open questions on 2026-10-29: the expansion seat votes, the vote is held once and reopened by an event or the Authority, the new criteria are reported before they are gated, and research stays off in meeting mode until approval.
 
 ## Sources
 

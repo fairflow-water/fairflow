@@ -259,6 +259,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0013 | The server times the private turn; untouched default (0 pumps, no action); `autoCommitted` and `autoCommittedBy` withheld until a per-player debrief |
 | 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens applies (scenario default in season 1; after a veto of it, the default), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
 | 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14); at expiry a vetoed previous lens gives way to the default, and a vetoed default to the previous lens (additions, 2026-10-15); in season 1 a vetoed default still applies (2026-10-15) |
+| 0017 | Community-scheme scenarios and meeting mode: a scenario declares `layout` (basin or scheme), `source` (surface, groundwater, conjunctive) and `setting` (classroom or meeting), with Kelvara's values as defaults; seats in a scheme are reaches plus an expansion area the table may recognise; recharge by climate card and/or capture; Melka Chefe as a labelled preset after fieldwork (proposed, draft PR) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 

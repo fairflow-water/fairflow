@@ -219,7 +219,9 @@ A scenario declares three settings. A scenario that leaves one out gets the Kelv
 - **Groundwater:** no river cards. The aquifer is the shared stock, and the lenses divide what may be pumped in a season.
 - **Conjunctive:** both, as in Kelvara.
 
-**Recharge.** Where the aquifer is on, a climate card may carry the season's natural recharge rₜ. It **replaces r₀** in the §2.6 gain, G = min(rₜ, κ·max(0, B₀ − B)), and is never added to it. Without a card value, rₜ = r₀. Without a river, the captured water is discharge lost to downstream users, reported in S and, with M5 on, against M5.
+**One engine** serves both layouts; the basin is the layout with one off-take per scheme along the river. **The ADR 0004 privacy gate** is rerun on any new display, since delivery per reach may reveal more than the basin view does.
+
+**Recharge.** Where the aquifer is on, a climate card may carry the season's natural recharge rₜ. It **replaces r₀** in the §2.6 gain (that formula with rₜ in place of r₀), and is never added to it. Without a card value, rₜ = r₀. In a groundwater scheme, spill above full leaves as discharge to downstream users. If a surface scheme's seepage is found to feed wells someone uses, the scenario switches the aquifer on for those seats. Without a river, the captured water is discharge lost to downstream users, reported in S and, with M5 on, against M5.
 
 ## 3. Reference vectors and fixtures
 
@@ -420,7 +422,7 @@ WCAG 2.1 AA contrast; numbers ≥ 14 px (16 px, 1.5 line height for Devanagari a
 
 For farmers and extension workers in a meeting or brainstorming setting. The classroom timetable (§5.0, ADR 0001) is unchanged.
 
-- **Devices:** no personal phones are needed. One shared screen carries the game, the facilitator enters each seat's choice, and paper cards are the fallback. This needs table mode and the facilitator-entered path.
+- **Devices:** no personal phones are needed. One shared screen carries the game, the facilitator enters each seat's choice, and paper cards are the fallback. This needs table mode and the facilitator-entered path of issue #9.
 - **Presentation:** water in turns, hours or cubes, in local units the scenario names. Lens cards use plain names and pictures (§5.3), and the facilitator speaks the prompts.
 - **Roles:** farmers play their own reach or user type; extension workers play the scheme manager, or swap.
 - **"What would each rule have done?":** after each season, the table can see the same season replayed under every enabled lens.
@@ -735,7 +737,7 @@ Three tiers: **baseline** on every merge (the shipped scenarios, 200 games per c
 | Human baselines | selfish tables score below principled tables; the 55–75 % band for principled tables cannot hold for proportional tables, which reach the score's maximum by construction, and is indicative only for the other lenses (ADR 0010) | communication raises cooperation in commons dilemmas (Ostrom, Gardner & Walker 1994; Balliet 2010); the levels are not calibration targets |
 | Timing | decisions per season × durations measured in the week-1 paper pilot ≤ 11 minutes; season 0 ≤ 10 |  |
 
-**\[ADR 0017\]** The criteria above apply to every scenario. A regression guard (`tests/test_regression_guard.py`) keeps the Kelvara results unchanged while scheme mode is built. Community-scheme scenarios add three criteria. They are reported first and gated only after the maintainer has seen the first runs:
+**\[ADR 0017\]** The criteria above apply to every scenario whose source and modules they concern: those on the aquifer (cooperation rewarded, the dilemma) need the aquifer on, and those on Modules 2–5 need the module. A regression guard (`packages/engine-py/tests/test_regression_guard.py`) keeps the Kelvara results unchanged while scheme mode is built. Community-scheme scenarios add three criteria. They are reported first and gated only after the maintainer has seen the first runs:
 - **position matters:** under some lens, the tail and the expansion area get visibly less of what they were allocated, and some lens narrows that gap;
 - **recognition matters:** the expansion area's share differs across the vote's options and across lenses;
 - **steal has a price:** taking at the head pays privately and costs the table when monitoring is on.

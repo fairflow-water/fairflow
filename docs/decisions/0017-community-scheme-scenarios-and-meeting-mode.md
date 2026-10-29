@@ -4,7 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 # ADR 0017: Community-scheme scenarios and meeting mode
 
-- Status: **accepted by the maintainer, 2026-10-29** (PR #48). The direction and the answers below come from the maintainer, 2026-10-29. Nothing is built yet.
+- Status: **accepted by the maintainer, 2026-10-29** (PR #48); decision 5 amended by the maintainer the same day (PR #62). The direction and the answers below come from the maintainer, 2026-10-29. Nothing is built yet.
 - After v1.1: it depends on Modules 2 to 5 and on table mode (E3b).
 
 ## Context

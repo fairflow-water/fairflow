@@ -8,38 +8,46 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
 
 ## As of
 
-2026-10-15, main at `6e0ab1b` (green: CI, balance). Nothing further is planned this week.
+2026-10-29, main at `5047e5b` (green: CI, balance). The day ended at a clean stop: no branch, check or agent is left running.
 
 ## Merged (latest first)
 
-- #39: ADR 0015 amendment (in season 1, with no previous lens, a vetoed default still applies at expiry; maintainer, 2026-10-15). It also added the `/save-state` command, `CLAUDE.md` importing this page, and this page.
-- #38: handoff §9 item 5. R10, the Authority hand-over, `treatment.assigned` and the service worker wait for a design session.
-- #37: only the Authority proposes a lens (R7). Closed #34.
-- #36: ADR 0015. At expiry a vetoed default gives way to the previous lens (tests only; the engine already did it).
-- #35: docs debt. The README names the balance harness, and "irrigation scheme" replaces "farm" in test docstrings and comments.
-- #29: blueprint §6.2 event table generated from `record.py`, with planned events in a separate "Not yet emitted" list.
-- #33: CI `timeout-minutes` on the engine, mirror and client jobs.
-- #32: ADR 0015 addition. Expiry during a re-vote skips a vetoed previous lens for the default.
-- Earlier on 2026-10-14/15: #21 (veto, ADR 0015), #22 (negotiation timer, ADR 0014), #23, #24, #25, #26, #27, #28, #31.
+- #62: ADR 0017 amended. The scheme-mode test case is one of Kelvara's own irrigation schemes, split into reaches plus an expansion area; there is no second hypothetical place (maintainer, 2026-10-29).
+- #50: blueprint carries ADR 0017: §1.4, the new §2.9 (community-scheme scenarios), R2, the new §5.5 (meeting mode), §9.2 and §10.4. Handoff §8 item 10 has the build order.
+- #49: the ADR 0017 regression guard. Sixteen fixed Kelvara games plus the UI fixtures must stay unchanged.
+- #48: ADR 0017, accepted by the maintainer on 2026-10-29.
+  - A scenario declares `layout`, `source` and `setting`.
+  - Seats in a scheme are the reaches plus an expansion area, and the expansion area's recognition is voted by every seat. The vote is held once and reopened by an event or the Authority.
+  - A climate card's recharge replaces r₀ in the ADR 0009 gain.
+  - Parcels above the canal pay to lift water; parcels below it can breach the bank.
+  - Meeting mode is for farmers and extension workers, English first, with research off until approval.
+- #44: Dependabot (setup-uv).
+- #40, #39 (2026-10-15): the state page and `/save-state`; ADR 0015's season-1 rule.
 
 ## Open
 
-- **#30 (draft, head `4b452d3`, green)**: pre-session linking code, ADR 0016 (proposed, no open questions). It waits for the maintainer to read ADR 0016 before it merges.
-  - It has all three rounds of answers. A code is required from every irrigation scheme while research is enabled; the Authority gives none. A duplicate code refuses the join: the phone shows "Choose a different code." with a link to `/pre` and the kept code is cleared. The separate `self` event stays. The no-phone path is in issue #9.
-  - Two notes from the last review are left for the maintainer's read:
-    1. After a refused join, `/pre` has no link back to the room, and the duplicate screen doesn't say to return to the join link.
-    2. The E5 row in handoff §7 still lists the linking code as not built.
-- **#5, #7**: Dependabot updates (npm group; server group). Not reviewed yet.
-- **Issue #9**: move a scheme's seat to another phone. It also holds the no-phone path for ADR 0016: the facilitator enters the code.
-- **Issue #20**: the server test suite stalls on the maintainer's machine. The maintainer attributes this to machine memory pressure, not the code (2026-10-15). The measured reruns of the local server step took 1 min 2.7 s and 1 min 14.0 s (comment on the issue). It stays open.
+- **Tracking issue #61** covers community-scheme scenarios and meeting mode, in build order:
+  - M2 #51, M3 #52, M4 #53, M5 #54 (v1.1);
+  - the scenario fields #55;
+  - the Kelvara scheme case #56;
+  - table mode #57;
+  - meeting mode #58;
+  - the start-page scenario choice #59. Today the start page always creates `default-basin`;
+  - the Melka Chefe preset #60, after fieldwork and a written release agreement.
+
+  Nothing in it is built yet.
+- **#30 (draft, `4b452d3`)**: the pre-session linking code, ADR 0016 (proposed). It waits for the maintainer's read; there are two review notes (no link back to the room from `/pre`; the stale E5 row).
+- **Dependabot #43, #45, #46, #47**: not reviewed yet.
+- **Issue #9**: seat transfer, including the no-phone path. **Issue #20**: local stalls of the test suites (memory pressure).
 
 ## Decisions (standing, beyond the ADRs)
 
 - Never push to main. Merge rule: the PR is rebased on main, all 28 checks are green on the final commit with nothing re-run, and a second agent's review has no open blocking item. Wait for main to be green before the next merge.
 - Every commit carries the maintainer's `Signed-off-by` (`git commit -s`).
-- `scripts/check-all.sh` must be green before every push. On this machine, run it in three foreground parts (YAML, REUSE and engine; server; TypeScript and e2e) and push only after the last part passes.
+- `scripts/check-all.sh` must be green before every push. On this machine, run it in four foreground parts (YAML, REUSE and engine lint; engine tests, up to about 9 minutes; server; TypeScript and e2e) and push only after the last part passes. `uv` is in `AppData/Roaming/Python/Python313/Scripts`, which is not on PATH. The machine PATH has malformed entries that break `cmd.exe` for npm, so run the TypeScript part with a clean PATH.
 - Numbers come only from Python or the registry. Derived files are regenerated by script. Contradictions with the blueprint are reported, never quietly fixed.
-- The seats are irrigation schemes, never farms. Only the hypothetical Kelvara basin is used. The room TTL stays at 24 h.
+- The seats are irrigation schemes, never farms. Kelvara is the one hypothetical case: scheme mode is tested on one of Kelvara's own schemes, and Melka Chefe is a real case (ADR 0017). The room TTL stays at 24 h.
+- The regression guard (`packages/engine-py/tests/test_regression_guard.py`) must stay green. Regenerate its fixture only for an intended basin change, and say so in the PR.
 - Leave untouched: the consent text, research mode, the ADR 0004 gate and `.zenodo.json`.
 
 ## Open questions (waiting on the maintainer)
@@ -50,11 +58,15 @@ Written by `/save-state` (`.claude/commands/save-state.md`). `CLAUDE.md` imports
   - the consent-text placeholders (ADR 0011);
   - the cohort cut, decided at app pilot 1;
   - the untracked `.zenodo.json`.
-- Handoff §9 item 5: the design session after the weekend (R10's hand-over and prediction prompts, the Authority hand-over, `treatment.assigned`, the service worker).
+- Handoff §9 item 5: the design session, still to be held (R10's hand-over and prediction prompts, the Authority hand-over, `treatment.assigned`, the service worker).
+
+- ADR 0017 details settled when building: which Kelvara scheme becomes the scheme case (#56), and which season's rₜ caps the river's next-season cut.
 
 ## Next steps
 
-1. The design session for §9 item 5. It needs the maintainer first.
-2. After the maintainer reads ADR 0016, merge #30 under the rule. It needs the maintainer first.
-3. Review the Dependabot PRs #5 and #7 under the merge rule.
-4. The remaining "farm" wording is in `packages/engine-py/analysis/privacy_leakage.py` and in the ADR 0010 note in `packages/engine-py/analysis/balance.py`. Their generated outputs carry it too (the `privacy_leakage_*.md` reports, `balance_kelvara.json`), so fixing it means editing the scripts and then regenerating. Scheme names such as "Tail-end Wheat Farms" are a separate question (handoff §8 item 8).
+1. **M2–M5** (#51–#54, v1.1), module by module, with an ADR where the blueprint leaves a choice open, keeping the regression guard green. This needs no further decision, so it can start when the maintainer says.
+2. **The design session** for handoff §9 item 5. It needs the maintainer first.
+3. **#30:** merge under the rule once the maintainer has read ADR 0016.
+4. **Review the Dependabot PRs** #43, #45, #46 and #47 under the merge rule.
+5. **The Melka Chefe field plan:** the updated copy is `Melkachefe_variables_to_collect_updated.docx` in the Fairflow folder, outside the repo, with no Fairflow references. The original was left as it was, because it was open in Word.
+6. **The remaining "farm" wording** is in `packages/engine-py/analysis/privacy_leakage.py` and in the ADR 0010 note in `balance.py`, and in their generated outputs. Fixing it means editing the scripts and then regenerating.

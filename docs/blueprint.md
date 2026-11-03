@@ -300,7 +300,7 @@ Full Kelvara scenario; proportional lens unless stated; one season is one year.
 
 - **R1.** A game is created from a scenario and a play mode; the scenario fixes every parameter of §2 and the module flags. **\[v3\]** The treatment arm (silent mode, universalisation nudge, Authority hand-over season) is written as a `treatment.assigned` event before season 1, with who assigned it. **\[ADR 0018\]** In room mode `treatment.assigned` is recorded in every game, with all arms off as the control. The facilitator sets the arms at room creation; random assignment waits for research approval.
 - **R2.** Roles: one player per scheme (3–5), one Basin Authority, \[M5\] one Voice of the River. Table mode: roles in seat order on one phone, the Authority holds the phone in every public phase. Room mode: join by code, pick a free role. **\[ADR 0017\]** In a community-scheme scenario the seats are the reaches plus an expansion area, and the Authority is the scheme manager (§2.9).
-- **R3.** **\[v3\]** Consent, pre-survey and the personal linking code are completed before the session on the player's own phone (QR sent the day before; paper on arrival for anyone who has not). Nobody sees a role card before the pre-survey closes. Season 0 is a facilitated tutorial budgeted at 10 minutes: normal year, two lenses (proportional, utilitarian), one practice private turn with pump cost 0, nothing scored; it is an engine mode, not a separate screen set. The facilitator plays the Authority for seasons 0–2 and hands over; the hand-over is an event.
+- **R3.** **\[v3\]** Consent, pre-survey and the personal linking code are completed before the session on the player's own phone (QR sent the day before; paper on arrival for anyone who has not). Nobody sees a role card before the pre-survey closes. Season 0 is a facilitated tutorial budgeted at 10 minutes: normal year, two lenses (proportional, utilitarian), one practice private turn with pump cost 0, nothing scored; it is an engine mode, not a separate screen set. The facilitator plays the Authority for seasons 0–2 and hands over; the hand-over is an event. **\[ADR 0018\]** In room mode with several tables, each table's Authority is a student from season 0.
 - **R4.** T \~ Uniform{5, 6}, sealed by hash of a secret nonce at creation, revealed after season T or at a time-box. Deck 1 W / 3 N / 2 D, shuffled at creation, order sealed the same way.
 - **R5.** B₀, B\_res, \[M3\] budget 0, livelihood 0.
 
@@ -529,9 +529,9 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 
 - `treatment.assigned` (public): silentMode, universalisationNudge, secretBallot, authorityHandoverSeason, deliberation, assignedBy (facilitator \| random), randomisationSeed? — written before season 1 so analysis can recover arm membership
 - `linking.code` (self): role, code (participant-generated, e.g. mother's initials + birth month) — links pre-, post- and delayed-post surveys without identity; never stored with a name
-- `authority.handover` (public): from, to, season
+- `authority.handover` (public): from, to, season **\[ADR 0018\]** `season, fromDevice, toDevice` (salted device hashes; the role stays the Authority).
 - `handover.accepted` (public): role, msSinceCommit (hand-over latency)
-- `prediction.answered` (public): role (the predictor), metric, predictedValue, actualValue filled at `season.resolved`
+- `prediction.answered` (public): role (the predictor), metric, predictedValue, actualValue filled at `season.resolved` **\[ADR 0018\]** `self`, with `{role, metric: "pumpsTotalObserved", answer: more | same | less}`; at `debrief.opened` a public `prediction.tally {season, more, same, less, outcome}` per season.
 - `authority.acted` (public): action, cost, budgetAfter \[M3\]
 - `event.drawn` (public): cardId, effect
 - `debrief.note` (public): promptId, role? (null for a table rule), text

@@ -5,10 +5,14 @@
 #   FAIRFLOW_DOMAIN=fairflow.example.org docker compose -f deploy/compose.yaml up -d --build
 # See deploy/README.md for the whole runbook.
 name: fairflow
+x-logging: &logging  # Docker's own log of each container's output, rotated (a convention: three files of 10 MB)
+  driver: json-file
+  options: { max-size: 10m, max-file: "3" }
 services:
   app:
     build: { context: .., dockerfile: deploy/Dockerfile, target: app }
     restart: unless-stopped
+    logging: *logging
     environment:
       FAIRFLOW_ALLOWED_ORIGINS: https://${FAIRFLOW_DOMAIN:?set FAIRFLOW_DOMAIN}
     volumes:
@@ -16,6 +20,7 @@ services:
   web:
     build: { context: .., dockerfile: deploy/Dockerfile, target: web }
     restart: unless-stopped
+    logging: *logging
     depends_on: [app]
     environment:
       FAIRFLOW_DOMAIN: ${FAIRFLOW_DOMAIN:?set FAIRFLOW_DOMAIN}

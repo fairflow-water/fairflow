@@ -176,8 +176,23 @@ jobs:
         run: |
           for i in $(seq 1 30); do curl -skf https://localhost/ >/dev/null && break; sleep 2; done
           curl -skf https://localhost/ | grep -q '<div id="root"'
-          room=$(curl -skf -X POST https://localhost/rooms -H 'content-type: application/json'             -H 'origin: https://localhost' -d '{"scenario": "default-basin"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["room"])')
+          for i in $(seq 1 30); do
+            room=$(curl -skf -X POST https://localhost/rooms -H 'content-type: application/json' -H 'origin: https://localhost' -d '{"scenario": "default-basin"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["room"])') && break
+            sleep 2
+          done
+          test -n "$room"
           curl -skf "https://localhost/rooms/$room" | grep -q '"freeRoles"'
+          echo "ROOM=$room" >> "$GITHUB_ENV"
+      - name: A WebSocket handshake through the proxy (the server's handshake log line is the known source of addresses)
+        run: |
+          curl -sk --http1.1 --max-time 3 -o /dev/null -w '%{http_code}' "https://localhost/rooms/$ROOM/ws" -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'origin: https://localhost' | tee code.txt || true
+          grep -q '^101$' code.txt
+      - name: A proxy error while the app is down (Caddy's error logger would record the client address)
+        run: |
+          docker compose -f deploy/compose.yaml stop app
+          code=$(curl -sk -o /dev/null -w '%{http_code}' -X POST https://localhost/rooms -H 'content-type: application/json' -d '{}' || true)
+          echo "status with the app down: $code"; test "$code" = 502
+          docker compose -f deploy/compose.yaml start app
       - name: Neither container logged a client IP address (packages/server/README.md, "IP addresses")
         run: |
           docker compose -f deploy/compose.yaml logs --no-color > logs.txt

@@ -2,10 +2,15 @@
 # SPDX-License-Identifier: MIT
 #
 # HTTPS for FAIRFLOW_DOMAIN (a certificate is obtained automatically; "localhost" uses Caddy's own local CA).
-# No `log` directive: Caddy then writes no access log, so no client IP address is recorded (packages/server/README.md,
-# "IP addresses"). Do not add one without dropping the remote address, or the information sheet must say so.
+# No client IP address is recorded (packages/server/README.md, "IP addresses"):
+# - no `log` directive in the site, so Caddy writes no access log;
+# - the error logger is excluded below: on a proxy error (e.g. a 502 while `app` restarts) it would write the
+#   client's address. Do not add either back without dropping the remote address, or the information sheet must say so.
 {
 	admin off
+	log default {
+		exclude http.log.error
+	}
 }
 
 {$FAIRFLOW_DOMAIN} {

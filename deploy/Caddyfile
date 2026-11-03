@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
+# SPDX-License-Identifier: MIT
+#
+# HTTPS for FAIRFLOW_DOMAIN (a certificate is obtained automatically; "localhost" uses Caddy's own local CA).
+# No `log` directive: Caddy then writes no access log, so no client IP address is recorded (packages/server/README.md,
+# "IP addresses"). Do not add one without dropping the remote address, or the information sheet must say so.
+{
+	admin off
+}
+
+{$FAIRFLOW_DOMAIN} {
+	encode zstd gzip
+	header -Server
+	handle /rooms* {
+		reverse_proxy app:8000
+	}
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

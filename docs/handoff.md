@@ -260,6 +260,7 @@ Weighted utilitarian, prioritarian, equal sacrifice and Talmud are implemented i
 | 0014 | The server times the negotiation from `season.climate`; at expiry the previous lens applies (scenario default in season 1; after a veto of it, the default), `byTimeout`; last short season in the registry (accepted by the maintainer, 2026-10-14) |
 | 0015 | The Authority's one veto per game, during the vote; every vote cleared and the rest re-voted; `lens.vetoed` (public); no new proposals after a veto (accepted by the maintainer, 2026-10-14); at expiry a vetoed previous lens gives way to the default, and a vetoed default to the previous lens (additions, 2026-10-15); in season 1 a vetoed default still applies (2026-10-15) |
 | 0017 | Community-scheme scenarios and meeting mode: a scenario declares `layout` (basin or scheme), `source` (surface, groundwater, conjunctive) and `setting` (classroom or meeting), with Kelvara's values as defaults; seats in a scheme are reaches plus an expansion area the table may recognise; a climate card's recharge may replace r₀ in ADR 0009's capture gain; Melka Chefe as a labelled preset after fieldwork; the expansion seat votes, the vote is held once and reopened by an event or the Authority, new criteria reported before gated, research off in meeting mode until approval (accepted by the maintainer, 2026-10-29; PR #48) |
+| 0018 | Room-mode predictions on each phone (more / same / less than last season, scored on the observed total, seen by the predictor only until the debrief); each table's Authority is a student, with a hand-over setting (default after season 2, 0 = never) through a one-time transfer link; `treatment.assigned` in every game, facilitator-assigned; service worker with table mode (accepted by the maintainer, 2026-11-03) |
 
 ## 7. Status against the epics (blueprint §8.1, ADR 0005)
 
@@ -371,11 +372,7 @@ Each item ends with `scripts/check-all.sh` green, plus a decision record if it c
    Keep `FAIRFLOW_RESEARCH_ENABLED` unset until these are filled and ethics approval is given. Change the sheet's `version` whenever its text changes.
 3. **Cohort cut** (E3b, E6, and the §8.3 list): decided at app pilot 1.
 4. **Untracked `.zenodo.json`** at the repository root: its origin is unknown. Ask before committing or deleting it.
-5. **Design session with the maintainer after the weekend** (maintainer, 2026-10-15). These wait for it; do not build them before then. The reason after each is the builder's context, not the maintainer's words:
-   - R10's hand-over and prediction prompts. They assume a phone passed round the table, so room mode needs a design, and the prompt's metrics are unspecified.
-   - The Authority hand-over (R3). It probably overlaps with seat transfer, issue #9.
-   - `treatment.assigned` (R1). This is a research-design question.
-   - The service worker (E7). Caching carries risk for the room app as built today, which is online only; the blueprint's offline install and table-mode fallback would need it.
+5. **Design session held; decided in ADR 0018** (accepted by the maintainer, 2026-11-03): R10's prediction prompts, the Authority hand-over, `treatment.assigned` and the service worker. The build items for the class of 2026-11-18 are in issue #69.
 
 ## 10. How to work in this repository
 

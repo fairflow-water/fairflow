@@ -36,10 +36,10 @@ Open `https://fairflow.example.org`. The start page creates a room. For several 
 ## IP addresses
 
 The information sheet does not mention an IP log, so none is kept:
-- **Caddy** has no `log` directive, so it writes no access log;
+- **Caddy** writes no access log, and its error logger, which would record the client's address on a proxy error, is excluded (`deploy/Caddyfile`);
 - **the server** runs with `--no-access-log --log-level warning` and blanks the WebSocket client address (`packages/server/README.md`).
 
-The CI job fails if a private or loopback address appears in either container's log. Do not add a proxy or a load balancer in front of `web` that logs addresses. If one is required, the information sheet must say so.
+The CI job makes a WebSocket handshake and a proxy error (with the app stopped) and fails if a private or loopback address then appears in either container's log. Do not add a proxy or a load balancer in front of `web` that logs addresses. If one is required, the information sheet must say so.
 
 ## Checks after a deploy
 

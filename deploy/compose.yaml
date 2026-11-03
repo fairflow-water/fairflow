@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
+# SPDX-License-Identifier: MIT
+#
+# On the server, from the repository root:
+#   FAIRFLOW_DOMAIN=fairflow.example.org docker compose -f deploy/compose.yaml up -d --build
+# See deploy/README.md for the whole runbook.
+name: fairflow
+services:
+  app:
+    build: { context: .., dockerfile: deploy/Dockerfile, target: app }
+    restart: unless-stopped
+    environment:
+      FAIRFLOW_ALLOWED_ORIGINS: https://${FAIRFLOW_DOMAIN:?set FAIRFLOW_DOMAIN}
+    volumes:
+      - rooms:/data
+  web:
+    build: { context: .., dockerfile: deploy/Dockerfile, target: web }
+    restart: unless-stopped
+    depends_on: [app]
+    environment:
+      FAIRFLOW_DOMAIN: ${FAIRFLOW_DOMAIN:?set FAIRFLOW_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  rooms: {}        # the room store (SQLite): exclude it from backups (packages/server/README.md)
+  caddy_data: {}   # certificates
+  caddy_config: {}

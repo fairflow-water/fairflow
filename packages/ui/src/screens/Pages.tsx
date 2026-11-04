@@ -88,7 +88,12 @@ export function FacilitatorPage() {
       <main className="start">
         <h1>Fairflow</h1>
         <p>Open a room for your table. Participants join by scanning the QR code.</p>
-        {error && <p role="alert" className="notice">The room could not be opened ({error}).</p>}
+        {error && (
+          <p role="alert" className="notice">
+            {error === 'bad_treatment' ? 'That hand-over season is outside the game. Choose another and open the room again.'
+              : `The room could not be opened (${error}).`}
+          </p>
+        )}
         <label className="setting">
           Pass the Authority role to another student
           <select value={handover} onChange={e => setHandover(Number(e.target.value))}>

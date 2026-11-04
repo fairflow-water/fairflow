@@ -65,6 +65,22 @@ describe('the hand-over season (ADR 0018)', () => {
     expect(ask(never)).toBe(false);
   });
 
+  it('a move for a broken phone during play, or at an earlier reveal, still leaves the prompt at the hand-over season', () => {
+    const at = upTo('season.resolved', SEASON);
+    const move = (season: number) => ({ ...at[0]!, seq: 999, type: 'authority.handover', season,
+      payload: { season, fromDevice: 'a', toDevice: 'b' } }) as RecordEvent;
+    const during = at.findIndex(e => e.type === 'private.opened' && e.season === SEASON);
+    const earlier = at.findIndex(e => e.type === 'season.resolved' && e.season === SEASON - 1);
+    for (const shown of [
+      [...at.slice(0, during + 1), move(SEASON), ...at.slice(during + 1)], // the phone broke during the season's play
+      [...at.slice(0, earlier + 1), move(SEASON - 1), ...at.slice(earlier + 1)], // moved at the reveal before it
+    ]) {
+      render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={vi.fn()} />);
+      expect(screen.getByRole('heading', { name: 'Pass the Authority role' })).toBeTruthy();
+      cleanup();
+    }
+  });
+
   it('the start page sends the chosen season with the new room, the scenario\'s default first', async () => {
     const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(() => Promise.resolve(new Response(JSON.stringify({ detail: { code: 'stop' } }), { status: 409 })));
     vi.stubGlobal('fetch', fetchMock);
@@ -80,5 +96,12 @@ describe('the hand-over season (ADR 0018)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(JSON.parse(String(fetchMock.mock.calls[1]![1]!.body))).toEqual({ scenario: 'default-basin', authorityHandoverSeason: 0 });
+  });
+
+  it('says in words when the server refuses the hand-over season', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: { code: 'bad_treatment' } }), { status: 409 }))));
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('That hand-over season is outside the game. Choose another and open the room again.');
   });
 });

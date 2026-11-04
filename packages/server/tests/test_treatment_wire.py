@@ -14,6 +14,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from test_server import ORIGIN, client
+from test_store import Clock, settings
+
+from fairflow_server.app import create_app
+from fairflow_server.rooms import RoomRegistry
 
 __all__ = ["client"]  # the shared fixture
 SCENARIO = json.loads((Path(__file__).resolve().parents[2] / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
@@ -56,3 +60,13 @@ def test_a_season_outside_the_game_is_refused_and_no_room_is_made(client: TestCl
     if status == 409:
         assert r.json()["detail"]["code"] == "bad_treatment"
     assert len(client.app.state.registry.rooms) == rooms  # type: ignore[attr-defined]
+
+
+def test_the_hand_over_season_survives_a_restart(tmp_path: Path) -> None:
+    """The arms are in the record, so a room restored from the store keeps the facilitator's setting."""
+    clock = Clock()
+    with TestClient(create_app(settings(tmp_path), now=clock)) as c:
+        r = c.post("/rooms", json={"scenario": "default-basin", "authorityHandoverSeason": LONGEST - 1})
+        assert r.status_code == 200
+    room = RoomRegistry(settings(tmp_path), now=clock).get(r.json()["room"])  # a restart, from the file alone
+    assert room.game.state.handoverSeason == LONGEST - 1 != DEFAULT

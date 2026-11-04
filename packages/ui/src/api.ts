@@ -21,9 +21,10 @@ async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-export const createRoom = async (scenario: string): Promise<CreatedRoom> =>
+/** A new room; `authorityHandoverSeason` is after which season the Authority role passes on, 0 = never (ADR 0018). */
+export const createRoom = async (scenario: string, authorityHandoverSeason?: number): Promise<CreatedRoom> =>
   json<CreatedRoom>(await fetch('/rooms', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ scenario }) }));
+    body: JSON.stringify({ scenario, ...(authorityHandoverSeason === undefined ? {} : { authorityHandoverSeason }) }) }));
 
 export const roomInfo = async (code: string): Promise<RoomInfo> => json<RoomInfo>(await fetch(`/rooms/${encodeURIComponent(code)}`));
 

@@ -10,16 +10,19 @@ import { Climate } from './Climate';
 import { FloorVote } from './FloorVote';
 import { AfterGame } from './AfterGame';
 import { GameEnd } from './GameEnd';
+import { HandoverPrompt } from './Handover';
 import { LensVote } from './LensVote';
 import { PrivateTurn } from './PrivateTurn';
 import { Reveal } from './Reveal';
 import { Review } from './Review';
 
-export function Season({ view, scenario, role, onIntent, trySend, resync, clockOffsetMs = 0, events = [], code = '' }: {
+export function Season({ view, scenario, role, onIntent, trySend, resync, clockOffsetMs = 0, events = [], code = '', passAuthority }: {
   view: RoomView; scenario: PublicScenario; role: string; onIntent: (intent: Record<string, unknown>) => void;
   /** Sends silently and says whether it went out (the private turn retries a commit that did not). */
   trySend?: (intent: Record<string, unknown>) => boolean;
   resync?: number; clockOffsetMs?: number; events?: readonly RecordEvent[]; code?: string;
+  /** On the Authority's device: makes the one-time link that passes the role on (ADR 0018). */
+  passAuthority?: () => Promise<string>;
 }) {
   const commitIntent = trySend ?? ((intent: Record<string, unknown>) => { onIntent(intent); return true; });
   const isPlayer = scenario.schemes.some(s => s.id === role);
@@ -99,6 +102,10 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
       {view.phase === 'reveal' && last && (
         <>
           <Reveal key={view.season} result={last.public} mine={last.mine} season={view.season} practice={view.tutorial} />
+          {role === 'authority' && passAuthority && !view.tutorial && view.handoverSeason > 0
+            && view.season === view.handoverSeason && (view.handedOverIn ?? 0) < view.handoverSeason && (
+            <HandoverPrompt key={view.season} season={view.season} makeLink={passAuthority} />
+          )}
           {role === 'authority' && (
             <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_season' })}>
               {view.tutorial ? 'Open season 1' : 'Open the next season'}

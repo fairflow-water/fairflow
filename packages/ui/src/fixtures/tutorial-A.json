@@ -66,7 +66,7 @@
  "events": [
   {
    "seq": 1,
-   "t": "2026-10-07T08:00:100Z",
+   "t": "2026-10-07T08:00:101Z",
    "season": 0,
    "actor": "engine",
    "type": "game.created",
@@ -130,7 +130,7 @@
     ],
     "runtime": {
      "fairflowEngine": "1.0.0.dev0",
-     "numpy": "2.5.3",
+     "numpy": "2.5.4",
      "scipy": "1.18.1"
     },
     "researchEnabled": false
@@ -139,7 +139,23 @@
   },
   {
    "seq": 2,
-   "t": "2026-10-07T08:00:101Z",
+   "t": "2026-10-07T08:00:102Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "treatment.assigned",
+   "payload": {
+    "silentMode": false,
+    "universalisationNudge": false,
+    "secretBallot": false,
+    "authorityHandoverSeason": 2,
+    "deliberation": "table",
+    "assignedBy": "facilitator"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 3,
+   "t": "2026-10-07T08:00:103Z",
    "season": 0,
    "actor": "A",
    "type": "player.joined",
@@ -153,8 +169,8 @@
    "visibility": "public"
   },
   {
-   "seq": 3,
-   "t": "2026-10-07T08:00:102Z",
+   "seq": 4,
+   "t": "2026-10-07T08:00:104Z",
    "season": 0,
    "actor": "B",
    "type": "player.joined",
@@ -168,8 +184,8 @@
    "visibility": "public"
   },
   {
-   "seq": 4,
-   "t": "2026-10-07T08:00:103Z",
+   "seq": 5,
+   "t": "2026-10-07T08:00:105Z",
    "season": 0,
    "actor": "C",
    "type": "player.joined",
@@ -183,8 +199,8 @@
    "visibility": "public"
   },
   {
-   "seq": 5,
-   "t": "2026-10-07T08:00:104Z",
+   "seq": 6,
+   "t": "2026-10-07T08:00:106Z",
    "season": 0,
    "actor": "authority",
    "type": "player.joined",
@@ -198,8 +214,8 @@
    "visibility": "public"
   },
   {
-   "seq": 6,
-   "t": "2026-10-07T08:00:105Z",
+   "seq": 7,
+   "t": "2026-10-07T08:00:107Z",
    "season": 0,
    "actor": "engine",
    "type": "season.climate",
@@ -272,8 +288,8 @@
    "visibility": "public"
   },
   {
-   "seq": 7,
-   "t": "2026-10-07T08:00:106Z",
+   "seq": 8,
+   "t": "2026-10-07T08:00:108Z",
    "season": 0,
    "actor": "authority",
    "type": "lens.proposed",
@@ -284,8 +300,8 @@
    "visibility": "public"
   },
   {
-   "seq": 8,
-   "t": "2026-10-07T08:00:107Z",
+   "seq": 9,
+   "t": "2026-10-07T08:00:109Z",
    "season": 0,
    "actor": "engine",
    "type": "lens.chosen",
@@ -299,8 +315,8 @@
    "visibility": "public"
   },
   {
-   "seq": 9,
-   "t": "2026-10-07T08:00:108Z",
+   "seq": 10,
+   "t": "2026-10-07T08:00:110Z",
    "season": 0,
    "actor": "engine",
    "type": "allocation.issued",
@@ -322,8 +338,8 @@
    "visibility": "public"
   },
   {
-   "seq": 10,
-   "t": "2026-10-07T08:00:109Z",
+   "seq": 11,
+   "t": "2026-10-07T08:00:111Z",
    "season": 0,
    "actor": "A",
    "type": "private.opened",
@@ -376,8 +392,8 @@
    "visibility": "self"
   },
   {
-   "seq": 13,
-   "t": "2026-10-07T08:00:113Z",
+   "seq": 14,
+   "t": "2026-10-07T08:00:115Z",
    "season": 0,
    "actor": "A",
    "type": "action.played",
@@ -385,13 +401,13 @@
     "role": "A",
     "pumps": 2,
     "action": null,
-    "committedAt": "2026-10-07T08:00:112Z"
+    "committedAt": "2026-10-07T08:00:114Z"
    },
    "visibility": "sealed"
   },
   {
-   "seq": 16,
-   "t": "2026-10-07T08:00:118Z",
+   "seq": 17,
+   "t": "2026-10-07T08:00:120Z",
    "season": 0,
    "actor": "engine",
    "type": "tutorial.resolved",

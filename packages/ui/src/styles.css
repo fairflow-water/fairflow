@@ -35,6 +35,12 @@ svg { width: 100%; max-height: 320px; }
 .negotiation { display: grid; grid-template-columns: 1fr 3.5rem; gap: 8px; align-items: center; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
 .hint, .waiting { color: var(--muted); }
 .notice { background: #fff4e5; border-radius: var(--radius); padding: 8px 12px; }
+.setting { display: grid; gap: 4px; margin: 16px 0 0; }
+.setting select { min-height: var(--target); padding: 0 12px; border-radius: var(--radius); border: 2px solid var(--accent);
+  background: #fff; color: var(--ink); font: inherit; }
+.handover { margin-top: 16px; } .handover h2 { margin-top: 0; }
+.transfer-link img { display: block; margin: 8px auto; max-width: 100%; height: auto; }
+.transfer-link p { overflow-wrap: anywhere; }
 .display { max-width: 960px; } .display header, .room-head { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 /* S3 map fills (last season's adequacy band) and S6–S8 */

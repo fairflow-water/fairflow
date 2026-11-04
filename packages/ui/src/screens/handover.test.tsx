@@ -1,0 +1,84 @@
+// SPDX-FileCopyrightText: 2026 Seleshi Yalew and Fairflow contributors
+// SPDX-License-Identifier: MIT
+//
+// ADR 0018 decision 2: the facilitator sets, when opening a room, after which season the Authority role passes to
+// another student's phone (0 = never; the scenario gives the default). The record carries it in `treatment.assigned`;
+// at the reveal of that season the Authority's device asks to pass the role on, with the one-time link as a QR code.
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { treatments, basin } from '../../../scenarios/default-basin.json';
+import { App } from '../App';
+import gamePublic from '../fixtures/game-public.json';
+import { viewOf, type PublicScenario, type RecordEvent } from '../room';
+import { Season } from './Season';
+
+const scenario = gamePublic.scenario as PublicScenario;
+const events = gamePublic.events as unknown as RecordEvent[]; // a scored game, as the Authority's device received it
+const SEASON = treatments.authorityHandoverSeason; // the scenario's hand-over season, which the fixture records
+const upTo = (type: string, nth = 1) => {
+  let seen = 0;
+  const i = events.findIndex(e => e.type === type && ++seen === nth);
+  return events.slice(0, i + 1);
+};
+const PASS = 'Show the code for the next Authority';
+
+beforeEach(() => { localStorage.clear(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+describe('the hand-over season (ADR 0018)', () => {
+  it('the room view reads it from treatment.assigned and keeps it, and notes a hand-over, across seasons', () => {
+    expect(viewOf(upTo('season.resolved', SEASON)).handoverSeason).toBe(SEASON);
+    const moved = { ...events[0]!, seq: 999, type: 'authority.handover', season: SEASON,
+      payload: { season: SEASON, fromDevice: 'a', toDevice: 'b' } } as RecordEvent;
+    const after = viewOf([...upTo('season.resolved', SEASON), moved, ...events.filter(e => e.type === 'season.climate').slice(SEASON, SEASON + 1)]);
+    expect(after.handoverSeason).toBe(SEASON);
+    expect(after.handedOverIn).toBe(SEASON);
+  });
+
+  it('at the reveal of that season the Authority is asked to pass the role on, and gets the link as a QR code', async () => {
+    const shown = upTo('season.resolved', SEASON);
+    const makeLink = vi.fn(() => Promise.resolve('https://table.example/transfer/ABCDE#L1'));
+    render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={makeLink} />);
+    expect(screen.getByRole('heading', { name: 'Pass the Authority role' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: PASS }));
+    expect(makeLink).toHaveBeenCalledOnce();
+    expect(await screen.findByText('https://table.example/transfer/ABCDE#L1')).toBeTruthy();
+    expect(await screen.findByRole('img', { name: /QR code/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open the next season' })).toBeTruthy(); // keeping the role stays possible
+  });
+
+  it('is not asked in other seasons, on other devices, once handed over, or when the setting is 0', () => {
+    const before = upTo('season.resolved', SEASON - 1);
+    const at = upTo('season.resolved', SEASON);
+    const ask = (shown: RecordEvent[], role = 'authority') => {
+      render(<Season view={viewOf(shown)} scenario={scenario} role={role} onIntent={vi.fn()} events={shown} passAuthority={vi.fn()} />);
+      const found = screen.queryByRole('heading', { name: 'Pass the Authority role' });
+      cleanup();
+      return found !== null;
+    };
+    expect(ask(before)).toBe(false);
+    expect(ask(at, 'display')).toBe(false);
+    const moved = { ...at[at.length - 1]!, seq: 999, type: 'authority.handover', payload: { season: SEASON, fromDevice: 'a', toDevice: 'b' } } as RecordEvent;
+    expect(ask([...at, moved])).toBe(false);
+    const never = at.map(e => e.type === 'treatment.assigned' ? { ...e, payload: { ...e.payload, authorityHandoverSeason: 0 } } : e);
+    expect(ask(never)).toBe(false);
+  });
+
+  it('the start page sends the chosen season with the new room, the scenario\'s default first', async () => {
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(() => Promise.resolve(new Response(JSON.stringify({ detail: { code: 'stop' } }), { status: 409 })));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<App />);
+    const choice = screen.getByRole('combobox', { name: /Pass the Authority role to another student/ });
+    expect((choice as HTMLSelectElement).value).toBe(String(SEASON));
+    const options = [...(choice as HTMLSelectElement).options].map(o => o.value);
+    expect(options).toEqual([...Array.from({ length: basin.gameLength.max - 1 }, (_, i) => String(i + 1)), '0']);
+    await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(JSON.parse(String(fetchMock.mock.calls[0]![1]!.body))).toEqual({ scenario: 'default-basin', authorityHandoverSeason: SEASON });
+    await userEvent.selectOptions(choice, '0');
+    await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(String(fetchMock.mock.calls[1]![1]!.body))).toEqual({ scenario: 'default-basin', authorityHandoverSeason: 0 });
+  });
+});

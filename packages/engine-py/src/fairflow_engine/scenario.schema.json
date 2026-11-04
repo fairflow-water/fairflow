@@ -164,7 +164,16 @@
       "required": ["kind"],
       "properties": { "kind": { "enum": ["schematic", "geojson"] }, "geojson": {}, "unitAttributes": {} }
     },
-    "treatments": { "type": "object" }
+    "treatments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "silentMode": { "type": "boolean" },
+        "universalisationNudge": { "type": "boolean" },
+        "secretBallot": { "type": "boolean" },
+        "authorityHandoverSeason": { "type": "integer", "minimum": 0 }
+      }
+    }
   },
   "$defs": {
     "source": { "type": "string", "minLength": 1 },

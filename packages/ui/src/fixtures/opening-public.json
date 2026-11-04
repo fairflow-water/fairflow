@@ -130,7 +130,7 @@
     ],
     "runtime": {
      "fairflowEngine": "1.0.0.dev0",
-     "numpy": "2.5.3",
+     "numpy": "2.5.4",
      "scipy": "1.18.1"
     },
     "researchEnabled": false
@@ -140,6 +140,22 @@
   {
    "seq": 2,
    "t": "2026-10-07T09:00:01Z",
+   "season": 0,
+   "actor": "engine",
+   "type": "treatment.assigned",
+   "payload": {
+    "silentMode": false,
+    "universalisationNudge": false,
+    "secretBallot": false,
+    "authorityHandoverSeason": 2,
+    "deliberation": "table",
+    "assignedBy": "facilitator"
+   },
+   "visibility": "public"
+  },
+  {
+   "seq": 3,
+   "t": "2026-10-07T09:00:02Z",
    "season": 0,
    "actor": "A",
    "type": "player.joined",
@@ -153,8 +169,8 @@
    "visibility": "public"
   },
   {
-   "seq": 3,
-   "t": "2026-10-07T09:00:02Z",
+   "seq": 4,
+   "t": "2026-10-07T09:00:03Z",
    "season": 0,
    "actor": "B",
    "type": "player.joined",
@@ -168,8 +184,8 @@
    "visibility": "public"
   },
   {
-   "seq": 4,
-   "t": "2026-10-07T09:00:03Z",
+   "seq": 5,
+   "t": "2026-10-07T09:00:04Z",
    "season": 0,
    "actor": "C",
    "type": "player.joined",
@@ -183,8 +199,8 @@
    "visibility": "public"
   },
   {
-   "seq": 5,
-   "t": "2026-10-07T09:00:04Z",
+   "seq": 6,
+   "t": "2026-10-07T09:00:05Z",
    "season": 0,
    "actor": "authority",
    "type": "player.joined",
@@ -198,8 +214,8 @@
    "visibility": "public"
   },
   {
-   "seq": 6,
-   "t": "2026-10-07T09:00:05Z",
+   "seq": 7,
+   "t": "2026-10-07T09:00:06Z",
    "season": 1,
    "actor": "engine",
    "type": "season.climate",
@@ -313,8 +329,8 @@
    "visibility": "public"
   },
   {
-   "seq": 7,
-   "t": "2026-10-07T09:00:06Z",
+   "seq": 8,
+   "t": "2026-10-07T09:00:07Z",
    "season": 1,
    "actor": "authority",
    "type": "lens.proposed",
@@ -325,8 +341,8 @@
    "visibility": "public"
   },
   {
-   "seq": 8,
-   "t": "2026-10-07T09:00:07Z",
+   "seq": 9,
+   "t": "2026-10-07T09:00:08Z",
    "season": 1,
    "actor": "authority",
    "type": "lens.proposed",
@@ -337,8 +353,8 @@
    "visibility": "public"
   },
   {
-   "seq": 9,
-   "t": "2026-10-07T09:00:08Z",
+   "seq": 10,
+   "t": "2026-10-07T09:00:09Z",
    "season": 1,
    "actor": "A",
    "type": "lens.voted",
@@ -349,8 +365,8 @@
    "visibility": "public"
   },
   {
-   "seq": 10,
-   "t": "2026-10-07T09:00:09Z",
+   "seq": 11,
+   "t": "2026-10-07T09:00:10Z",
    "season": 1,
    "actor": "B",
    "type": "lens.voted",
@@ -361,8 +377,8 @@
    "visibility": "public"
   },
   {
-   "seq": 11,
-   "t": "2026-10-07T09:00:10Z",
+   "seq": 12,
+   "t": "2026-10-07T09:00:11Z",
    "season": 1,
    "actor": "C",
    "type": "lens.voted",
@@ -373,8 +389,8 @@
    "visibility": "public"
   },
   {
-   "seq": 12,
-   "t": "2026-10-07T09:00:11Z",
+   "seq": 13,
+   "t": "2026-10-07T09:00:12Z",
    "season": 1,
    "actor": "engine",
    "type": "lens.chosen",
@@ -391,8 +407,8 @@
    "visibility": "public"
   },
   {
-   "seq": 13,
-   "t": "2026-10-07T09:00:12Z",
+   "seq": 14,
+   "t": "2026-10-07T09:00:13Z",
    "season": 1,
    "actor": "engine",
    "type": "allocation.issued",

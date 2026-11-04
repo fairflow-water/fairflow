@@ -19,7 +19,7 @@ from jsonschema import Draft202012Validator
 from .allocate import FLOOR_RULES
 from .aquifer import inflow_loss_next
 from .model import HA_MM_TO_MM3, Basin, LensId, LensParams, Scheme, Scoring
-from .record import GameSetup
+from .record import NOT_BUILT, GameSetup, handover_season_problem
 
 
 def basin_from_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> Basin:
@@ -184,6 +184,14 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
         )
     ):  # the server times the negotiation from these (ADR 0014)
         errors.append("session.negotiationS needs seasons0to2 and from3, each a positive number of seconds (R20)")
+    treatments = scenario.get("treatments", {})
+    errors.extend(
+        f"treatments.{arm} is not built yet (ADR 0018); it must be false" for arm in NOT_BUILT if treatments.get(arm)
+    )
+    if "authorityHandoverSeason" in treatments:
+        problem = handover_season_problem(treatments["authorityHandoverSeason"], length["max"])
+        if problem is not None:
+            errors.append(f"treatments.{problem}")
     errors.extend(hard_checks(scenario, registry))
     if errors:
         return ScenarioLoad(None, errors, warnings)
@@ -247,6 +255,14 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
             else None
         ),
         authorityMaxMeanPumping=registry["goals.authority.maxMeanPumping"],
+        treatments={
+            **treatments,
+            **(
+                {"deliberation": scenario["session"]["deliberation"]}
+                if "deliberation" in scenario.get("session", {})
+                else {}
+            ),
+        },
         bands={
             "equity": tuple(registry["indicators.equityBands"]),
             "efficiency": tuple(registry["indicators.efficiencyBands"]),

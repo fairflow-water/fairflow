@@ -100,6 +100,8 @@ export interface RoomView {
   researchEnabled: boolean; // ADR 0011: the room asks the research question (off = course-only)
   joinedOn: Record<string, string>; // each role's join date (YYYY-MM-DD), for the withdrawal note
   timeboxed: boolean; // R20: the Authority has ended play after the current season (game.timeboxed)
+  handoverSeason: number; // ADR 0018: after this season the Authority passes on; 0 = never (treatment.assigned)
+  handedOverIn: number | null; // the season of the latest authority.handover, if any
 }
 
 export const emptyView = (): RoomView => ({
@@ -107,6 +109,7 @@ export const emptyView = (): RoomView => ({
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
   tutorial: false, tutorialResult: null, seated: [], researchEnabled: false, joinedOn: {}, timeboxed: false,
+  handoverSeason: 0, handedOverIn: null,
 });
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -126,7 +129,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
           tutorial: p['tutorial'] === true, seated: v.seated, researchEnabled: v.researchEnabled, joinedOn: v.joinedOn,
-          vetoUsed: v.vetoUsed, timeboxed: v.timeboxed,
+          vetoUsed: v.vetoUsed, timeboxed: v.timeboxed, handoverSeason: v.handoverSeason, handedOverIn: v.handedOverIn,
         };
         break;
       case 'player.joined':
@@ -149,6 +152,12 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         break;
       case 'game.timeboxed':
         v = { ...v, timeboxed: true };
+        break;
+      case 'treatment.assigned':
+        v = { ...v, handoverSeason: typeof p['authorityHandoverSeason'] === 'number' ? p['authorityHandoverSeason'] : 0 };
+        break;
+      case 'authority.handover':
+        v = { ...v, handedOverIn: e.season };
         break;
       case 'debrief.opened':
         v = { ...v, debriefOpened: true, perPlayer: p['perPlayer'] === true };

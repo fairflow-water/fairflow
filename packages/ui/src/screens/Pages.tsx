@@ -3,7 +3,6 @@
 //
 // One page per kind of device: a player's phone, the facilitator (the Authority), and the projector. Each holds one
 // connection and sees only its own projection; the facilitator and the projector see the public view only.
-import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { claimTransfer, createRoom, deviceHash, hostStore, offerTransfer, roomInfo, tokenStore, type CreatedRoom } from '../api';
 import type { PublicScenario } from '../room';
@@ -11,6 +10,7 @@ import { useRoom } from '../useRoom';
 import { useWakeLock } from '../useWakeLock';
 import { IDLE_RELEASE_MS, screenStaysOn, useIdle } from '../wakePolicy';
 import { Join } from './Join';
+import { Qr } from './Qr';
 import { Season } from './Season';
 
 function useScenario(code: string): PublicScenario | null {
@@ -42,7 +42,10 @@ function Live({ code, token, fallbackRole }: { code: string; token: string; fall
       )}
       {room.notice && <p role="status" className="notice">{room.notice}</p>}
       <Season view={room.view} scenario={scenario} role={room.role ?? fallbackRole} onIntent={room.send}
-        trySend={room.trySend} resync={room.syncs} clockOffsetMs={room.clockOffsetMs} events={room.events} code={code} />
+        trySend={room.trySend} resync={room.syncs} clockOffsetMs={room.clockOffsetMs} events={room.events} code={code}
+        {...(fallbackRole === 'authority'
+          ? { passAuthority: () => offerTransfer(code, token, 'authority').then(link => `${location.origin}/transfer/${code}#${link}`) }
+          : {})} />
     </>
   );
 }
@@ -63,10 +66,14 @@ export function DisplayPage({ code, token }: { code: string; token: string }) {
   );
 }
 
+// ADR 0018: after which season the Authority passes on: 1 up to the season before the longest game's last, or never (0)
+const HANDOVER_CHOICES = [...Array.from({ length: __ROOM_SETTINGS__.longestGame - 1 }, (_, i) => i + 1), 0];
+
 export function FacilitatorPage() {
   const [room, setRoom] = useState<CreatedRoom | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hosted, setHosted] = useState<CreatedRoom[]>(() => hostStore.list());
+  const [handover, setHandover] = useState<number>(__ROOM_SETTINGS__.authorityHandoverSeason); // the scenario's default
 
   function resume(r: CreatedRoom) {
     roomInfo(r.room).then(() => setRoom(r), () => {
@@ -82,8 +89,14 @@ export function FacilitatorPage() {
         <h1>Fairflow</h1>
         <p>Open a room for your table. Participants join by scanning the QR code.</p>
         {error && <p role="alert" className="notice">The room could not be opened ({error}).</p>}
+        <label className="setting">
+          Pass the Authority role to another student
+          <select value={handover} onChange={e => setHandover(Number(e.target.value))}>
+            {HANDOVER_CHOICES.map(n => <option key={n} value={n}>{n === 0 ? 'Never' : `After season ${n}`}</option>)}
+          </select>
+        </label>
         <button type="button" className="cta" onClick={() => {
-          createRoom('default-basin').then(r => { hostStore.add(r); setRoom(r); },
+          createRoom('default-basin', handover).then(r => { hostStore.add(r); setRoom(r); },
             (e: unknown) => setError(e instanceof Error ? e.message : 'failed'));
         }}>Open a room</button>
         {hosted.length > 0 && (
@@ -144,7 +157,7 @@ function MoveRole({ code, token }: { code: string; token: string }) {
       {shown && (
         <div className="transfer-link" data-role={shown.role}>
           <p>Scan this with the new phone. The link works once; the old phone then stops.</p>
-          <Qr text={shown.url} />
+          <Qr text={shown.url} label="QR code to move a role" />
           <p>{shown.url}</p>
         </div>
       )}
@@ -193,8 +206,3 @@ export function TransferPage({ code, link }: { code: string; link: string }) {
   return state.role === 'authority' ? <FacilitatorPage /> : <PlayerPage code={code} />;
 }
 
-function Qr({ text }: { text: string }) {
-  const [src, setSrc] = useState<string>('');
-  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: 240 }).then(setSrc, () => setSrc('')); }, [text]);
-  return src ? <img src={src} width={240} height={240} alt={`QR code to join: ${text}`} /> : null;
-}

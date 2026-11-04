@@ -98,6 +98,25 @@ class Rejection(Exception):
         self.code = code
 
 
+# R1, ADR 0018 decision 3: the treatment arms `treatment.assigned` records, and the control (every arm off, and a hand-over
+# season of 0, which means the Authority never passes on). Only the hand-over season is built; the others stay off.
+CONTROL: dict[str, bool | int] = {
+    "silentMode": False,
+    "universalisationNudge": False,
+    "secretBallot": False,
+    "authorityHandoverSeason": 0,
+}
+NOT_BUILT = ("silentMode", "universalisationNudge", "secretBallot")
+
+
+def handover_season_problem(season: object, game_length_max: int) -> str | None:
+    """Why a hand-over season cannot be used, or None: a whole number of seasons, 0 (never) up to the season before
+    the longest game's last, after which there is no season left to hand over into (ADR 0018)."""
+    if not isinstance(season, int) or isinstance(season, bool) or not 0 <= season < game_length_max:
+        return f"authorityHandoverSeason must be a whole number from 0 (never) to {game_length_max - 1}"
+    return None
+
+
 @dataclass(frozen=True)
 class GameSetup:
     """Everything a game needs from its scenario. All values come from the scenario or the registry."""
@@ -121,6 +140,9 @@ class GameSetup:
     # The basin's orchard crop (scenario `basin.orchardCrop`): depthMm and beta (its gross depth under its own irrigation
     # method), yieldTHa, ky, price. Orchard switches a scheme to it at its own area and method (ADR 0007).
     orchardCrop: Mapping[str, float] | None = None
+    # R1, ADR 0018: the arms `treatment.assigned` records unless the facilitator sets them (scenario `treatments`, and
+    # `session.deliberation`); empty means the control
+    treatments: Mapping[str, Any] = field(default_factory=dict)
 
     def actions_for(self, scheme: str) -> tuple[str, ...]:
         return self.schemeActions.get(scheme, tuple(self.actions))
@@ -197,6 +219,7 @@ class State:
     timeboxed: bool = False
     debrief: dict[str, Any] | None = None
     researchEnabled: bool = False  # ADR 0011: off = course-only
+    handoverSeason: int = 0  # ADR 0018: after this season the Authority passes on; 0 = never (treatment.assigned)
     schemes: dict[str, dict[str, float]] = field(default_factory=dict)  # parameters in force this season (public)
     pendingActions: dict[str, str] = field(default_factory=dict)  # played this season, in force from the next
     used: dict[str, list[str]] = field(default_factory=dict)  # every action each scheme has played
@@ -214,6 +237,8 @@ def apply_event(state: State, event: Event) -> State:
         s.schemes = {v["id"]: {k: v[k] for k in SCHEME_STATE} for v in p["schemes"]}
         s.used = {r: [] for r in p["schemeRoles"]}
         s.researchEnabled = p.get("researchEnabled", False)  # absent in records made before ADR 0011
+    elif kind == "treatment.assigned":
+        s.handoverSeason = p["authorityHandoverSeason"]
     elif kind == "player.joined":
         s.players[p["role"]] = p
     elif kind in ("seat.transferred", "authority.handover"):  # ADR 0018: the role now plays from this device
@@ -291,7 +316,19 @@ class Game:
         clock: Callable[[], str],
         nonce: str | None = None,
         researchEnabled: bool = False,
+        authorityHandoverSeason: int | None = None,
     ) -> Game:
+        """A new game: `game.created`, then `treatment.assigned` (R1, ADR 0018) with the setup's arms, and the
+        facilitator's hand-over season when one is given."""
+        arms: dict[str, Any] = {**CONTROL, **setup.treatments}
+        if authorityHandoverSeason is not None:
+            arms["authorityHandoverSeason"] = authorityHandoverSeason
+        problem = handover_season_problem(arms["authorityHandoverSeason"], setup.gameLength[1])
+        if problem is not None:
+            raise Rejection("bad_treatment", problem)
+        on = [arm for arm in NOT_BUILT if arms[arm]]
+        if on:
+            raise Rejection("bad_treatment", f"not built yet (ADR 0018): {', '.join(on)}")
         nonce = nonce or _secrets.token_hex(16)  # layout: 128-bit secret nonce
         sec = draw_secrets(setup, nonce)
         game = cls(setup, sec, [], clock)
@@ -317,6 +354,15 @@ class Game:
                 "researchEnabled": researchEnabled,
             },
         )
+        assignment = {
+            "silentMode": arms["silentMode"],
+            "universalisationNudge": arms["universalisationNudge"],
+            "secretBallot": arms["secretBallot"],
+            "authorityHandoverSeason": arms["authorityHandoverSeason"],
+            "deliberation": arms.get("deliberation"),  # the scenario's session.deliberation; null when it has none
+            "assignedBy": "facilitator",  # random assignment waits for research approval (ADR 0011, ADR 0018)
+        }
+        game._emit("treatment.assigned", "engine", "public", assignment)
         return game
 
     @property

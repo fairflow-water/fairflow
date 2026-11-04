@@ -69,6 +69,10 @@ test('every page route and server endpoint answers as designed, refusals include
   const unknownScenario = await request.post('/rooms', { data: { scenario: 'no-such-basin' } });
   expect([unknownScenario.status(), await detail(unknownScenario)]).toEqual([404, 'unknown_scenario']);
   expect((await request.post('/rooms', { data: { scenario: 'default-basin', surprise: 1 } })).status()).toBe(422);
+  // ADR 0018: the hand-over season must fall inside the game, and be a whole number
+  const outside = await request.post('/rooms', { data: { scenario: 'default-basin', authorityHandoverSeason: -1 } });
+  expect([outside.status(), await detail(outside)]).toEqual([409, 'bad_treatment']);
+  expect((await request.post('/rooms', { data: { scenario: 'default-basin', authorityHandoverSeason: '2' } })).status()).toBe(422);
 
   const info = await (await request.get(`/rooms/${room.room}`)).json() as {
     freeRoles: string[]; phase: string; researchEnabled: boolean; infoSheetVersion: string; scenario: { schemes: { id: string }[] };

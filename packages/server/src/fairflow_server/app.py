@@ -51,6 +51,9 @@ MS = 1000  # layout: the welcome message gives the server's time in milliseconds
 class CreateRoom(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     scenario: str
+    # ADR 0018: after this season the Authority role passes to another student's phone; 0 = never; left out, the
+    # scenario's `treatments` default. The engine checks the range and records it in `treatment.assigned` (R1).
+    authorityHandoverSeason: int | None = None
 
 
 @dataclass
@@ -153,7 +156,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
     @app.post("/rooms")
     def create_room(body: CreateRoom) -> dict[str, str]:
         try:
-            room, facilitator, display = registry.create(body.scenario, SERVER_VERSION)
+            room, facilitator, display = registry.create(body.scenario, SERVER_VERSION, body.authorityHandoverSeason)
         except Rejection as e:
             raise http_error(e) from None
         log.info("room created room=%s", room.code)

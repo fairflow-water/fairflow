@@ -129,9 +129,11 @@ describe('the hand-over season (ADR 0018)', () => {
     const { result } = renderHook(() => useAuthorityLink(makeLink));
     act(() => { result.current.make(); }); // A
     act(() => { result.current.make(); }); // B, which replaces A on the server
-    await act(async () => { replies[1]!('https://t.example/transfer/ABCDE#B'); await Promise.resolve(); });
-    await act(async () => { replies[0]!('https://t.example/transfer/ABCDE#A'); fails[0]!(new Error('late')); await Promise.resolve(); });
-    expect(result.current.url).toBe('https://t.example/transfer/ABCDE#B');
+    act(() => { result.current.make(); }); // C, which replaces B
+    await act(async () => { replies[2]!('https://t.example/transfer/ABCDE#C'); await Promise.resolve(); });
+    await act(async () => { replies[0]!('https://t.example/transfer/ABCDE#A'); await Promise.resolve(); }); // a late success
+    await act(async () => { fails[1]!(new Error('late')); await Promise.resolve(); }); // a late refusal
+    expect(result.current.url).toBe('https://t.example/transfer/ABCDE#C');
     expect(result.current.error).toBeNull();
   });
 

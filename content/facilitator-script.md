@@ -10,7 +10,7 @@ The printed script for one 120-minute session in **room mode with several tables
 
 - Check the game opens at the session's address on a phone and on the projector laptop.
 - One table is one room: four students. Three play the irrigation schemes (the upstream citrus estate, the midstream rice cooperative, the tail-end wheat scheme), and the fourth plays the **Authority** (ADR 0018). Each table needs a shared screen: a projector, a TV or a laptop turned to the table.
-- Research is off for this session. Students give only part 1 of the consent (taking part) when they join (ADR 0011).
+- Research is off for this session: check that the server does not set `FAIRFLOW_RESEARCH_ENABLED` (`deploy/README.md`). Students then give only part 1 of the consent (taking part) when they join (ADR 0011).
 - Have one deliberation sheet per table, with the task printed (see minute 105).
 
 ## 0–05 Arrival and table formation (facilitator)
@@ -31,7 +31,7 @@ The printed script for one 120-minute session in **room mode with several tables
 ## 15–80 Seasons 1 to T (the tables play)
 
 - The game lasts 5 or 6 seasons; nobody knows which until the end.
-- **Negotiation:** 3 minutes in seasons 1 and 2, then 4 minutes. The timer runs on the server. At expiry, the previous season's lens applies.
+- **Negotiation:** 3 minutes in the practice round and seasons 1 and 2, then 4 minutes. The timer runs on the server. At expiry, the previous season's lens applies.
 - **The private turn:** 45 seconds on each phone. An untouched turn commits "no pumping, no action", with 3 seconds to undo.
 - **The Authority's single veto per game** is on their phone during the vote.
 - *[When built (ADR 0018): at the start of each private turn, every scheme player guesses whether the table will pump more, about the same or less than last season. Nobody else sees the guess until the debrief.]*
@@ -42,8 +42,8 @@ The printed script for one 120-minute session in **room mode with several tables
 ## 80–85 Reveal and decompress (facilitator)
 
 - The projector shows the end of the game: the game length and the scoreboard. *[Showing the deck order with its hash proof is not built yet (v1.1).]*
-- Read the engine's three-line debrief brief aloud for each table: the heaviest pumping season, the lens switches, and the verdict mismatches.
-- **Before anyone's pumping is shown**, say: "The rules made pumping rational; we debrief the rules, not the person." (blueprint §5.3)
+- At each table, read aloud the engine's debrief brief, shown on the **Authority's phone** (not on the projector): the heaviest pumping season, the lens by season with the number of changes, and the floor votes held. *[The blueprint's third line, verdict mismatches, is not in the brief yet; the two-line verdict is on the debrief screen.]*
+- **Before anyone's pumping is shown**, say: "The rules made pumping rational; we debrief the rules, not the person." (blueprint §5.3; the Authority's phone shows it as "Say first".)
 - Each table chooses whether to open the per-player figures (R19). If it does not, only the totals are shown.
 
 ## 85–105 Hot debrief (facilitator, Lederman's phases)
@@ -62,6 +62,7 @@ The printed script for one 120-minute session in **room mode with several tables
 - *[one dominant voter]*
 - *[pumping from season 1]*
 - *[the game was time-boxed]*
+- The blueprint's branch "facilitator played the Authority" does not apply when a student is the Authority (ADR 0018).
 
 ## 105–120 Table deliberation (the tables)
 

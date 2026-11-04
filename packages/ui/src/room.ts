@@ -101,7 +101,8 @@ export interface RoomView {
   joinedOn: Record<string, string>; // each role's join date (YYYY-MM-DD), for the withdrawal note
   timeboxed: boolean; // R20: the Authority has ended play after the current season (game.timeboxed)
   handoverSeason: number; // ADR 0018: after this season the Authority passes on; 0 = never (treatment.assigned)
-  handedOverIn: number | null; // the season of the latest authority.handover, if any
+  handedOverIn: number | null; // the season after whose reveal the Authority last passed on (a move during play, for
+  // a broken phone, is not the hand-over: the prompt still comes at that season's reveal)
 }
 
 export const emptyView = (): RoomView => ({
@@ -157,7 +158,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         v = { ...v, handoverSeason: typeof p['authorityHandoverSeason'] === 'number' ? p['authorityHandoverSeason'] : 0 };
         break;
       case 'authority.handover':
-        v = { ...v, handedOverIn: e.season };
+        v = { ...v, handedOverIn: v.phase === 'reveal' && !v.tutorial ? e.season : v.handedOverIn };
         break;
       case 'debrief.opened':
         v = { ...v, debriefOpened: true, perPlayer: p['perPlayer'] === true };

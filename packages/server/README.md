@@ -40,3 +40,5 @@ done, the sheet must say so again, with how long the log is kept.
 - `POST /rooms/{code}/transfers {token, role}` gives the Authority's device a one-time link for that role. A newer link for the same role replaces the older one.
 - The new phone claims it with `POST /rooms/{code}/transfers/claim {link, deviceHash}`. The engine records `authority.handover` or `seat.transferred`, the new phone receives the role's token, and the old phone is disconnected with close code 4001.
 - The old token and the link stop working, in memory and in the store. A link's token never opens a game connection.
+- An intent the old phone sent just before the move is refused once it reaches the room lock, and that phone is disconnected with 4001.
+- Making a link counts as activity in the room, so the 24-hour deletion (ADR 0012) counts from it.

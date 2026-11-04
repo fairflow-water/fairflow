@@ -189,7 +189,7 @@ def load_scenario(scenario: Mapping[str, Any], registry: Mapping[str, Any]) -> S
         f"treatments.{arm} is not built yet (ADR 0018); it must be false" for arm in NOT_BUILT if treatments.get(arm)
     )
     if "authorityHandoverSeason" in treatments:
-        problem = handover_season_problem(treatments["authorityHandoverSeason"], length["max"])
+        problem = handover_season_problem(treatments["authorityHandoverSeason"], length["min"])
         if problem is not None:
             errors.append(f"treatments.{problem}")
     errors.extend(hard_checks(scenario, registry))

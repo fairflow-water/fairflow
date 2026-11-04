@@ -7,11 +7,11 @@ import { defineConfig } from 'vitest/config';
 // ADR 0018: the start page offers the hand-over season. Only the two values it needs are read from the shipped scenario
 // here, at build time, so that no other scenario number (inflows, aquifer, goals) reaches the client bundle.
 const scenario = JSON.parse(readFileSync(new URL('../scenarios/default-basin.json', import.meta.url), 'utf-8')) as {
-  treatments: { authorityHandoverSeason: number }; basin: { gameLength: { max: number } };
+  treatments: { authorityHandoverSeason: number }; basin: { gameLength: { min: number } };
 };
 const roomSettings = {
   authorityHandoverSeason: scenario.treatments.authorityHandoverSeason,
-  longestGame: scenario.basin.gameLength.max,
+  shortestGame: scenario.basin.gameLength.min,
 };
 
 // In development the room server runs on :8000; Vite proxies REST and the WebSocket so the page and the server share

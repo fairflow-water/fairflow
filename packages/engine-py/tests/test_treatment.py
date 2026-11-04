@@ -46,15 +46,16 @@ def test_every_game_records_its_arms_right_after_creation_and_before_season_1():
 
 
 def test_the_facilitator_sets_the_hand_over_season_and_0_means_never():
-    _, last = loaded().gameLength
-    for season in (0, last - 1):
+    shortest, _ = loaded().gameLength
+    for season in (0, shortest - 1):
         assert assigned(create(authorityHandoverSeason=season))["payload"]["authorityHandoverSeason"] == season
 
 
-@pytest.mark.parametrize("season", [-1, "loaded-max", True, 1.5])
+@pytest.mark.parametrize("season", [-1, "shortest", "longest", True, 1.5])
 def test_a_hand_over_season_outside_the_game_is_refused(season):
     s = loaded()
-    value = s.gameLength[1] if season == "loaded-max" else season  # after the longest game's last season: never reached
+    # after the shortest game's last season the game may already be over, so the hand-over might never happen
+    value = {"shortest": s.gameLength[0], "longest": s.gameLength[1]}.get(season, season)
     with pytest.raises(Rejection) as e:
         create(s, authorityHandoverSeason=value)
     assert e.value.code == "bad_treatment"
@@ -95,7 +96,7 @@ def test_a_scenario_cannot_switch_on_an_arm_that_is_not_built(arm):
 
 def test_a_scenario_hand_over_season_must_fall_inside_the_game():
     scenario = copy.deepcopy(SCENARIO)
-    scenario["treatments"]["authorityHandoverSeason"] = scenario["basin"]["gameLength"]["max"]
+    scenario["treatments"]["authorityHandoverSeason"] = scenario["basin"]["gameLength"]["min"]
     load = load_scenario(scenario, REGISTRY)
     assert load.setup is None and any("authorityHandoverSeason" in err for err in load.errors)
 

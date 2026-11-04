@@ -109,11 +109,13 @@ CONTROL: dict[str, bool | int] = {
 NOT_BUILT = ("silentMode", "universalisationNudge", "secretBallot")
 
 
-def handover_season_problem(season: object, game_length_max: int) -> str | None:
+def handover_season_problem(season: object, game_length_min: int) -> str | None:
     """Why a hand-over season cannot be used, or None: a whole number of seasons, 0 (never) up to the season before
-    the longest game's last, after which there is no season left to hand over into (ADR 0018)."""
-    if not isinstance(season, int) or isinstance(season, bool) or not 0 <= season < game_length_max:
-        return f"authorityHandoverSeason must be a whole number from 0 (never) to {game_length_max - 1}"
+    the shortest game's last (ADR 0018). The game's length is drawn and kept secret, so a later season might be the
+    last one: the hand-over would then happen in some games and not in others, and the arm would not be what the
+    record says."""
+    if not isinstance(season, int) or isinstance(season, bool) or not 0 <= season < game_length_min:
+        return f"authorityHandoverSeason must be a whole number from 0 (never) to {game_length_min - 1}"
     return None
 
 
@@ -323,7 +325,7 @@ class Game:
         arms: dict[str, Any] = {**CONTROL, **setup.treatments}
         if authorityHandoverSeason is not None:
             arms["authorityHandoverSeason"] = authorityHandoverSeason
-        problem = handover_season_problem(arms["authorityHandoverSeason"], setup.gameLength[1])
+        problem = handover_season_problem(arms["authorityHandoverSeason"], setup.gameLength[0])
         if problem is not None:
             raise Rejection("bad_treatment", problem)
         on = [arm for arm in NOT_BUILT if arms[arm]]

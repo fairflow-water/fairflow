@@ -22,7 +22,7 @@ from fairflow_server.rooms import RoomRegistry
 __all__ = ["client"]  # the shared fixture
 SCENARIO = json.loads((Path(__file__).resolve().parents[2] / "scenarios" / "default-basin.json").read_text(encoding="utf-8"))
 DEFAULT = SCENARIO["treatments"]["authorityHandoverSeason"]
-LONGEST = SCENARIO["basin"]["gameLength"]["max"]
+SHORTEST = SCENARIO["basin"]["gameLength"]["min"]  # every game has this many seasons
 
 
 def arms(client: TestClient, body: dict[str, Any]) -> dict[str, Any]:
@@ -47,12 +47,12 @@ def test_left_out_the_scenario_default_is_recorded(client: TestClient) -> None:
     assert not (payload["silentMode"] or payload["secretBallot"] or payload["universalisationNudge"])
 
 
-@pytest.mark.parametrize("season", [0, LONGEST - 1])
+@pytest.mark.parametrize("season", [0, SHORTEST - 1])
 def test_the_facilitator_sets_the_hand_over_season(client: TestClient, season: int) -> None:
     assert arms(client, {"authorityHandoverSeason": season})["authorityHandoverSeason"] == season
 
 
-@pytest.mark.parametrize(("season", "status"), [(-1, 409), (LONGEST, 409), ("2", 422), (True, 422)])
+@pytest.mark.parametrize(("season", "status"), [(-1, 409), (SHORTEST, 409), ("2", 422), (True, 422)])
 def test_a_season_outside_the_game_is_refused_and_no_room_is_made(client: TestClient, season: Any, status: int) -> None:
     rooms = len(client.app.state.registry.rooms)  # type: ignore[attr-defined]
     r = client.post("/rooms", json={"scenario": "default-basin", "authorityHandoverSeason": season})
@@ -66,7 +66,7 @@ def test_the_hand_over_season_survives_a_restart(tmp_path: Path) -> None:
     """The arms are in the record, so a room restored from the store keeps the facilitator's setting."""
     clock = Clock()
     with TestClient(create_app(settings(tmp_path), now=clock)) as c:
-        r = c.post("/rooms", json={"scenario": "default-basin", "authorityHandoverSeason": LONGEST - 1})
+        r = c.post("/rooms", json={"scenario": "default-basin", "authorityHandoverSeason": SHORTEST - 1})
         assert r.status_code == 200
     room = RoomRegistry(settings(tmp_path), now=clock).get(r.json()["room"])  # a restart, from the file alone
-    assert room.game.state.handoverSeason == LONGEST - 1 != DEFAULT
+    assert room.game.state.handoverSeason == SHORTEST - 1 != DEFAULT

@@ -36,7 +36,7 @@ about an IP log, so **any reverse proxy in front of the server must be configure
 nginx, an `access_log off;` or a `log_format` without `$remote_addr` and `$http_x_forwarded_for`). If that cannot be
 done, the sheet must say so again, with how long the log is kept.
 
-**The hand-over season** (ADR 0018). `POST /rooms {scenario, authorityHandoverSeason?}`: after that season the Authority role passes to another student's phone; 0 means never, and left out it is the scenario's `treatments` default. A season outside the game is refused with 409 `bad_treatment`, and no room is made. The engine records the arms in `treatment.assigned`, right after `game.created`.
+**The hand-over season** (ADR 0018). `POST /rooms {scenario, authorityHandoverSeason?}`: after that season the Authority role passes to another student's phone; 0 means never, and left out it is the scenario's `treatments` default. A season outside the game (after the shortest game's last season, or not a whole number from 0) is refused with 409 `bad_treatment`, and no room is made. The engine records the arms in `treatment.assigned`, right after `game.created`.
 
 **Moving a role to another phone** (ADR 0018, issue #9).
 - `POST /rooms/{code}/transfers {token, role}` gives the Authority's device a one-time link for that role. A newer link for the same role replaces the older one.

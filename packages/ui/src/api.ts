@@ -38,6 +38,21 @@ export async function joinRoom(code: string, role: string, deviceHash: string, c
   return r.token;
 }
 
+/** ADR 0018, issue #9: the Authority's device asks for a one-time link that moves `role` to another phone. */
+export async function offerTransfer(code: string, authorityToken: string, role: string): Promise<string> {
+  const r = await json<{ link: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/transfers`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: authorityToken, role }),
+  }));
+  return r.link;
+}
+
+/** The new phone claims the link with its own device hash; it gets the role and the role's new token. */
+export async function claimTransfer(code: string, link: string, device: string): Promise<{ token: string; role: string }> {
+  return json<{ token: string; role: string }>(await fetch(`/rooms/${encodeURIComponent(code)}/transfers/claim`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ link, deviceHash: device }),
+  }));
+}
+
 /** A random per-device identifier, hashed (blueprint §6.2: a salted hash, never a device identifier). */
 export async function deviceHash(): Promise<string> {
   const bytes = new TextEncoder().encode(crypto.randomUUID());
@@ -83,9 +98,10 @@ export interface RoomSocket { send(intent: Record<string, unknown>): boolean; cl
 
 /** Connection state for the screen: open; lost and retrying; or refused for good (unknown room or token: the room was
  * deleted after the server's retention period, or the server keeps rooms in memory only and restarted; ADR 0012). */
-export type LinkStatus = 'open' | 'reconnecting' | 'gone';
+export type LinkStatus = 'open' | 'reconnecting' | 'gone' | 'moved';
 
 const POLICY_VIOLATION = 1008; // RFC 6455 close code the server uses for a bad token, origin or room: do not retry
+const ROLE_MOVED = 4001; // the server's close code when this role now plays from another phone (ADR 0018): do not retry
 const RETRY_FIRST_MS = 500; // layout: first retry after a dropped connection
 const RETRY_MAX_MS = 8000; // layout: retries back off by doubling up to this interval
 
@@ -110,6 +126,7 @@ export function connect(code: string, token: string, onMessage: (m: ServerMessag
     socket.addEventListener('close', ev => {
       if (stopped || socket !== ws) return;
       if (ev.code === POLICY_VIOLATION) { stopped = true; onStatus('gone'); return; }
+      if (ev.code === ROLE_MOVED) { stopped = true; onStatus('moved'); return; }
       onStatus('reconnecting');
       timer = setTimeout(open, Math.min(RETRY_MAX_MS, RETRY_FIRST_MS * 2 ** attempt));
       attempt += 1;

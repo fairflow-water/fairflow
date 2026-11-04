@@ -8,7 +8,7 @@
 // The server keeps one live link per role: a newer one replaces the older. So the Authority's device keeps one
 // Authority link, shared by this prompt and the "Move a role" panel: wherever it is made, both show the same code,
 // and no screen is left showing a replaced one.
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Qr } from './Qr';
 
 export type AuthorityLink = {
@@ -23,10 +23,14 @@ export type AuthorityLink = {
 export function useAuthorityLink(makeLink: () => Promise<string>): AuthorityLink {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const latest = useRef(0); // only the newest request may fill the screen: the server keeps the link it made last
   const make = useCallback(() => {
+    const mine = ++latest.current;
     setError(null);
     setUrl(null); // the older link is replaced on the server, so never leave it on screen while the new one is made
-    makeLink().then(setUrl, (e: unknown) => setError(e instanceof Error ? e.message : 'failed'));
+    makeLink().then(
+      u => { if (mine === latest.current) setUrl(u); },
+      (e: unknown) => { if (mine === latest.current) setError(e instanceof Error ? e.message : 'failed'); });
   }, [makeLink]);
   return { url, error, make };
 }

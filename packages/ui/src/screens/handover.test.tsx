@@ -40,14 +40,15 @@ describe('the hand-over season (ADR 0018)', () => {
 
   it('at the reveal of that season the Authority is asked to pass the role on, and gets the link as a QR code', async () => {
     const shown = upTo('season.resolved', SEASON);
-    const asked = link();
-    const view = (l: AuthorityLink) =>
-      <Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={l} />;
-    const { rerender } = render(view(asked));
+    const makeLink = vi.fn(() => Promise.resolve('https://table.example/transfer/ABCDE#L1'));
+    function Host() { // the host page's wiring: the real hook, handed to the season screen
+      const l = useAuthorityLink(makeLink);
+      return <Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={l} />;
+    }
+    render(<Host />);
     expect(screen.getByRole('heading', { name: 'Pass the Authority role' })).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: PASS }));
-    expect(asked.make).toHaveBeenCalledOnce();
-    rerender(view(link({ url: 'https://table.example/transfer/ABCDE#L1' })));
+    expect(makeLink).toHaveBeenCalledOnce();
     expect(await screen.findByText('https://table.example/transfer/ABCDE#L1')).toBeTruthy();
     expect(await screen.findByRole('img', { name: /QR code/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open the next season' })).toBeTruthy(); // keeping the role stays possible
@@ -119,6 +120,19 @@ describe('the hand-over season (ADR 0018)', () => {
     render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown}
       passAuthority={link({ error: 'not_authority' })} />);
     expect(screen.getByRole('alert').textContent).toBe('This device no longer holds the Authority role.');
+  });
+
+  it('a slow older request never replaces the newer link on screen', async () => {
+    const replies: ((v: string) => void)[] = [];
+    const fails: ((e: Error) => void)[] = [];
+    const makeLink = vi.fn(() => new Promise<string>((ok, fail) => { replies.push(ok); fails.push(fail); }));
+    const { result } = renderHook(() => useAuthorityLink(makeLink));
+    act(() => { result.current.make(); }); // A
+    act(() => { result.current.make(); }); // B, which replaces A on the server
+    await act(async () => { replies[1]!('https://t.example/transfer/ABCDE#B'); await Promise.resolve(); });
+    await act(async () => { replies[0]!('https://t.example/transfer/ABCDE#A'); fails[0]!(new Error('late')); await Promise.resolve(); });
+    expect(result.current.url).toBe('https://t.example/transfer/ABCDE#B');
+    expect(result.current.error).toBeNull();
   });
 
   it('says in words when the server refuses the hand-over season', async () => {

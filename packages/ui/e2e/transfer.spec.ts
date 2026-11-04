@@ -104,6 +104,10 @@ test('at the hand-over season the Authority is asked to pass the role on, and th
   await expect(inPanel).toBeVisible();
   await expect(inPanel).not.toHaveText(firstCode);
   await expect(shown).toHaveText((await inPanel.textContent()) ?? '');
+  const stale = await newPage(browser, PHONE); // the replaced code no longer works
+  await stale.goto(firstCode);
+  await expect(stale.getByText(/used or replaced/)).toBeVisible();
+  await stale.context().close();
   const next = await newPage(browser, PHONE);
   await next.goto((await shown.textContent()) ?? '');
   await next.getByRole('button', { name: `Continue room ${code}` }).click();

@@ -9,7 +9,7 @@ The printed script for one 120-minute session in **room mode with several tables
 ## Before the day
 
 - Check the game opens at the session's address on a phone and on the projector laptop.
-- One table is one room: four to six students. Three play the irrigation schemes (the upstream citrus estate, the midstream rice cooperative, the tail-end wheat scheme), and the fourth plays the **Authority** (ADR 0018). Each table needs a shared screen: a projector, a TV or a laptop turned to the table.
+- One table is one room: four to six students. Three play the irrigation schemes (the upstream citrus estate, the midstream rice cooperative, the tail-end wheat scheme), one plays the **Authority** (ADR 0018), and a fifth or sixth student helps (see minute 0–05). Each table needs a shared screen: a projector, a TV or a laptop turned to the table.
 - Research is off for this session: check that the server does not set `FAIRFLOW_RESEARCH_ENABLED` (`deploy/README.md`). Students then give only part 1 of the consent (taking part) when they join (ADR 0011).
 - Have one deliberation sheet per table, with the task printed (see minute 105).
 
@@ -19,7 +19,7 @@ The printed script for one 120-minute session in **room mode with several tables
   - **Four students:** three schemes and the Authority. Nobody is free to take over.
   - **Five students:** the fifth is the next Authority. They sit beside the Authority and watch until the hand-over.
   - **Six students:** as for five, and the sixth shares a scheme's phone with its player; the two decide together.
-  - **Three students:** join them to another table.
+  - **Three students left over:** add them, one each, to tables of four or five.
 - **The Authority** opens the game's address. Under **Pass the Authority role to another student**, they choose when the role passes on (ADR 0018): **After season 2** (the default, as in §5.0) when the table has a fifth student to take over, or **Never** at a table of four. If they forget, nothing breaks: at the hand-over, the Authority keeps the role by opening the next season. Then they tap **Open a room**. Their device now holds the Authority role and shows the room's QR code and the link **Open the projector view**.
 - The Authority opens the projector view on the table's shared screen.
 - **The three scheme players** scan the QR code, read the information shown, tick that they will take part, and pick a free irrigation scheme.

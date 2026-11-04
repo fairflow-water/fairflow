@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -79,9 +79,13 @@ class Store:
         with self._tx() as db:
             db.execute("INSERT INTO rooms VALUES (?, ?, ?, ?)", (code, json.dumps(scenario), nonce, at))
 
-    def append(self, code: str, events: list[dict[str, Any]], at: float, tokens: list[tuple[str, str]]) -> None:
-        """New events of one accepted intent, and any new tokens' hashes and roles, in one transaction."""
+    def append(
+        self, code: str, events: list[dict[str, Any]], at: float, tokens: list[tuple[str, str]], revoke: Sequence[str] = ()
+    ) -> None:
+        """New events of one accepted intent, any new tokens' hashes and roles, and the hashes of tokens it revokes (a role
+        moved to another phone, ADR 0018), in one transaction."""
         with self._tx() as db:
+            db.executemany("DELETE FROM tokens WHERE hash = ? AND code = ?", [(h, code) for h in revoke])
             db.executemany(
                 "INSERT INTO events VALUES (?, ?, ?)", [(code, e["seq"], json.dumps(e, sort_keys=True)) for e in events]
             )

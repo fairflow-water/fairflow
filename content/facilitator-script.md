@@ -37,7 +37,7 @@ The printed script for one 120-minute session in **room mode with several tables
 - *[When built (ADR 0018): at the start of each private turn, every scheme player guesses whether the table will pump more, about the same or less than last season. Nobody else sees the guess until the debrief.]*
 - *[When built (ADR 0018): the Authority hand-over after season 2 through the transfer link. Until then, the same student stays Authority.]*
 - **Your job:** move between tables, answer rule questions, and never comment on anyone's choices.
-- **Minute 80:** if a table is still playing, its Authority taps **End the game after this season** (during a season) or **End the game here** (at a reveal), and confirms. Every device then shows that the game ends after this season. The game still ends validly and reveals its length (the time-box, R20).
+- **Minute 80:** if a table is still playing, its Authority taps **End the game after this season** (during a season) or **End the game here** (at a reveal), and confirms. During a season, every device then shows that the game ends after this season; at a reveal, the game ends at once. Either way it ends validly and reveals its length (the time-box, R20).
 
 ## 80–85 Reveal and decompress (facilitator)
 

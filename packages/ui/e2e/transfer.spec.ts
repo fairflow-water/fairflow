@@ -94,6 +94,16 @@ test('at the hand-over season the Authority is asked to pass the role on, and th
   const shown = host.locator('.handover .transfer-link p').filter({ hasText: '/transfer/' });
   await expect(shown).toBeVisible();
   await expect(host.getByRole('img', { name: /QR code to become the Authority/ })).toBeVisible();
+  const firstCode = (await shown.textContent()) ?? '';
+
+  // a newer Authority link from the Move a role panel replaces it on the server, and the prompt shows the new one too
+  const panel = host.locator('details.move-role');
+  await panel.locator('summary').click();
+  await panel.getByRole('button', { name: 'Pass the Authority role' }).click();
+  const inPanel = panel.locator('.transfer-link p').filter({ hasText: '/transfer/' });
+  await expect(inPanel).toBeVisible();
+  await expect(inPanel).not.toHaveText(firstCode);
+  await expect(shown).toHaveText((await inPanel.textContent()) ?? '');
   const next = await newPage(browser, PHONE);
   await next.goto((await shown.textContent()) ?? '');
   await next.getByRole('button', { name: `Continue room ${code}` }).click();

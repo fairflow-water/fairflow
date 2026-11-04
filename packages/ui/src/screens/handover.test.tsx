@@ -4,13 +4,14 @@
 // ADR 0018 decision 2: the facilitator sets, when opening a room, after which season the Authority role passes to
 // another student's phone (0 = never; the scenario gives the default). The record carries it in `treatment.assigned`;
 // at the reveal of that season the Authority's device asks to pass the role on, with the one-time link as a QR code.
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { treatments, basin } from '../../../scenarios/default-basin.json';
 import { App } from '../App';
 import gamePublic from '../fixtures/game-public.json';
 import { viewOf, type PublicScenario, type RecordEvent } from '../room';
+import { useAuthorityLink, type AuthorityLink } from './Handover';
 import { Season } from './Season';
 
 const scenario = gamePublic.scenario as PublicScenario;
@@ -22,6 +23,7 @@ const upTo = (type: string, nth = 1) => {
   return events.slice(0, i + 1);
 };
 const PASS = 'Show the code for the next Authority';
+const link = (over: Partial<AuthorityLink> = {}): AuthorityLink => ({ url: null, error: null, make: vi.fn(), ...over });
 
 beforeEach(() => { localStorage.clear(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -38,11 +40,14 @@ describe('the hand-over season (ADR 0018)', () => {
 
   it('at the reveal of that season the Authority is asked to pass the role on, and gets the link as a QR code', async () => {
     const shown = upTo('season.resolved', SEASON);
-    const makeLink = vi.fn(() => Promise.resolve('https://table.example/transfer/ABCDE#L1'));
-    render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={makeLink} />);
+    const asked = link();
+    const view = (l: AuthorityLink) =>
+      <Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={l} />;
+    const { rerender } = render(view(asked));
     expect(screen.getByRole('heading', { name: 'Pass the Authority role' })).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: PASS }));
-    expect(makeLink).toHaveBeenCalledOnce();
+    expect(asked.make).toHaveBeenCalledOnce();
+    rerender(view(link({ url: 'https://table.example/transfer/ABCDE#L1' })));
     expect(await screen.findByText('https://table.example/transfer/ABCDE#L1')).toBeTruthy();
     expect(await screen.findByRole('img', { name: /QR code/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open the next season' })).toBeTruthy(); // keeping the role stays possible
@@ -52,7 +57,7 @@ describe('the hand-over season (ADR 0018)', () => {
     const before = upTo('season.resolved', SEASON - 1);
     const at = upTo('season.resolved', SEASON);
     const ask = (shown: RecordEvent[], role = 'authority') => {
-      render(<Season view={viewOf(shown)} scenario={scenario} role={role} onIntent={vi.fn()} events={shown} passAuthority={vi.fn()} />);
+      render(<Season view={viewOf(shown)} scenario={scenario} role={role} onIntent={vi.fn()} events={shown} passAuthority={link()} />);
       const found = screen.queryByRole('heading', { name: 'Pass the Authority role' });
       cleanup();
       return found !== null;
@@ -75,7 +80,7 @@ describe('the hand-over season (ADR 0018)', () => {
       [...at.slice(0, during + 1), move(SEASON), ...at.slice(during + 1)], // the phone broke during the season's play
       [...at.slice(0, earlier + 1), move(SEASON - 1), ...at.slice(earlier + 1)], // moved at the reveal before it
     ]) {
-      render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={vi.fn()} />);
+      render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown} passAuthority={link()} />);
       expect(screen.getByRole('heading', { name: 'Pass the Authority role' })).toBeTruthy();
       cleanup();
     }
@@ -88,7 +93,7 @@ describe('the hand-over season (ADR 0018)', () => {
     const choice = screen.getByRole('combobox', { name: /Pass the Authority role to another student/ });
     expect((choice as HTMLSelectElement).value).toBe(String(SEASON));
     const options = [...(choice as HTMLSelectElement).options].map(o => o.value);
-    expect(options).toEqual([...Array.from({ length: basin.gameLength.max - 1 }, (_, i) => String(i + 1)), '0']);
+    expect(options).toEqual([...Array.from({ length: basin.gameLength.min - 1 }, (_, i) => String(i + 1)), '0']);
     await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(JSON.parse(String(fetchMock.mock.calls[0]![1]!.body))).toEqual({ scenario: 'default-basin', authorityHandoverSeason: SEASON });
@@ -96,6 +101,24 @@ describe('the hand-over season (ADR 0018)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open a room' }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(JSON.parse(String(fetchMock.mock.calls[1]![1]!.body))).toEqual({ scenario: 'default-basin', authorityHandoverSeason: 0 });
+  });
+
+  it('keeps one Authority link: a newer one replaces the shown one, and a refusal is said in words', async () => {
+    let n = 0;
+    const makeLink = vi.fn(() => (++n === 3 ? Promise.reject(new Error('not_authority')) : Promise.resolve(`https://t.example/transfer/ABCDE#L${n}`)));
+    const { result } = renderHook(() => useAuthorityLink(makeLink));
+    act(() => { result.current.make(); });
+    await waitFor(() => expect(result.current.url).toBe('https://t.example/transfer/ABCDE#L1'));
+    act(() => { result.current.make(); });
+    expect(result.current.url).toBeNull(); // the replaced link leaves the screen at once
+    await waitFor(() => expect(result.current.url).toBe('https://t.example/transfer/ABCDE#L2'));
+    act(() => { result.current.make(); });
+    await waitFor(() => expect(result.current.error).toBe('not_authority'));
+    expect(result.current.url).toBeNull();
+    const shown = upTo('season.resolved', SEASON);
+    render(<Season view={viewOf(shown)} scenario={scenario} role="authority" onIntent={vi.fn()} events={shown}
+      passAuthority={link({ error: 'not_authority' })} />);
+    expect(screen.getByRole('alert').textContent).toBe('This device no longer holds the Authority role.');
   });
 
   it('says in words when the server refuses the hand-over season', async () => {

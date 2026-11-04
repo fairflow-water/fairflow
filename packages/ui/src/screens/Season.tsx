@@ -10,7 +10,7 @@ import { Climate } from './Climate';
 import { FloorVote } from './FloorVote';
 import { AfterGame } from './AfterGame';
 import { GameEnd } from './GameEnd';
-import { HandoverPrompt } from './Handover';
+import { HandoverPrompt, type AuthorityLink } from './Handover';
 import { LensVote } from './LensVote';
 import { PrivateTurn } from './PrivateTurn';
 import { Reveal } from './Reveal';
@@ -21,8 +21,8 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
   /** Sends silently and says whether it went out (the private turn retries a commit that did not). */
   trySend?: (intent: Record<string, unknown>) => boolean;
   resync?: number; clockOffsetMs?: number; events?: readonly RecordEvent[]; code?: string;
-  /** On the Authority's device: makes the one-time link that passes the role on (ADR 0018). */
-  passAuthority?: () => Promise<string>;
+  /** On the Authority's device: the one-time link that passes the role on (ADR 0018). */
+  passAuthority?: AuthorityLink;
 }) {
   const commitIntent = trySend ?? ((intent: Record<string, unknown>) => { onIntent(intent); return true; });
   const isPlayer = scenario.schemes.some(s => s.id === role);
@@ -104,7 +104,7 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
           <Reveal key={view.season} result={last.public} mine={last.mine} season={view.season} practice={view.tutorial} />
           {role === 'authority' && passAuthority && !view.tutorial && view.handoverSeason > 0
             && view.season === view.handoverSeason && (view.handedOverIn ?? 0) < view.handoverSeason && (
-            <HandoverPrompt key={view.season} season={view.season} makeLink={passAuthority} />
+            <HandoverPrompt season={view.season} link={passAuthority} />
           )}
           {role === 'authority' && (
             <button type="button" className="cta" onClick={() => onIntent({ intent: 'start_season' })}>

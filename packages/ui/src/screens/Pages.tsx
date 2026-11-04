@@ -3,12 +3,13 @@
 //
 // One page per kind of device: a player's phone, the facilitator (the Authority), and the projector. Each holds one
 // connection and sees only its own projection; the facilitator and the projector see the public view only.
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { claimTransfer, createRoom, deviceHash, hostStore, offerTransfer, roomInfo, tokenStore, type CreatedRoom } from '../api';
 import type { PublicScenario } from '../room';
 import { useRoom } from '../useRoom';
 import { useWakeLock } from '../useWakeLock';
 import { IDLE_RELEASE_MS, screenStaysOn, useIdle } from '../wakePolicy';
+import { AuthorityCode, authorityLinkError, useAuthorityLink, type AuthorityLink } from './Handover';
 import { Join } from './Join';
 import { Qr } from './Qr';
 import { Season } from './Season';
@@ -19,7 +20,9 @@ function useScenario(code: string): PublicScenario | null {
   return scenario;
 }
 
-function Live({ code, token, fallbackRole }: { code: string; token: string; fallbackRole: string }) {
+function Live({ code, token, fallbackRole, authorityLink }: {
+  code: string; token: string; fallbackRole: string; authorityLink?: AuthorityLink;
+}) {
   const scenario = useScenario(code);
   const room = useRoom(code, token);
   useEffect(() => {
@@ -43,9 +46,7 @@ function Live({ code, token, fallbackRole }: { code: string; token: string; fall
       {room.notice && <p role="status" className="notice">{room.notice}</p>}
       <Season view={room.view} scenario={scenario} role={room.role ?? fallbackRole} onIntent={room.send}
         trySend={room.trySend} resync={room.syncs} clockOffsetMs={room.clockOffsetMs} events={room.events} code={code}
-        {...(fallbackRole === 'authority'
-          ? { passAuthority: () => offerTransfer(code, token, 'authority').then(link => `${location.origin}/transfer/${code}#${link}`) }
-          : {})} />
+        {...(authorityLink ? { passAuthority: authorityLink } : {})} />
     </>
   );
 }
@@ -66,8 +67,9 @@ export function DisplayPage({ code, token }: { code: string; token: string }) {
   );
 }
 
-// ADR 0018: after which season the Authority passes on: 1 up to the season before the longest game's last, or never (0)
-const HANDOVER_CHOICES = [...Array.from({ length: __ROOM_SETTINGS__.longestGame - 1 }, (_, i) => i + 1), 0];
+// ADR 0018: after which season the Authority passes on: 1 up to the season before the shortest game's last, so that
+// every game reaches it, or never (0)
+const HANDOVER_CHOICES = [...Array.from({ length: __ROOM_SETTINGS__.shortestGame - 1 }, (_, i) => i + 1), 0];
 
 export function FacilitatorPage() {
   const [room, setRoom] = useState<CreatedRoom | null>(null);
@@ -114,6 +116,15 @@ export function FacilitatorPage() {
       </main>
     );
   }
+  return <HostRoom room={room} />;
+}
+
+function HostRoom({ room }: { room: CreatedRoom }) {
+  const code = room.room;
+  const token = room.facilitatorToken;
+  const makeLink = useCallback(
+    () => offerTransfer(code, token, 'authority').then(link => `${location.origin}/transfer/${code}#${link}`), [code, token]);
+  const authorityLink = useAuthorityLink(makeLink);
   const joinUrl = `${location.origin}${room.joinPath}`;
   return (
     <main>
@@ -124,19 +135,24 @@ export function FacilitatorPage() {
           <a href={`/display/${room.room}#${room.displayToken}`} target="_blank" rel="noreferrer">Open the projector view</a>
         )}
       </header>
-      <Live code={room.room} token={room.facilitatorToken} fallbackRole="authority" />
-      <MoveRole code={room.room} token={room.facilitatorToken} />
+      <Live code={code} token={token} fallbackRole="authority" authorityLink={authorityLink} />
+      <MoveRole code={code} token={token} authorityLink={authorityLink} />
     </main>
   );
 }
 
 /** ADR 0018, issue #9: on the Authority's device, a one-time link (and QR code) that moves a role to another phone. */
-function MoveRole({ code, token }: { code: string; token: string }) {
+function MoveRole({ code, token, authorityLink }: { code: string; token: string; authorityLink: AuthorityLink }) {
   const scenario = useScenario(code);
-  const [shown, setShown] = useState<{ role: string; url: string } | null>(null);
+  const [shown, setShown] = useState<{ role: string; url: string } | 'authority' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ask = (role: string) => {
     setError(null);
+    if (role === 'authority') { // the one Authority link, which the hand-over prompt shows too
+      setShown('authority');
+      authorityLink.make();
+      return;
+    }
     setShown(null); // never leave an older role's link on screen while a new one is made
     offerTransfer(code, token, role).then(
       link => setShown({ role, url: `${location.origin}/transfer/${code}#${link}` }),
@@ -159,7 +175,11 @@ function MoveRole({ code, token }: { code: string; token: string }) {
               : `The link could not be made (${error}).`}
         </p>
       )}
-      {shown && (
+      {shown === 'authority' && authorityLink.url && <AuthorityCode url={authorityLink.url} />}
+      {shown === 'authority' && authorityLink.error && (
+        <p role="alert" className="notice">{authorityLinkError(authorityLink.error)}</p>
+      )}
+      {shown && shown !== 'authority' && (
         <div className="transfer-link" data-role={shown.role}>
           <p>Scan this with the new phone. The link works once; the old phone then stops.</p>
           <Qr text={shown.url} label="QR code to move a role" />

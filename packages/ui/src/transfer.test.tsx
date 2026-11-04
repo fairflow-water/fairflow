@@ -73,6 +73,22 @@ describe('moving a role (ADR 0018, #9)', () => {
     expect(screen.getByRole('button', { name: 'Pass the Authority role' })).toBeTruthy();
   });
 
+  it('says in words when a scheme has no player yet, or this device no longer holds the Authority role', async () => {
+    hostStore.add({ room: 'ABCDE', facilitatorToken: 'auth-token', displayToken: 'disp', joinPath: '/join/ABCDE' });
+    const refusals = ['not_seated', 'not_authority'];
+    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(url.endsWith('/transfers')
+      ? new Response(JSON.stringify({ detail: { code: refusals.shift() } }), { status: 409 })
+      : ok({ room: 'ABCDE', freeRoles: [], phase: 'lobby', scenario }))));
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Continue room ABCDE' }));
+    await userEvent.click(await screen.findByText('Move a role to another phone'));
+    const scheme = scenario.schemes[0]!;
+    await userEvent.click(screen.getByRole('button', { name: `Move ${scheme.name}` }));
+    expect(await screen.findByText('That irrigation scheme has no player yet.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Pass the Authority role' }));
+    expect(await screen.findByText('This device no longer holds the Authority role.')).toBeTruthy();
+  });
+
   it('the new phone claims the link, keeps the role token, and leaves the link out of the address', async () => {
     history.replaceState(null, '', '/transfer/ABCDE#LINK-1');
     const fetchMock = vi.fn((url: string) => Promise.resolve(url.endsWith('/claim')

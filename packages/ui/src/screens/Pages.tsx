@@ -134,7 +134,13 @@ function MoveRole({ code, token }: { code: string; token: string }) {
         ))}
         <li><button type="button" onClick={() => ask('authority')}>Pass the Authority role</button></li>
       </ul>
-      {error && <p role="alert" className="notice">The link could not be made ({error}).</p>}
+      {error && (
+        <p role="alert" className="notice">
+          {error === 'not_seated' ? 'That irrigation scheme has no player yet.'
+            : error === 'not_authority' ? 'This device no longer holds the Authority role.'
+              : `The link could not be made (${error}).`}
+        </p>
+      )}
       {shown && (
         <div className="transfer-link" data-role={shown.role}>
           <p>Scan this with the new phone. The link works once; the old phone then stops.</p>

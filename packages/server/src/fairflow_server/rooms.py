@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from fairflow_engine import AUTHORITY, Game, Rejection, audit, commitment, draw_secrets
+from fairflow_engine import AUTHORITY, ENGINE, Game, Rejection, audit, commitment, draw_secrets, replay
 from fairflow_engine.scenario import load_scenario
 
 from .settings import Settings
@@ -26,6 +26,7 @@ from .store import Store, StoredRoom
 
 log = logging.getLogger("fairflow.server")
 DISPLAY = "display"  # the projector / shared screen: sees the public projection only
+TRANSFER = "transfer:"  # ADR 0018: a one-time link's token, stored as transfer:<role>; it admits no connection
 
 
 def _now() -> str:
@@ -166,17 +167,19 @@ class RoomRegistry:
             if code not in self.rooms and not (self.store is not None and self.store.exists(code)):
                 return code
 
-    def record(self, room: Room, before: int, tokens: dict[str, str] | None = None) -> None:
+    def record(self, room: Room, before: int, tokens: dict[str, str] | None = None, revoke: list[str] | None = None) -> None:
         """Write what one accepted intent added (and any new token hashes) before anyone is told of it. If the write
         fails, the intent is undone in memory too, so memory and disk never disagree."""
         at = self.now()
         try:
             if self.store is not None:
-                self.store.append(room.code, room.game.events[before:], at, list((tokens or {}).items()))
+                self.store.append(room.code, room.game.events[before:], at, list((tokens or {}).items()), revoke or [])
         except Exception:
             del room.game.events[before:]
             log.exception("store write failed room=%s", room.code)
             raise Rejection("storage_failed", "the move could not be saved; try again") from None
+        for h in revoke or []:
+            room.tokens.pop(h, None)
         room.tokens.update(tokens or {})
         room.last_event = at
 
@@ -248,6 +251,36 @@ class RoomRegistry:
         token = secrets.token_urlsafe(32)
         self.record(room, before, {token_hash(token): role})
         return token
+
+    def offer_transfer(self, code: str, authority_token: str, role: str) -> str:
+        """ADR 0018 decision 2, issue #9: a one-time link that moves `role` to another phone. Only the Authority's device
+        may make one. A newer link for the same role replaces the older. The link's token is good only for claiming the
+        move, never for playing (it is stored as `transfer:<role>`, which no connection is admitted with)."""
+        room = self.get(code)
+        if room.role_of(authority_token) != AUTHORITY:
+            raise Rejection("not_authority", "only the Authority's device moves a role")
+        if role not in replay(room.game.events).players:
+            raise Rejection("not_seated", role)
+        pending = [h for h, r in room.tokens.items() if r == TRANSFER + role]
+        link = secrets.token_urlsafe(32)
+        self.record(room, len(room.game.events), {token_hash(link): TRANSFER + role}, pending)
+        return link
+
+    def claim_transfer(self, code: str, link: str, device_hash: str) -> tuple[str, str]:
+        """The new phone claims a transfer link: the engine records the move (`transfer`, from the room server), the
+        phone gets a new token for the role, and every older token of the role and the link itself stop working.
+        Returns the role and its new token."""
+        room = self.get(code)
+        entry = room.tokens.get(token_hash(link), "")
+        if not entry.startswith(TRANSFER):
+            raise Rejection("unknown_transfer", "this link has been used or replaced; ask for a new one")
+        role = entry[len(TRANSFER) :]
+        before = len(room.game.events)
+        room.game.submit(ENGINE, "transfer", role=role, deviceHash=device_hash)
+        token = secrets.token_urlsafe(32)
+        old = [h for h, r in room.tokens.items() if r == role] + [token_hash(link)]
+        self.record(room, before, {token_hash(token): role}, old)
+        return role, token
 
     def get(self, code: str) -> Room:
         """A room past its TTL is deleted here, even before the sweep reaches it."""

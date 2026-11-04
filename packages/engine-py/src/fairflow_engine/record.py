@@ -216,6 +216,9 @@ def apply_event(state: State, event: Event) -> State:
         s.researchEnabled = p.get("researchEnabled", False)  # absent in records made before ADR 0011
     elif kind == "player.joined":
         s.players[p["role"]] = p
+    elif kind in ("seat.transferred", "authority.handover"):  # ADR 0018: the role now plays from this device
+        role = AUTHORITY if kind == "authority.handover" else p["role"]
+        s.players[role] = {**s.players[role], "deviceId": p["toDevice"]}
     elif kind == "season.climate":
         s.season, s.climate, s.phase = event["season"], p, "vote"
         s.schemes = {v["id"]: {k: v[k] for k in SCHEME_STATE} for v in p["schemes"]}
@@ -747,6 +750,22 @@ class Game:
         )
         if s.committed | {actor} == set(self._scheme_roles()):
             self._resolve_season(replay(self.events))
+
+    def _on_transfer(self, s: State, actor: str, role: str, deviceHash: str) -> None:
+        """ADR 0018 decision 2, issue #9: a role moves to another phone, through the one-time link on the host page. Only
+        the room server records it, once the new phone has claimed the link. The Authority's move is `authority.handover`;
+        an irrigation scheme's is `seat.transferred`. Both are public, with the season and the two devices' salted hashes
+        (as `player.joined` carries one); the role, its results and the game are unchanged."""
+        self._need(actor == ENGINE, "not_engine", "only the room server moves a role to another phone")
+        self._need(role in s.players, "not_seated", role)
+        self._need(isinstance(deviceHash, str) and bool(deviceHash), "bad_input", "deviceHash")
+        current = s.players[role]["deviceId"]
+        self._need(deviceHash != current, "same_device", "this phone already holds the role")
+        moved = {"season": s.season, "fromDevice": current, "toDevice": deviceHash}
+        if role == AUTHORITY:
+            self._emit("authority.handover", ENGINE, "public", moved, season=s.season)
+        else:
+            self._emit("seat.transferred", ENGINE, "public", {"role": role, **moved}, season=s.season)
 
     def _on_timeout_private(self, s: State, actor: str, season: int) -> None:
         """ADR 0013: the server's private-turn deadline has passed. Every scheme that has not committed gets the commit

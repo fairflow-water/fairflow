@@ -114,6 +114,22 @@ Intent = Annotated[
 INTENT: TypeAdapter[Intent] = TypeAdapter(Intent)
 
 
+class TransferOffer(BaseModel):
+    """POST /rooms/{code}/transfers (ADR 0018): the Authority's device asks for a one-time link that moves `role`."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    token: Annotated[str, Field(min_length=1, max_length=128)]
+    role: Annotated[str, Field(min_length=1, max_length=32)]
+
+
+class TransferClaim(BaseModel):
+    """POST /rooms/{code}/transfers/claim (ADR 0018): the new phone claims the link with its own device hash."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    link: Annotated[str, Field(min_length=1, max_length=128)]
+    deviceHash: Annotated[str, Field(min_length=8, max_length=128)]
+
+
 class JoinRequest(BaseModel):
     """POST /rooms/{code}/join. deviceHash is a client-side salted hash, never a device identifier (blueprint §6.2).
     ADR 0011: part 1 (taking part), the research answer (null when not asked) and the information-sheet version read."""

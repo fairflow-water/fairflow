@@ -36,6 +36,8 @@ NEEDS = {  # a role check on `actor` in an intent handler -> who may send that i
 # event -> who causes it, where the handler's checks do not show it; each with its reason
 CAUSE_NOTES = {
     "research.consent": f"{SCHEME} (join; asked only of schemes while research is enabled, ADR 0011)",
+    "authority.handover": "the room server (`transfer`), when the Authority's one-time transfer link is claimed (ADR 0018)",
+    "seat.transferred": "the room server (`transfer`), when a scheme's one-time transfer link is claimed (ADR 0018, #9)",
 }
 
 
@@ -93,6 +95,8 @@ def _actor(node: ast.expr) -> list[str]:
         return [node.value]
     if isinstance(node, ast.Name) and node.id == "AUTHORITY":
         return ["authority"]
+    if isinstance(node, ast.Name) and node.id == "ENGINE":
+        return ["engine"]
     if isinstance(node, ast.IfExp):
         return _actor(node.body) + _actor(node.orelse)
     if ast.unparse(node) == "actor":

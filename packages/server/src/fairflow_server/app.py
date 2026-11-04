@@ -34,14 +34,15 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from .protocol import INTENT, JoinRequest
-from .rooms import DISPLAY, Room, RoomRegistry
+from .protocol import INTENT, JoinRequest, TransferClaim, TransferOffer
+from .rooms import DISPLAY, TRANSFER, Room, RoomRegistry
 from .settings import Settings
 
 log = logging.getLogger("fairflow.server")
 SERVER_VERSION = "1.0.0.dev0"
 POLICY_VIOLATION = 1008  # RFC 6455 close codes (layout)
 MESSAGE_TOO_BIG = 1009
+ROLE_MOVED = 4001  # application close code (layout): this role now plays from another phone (ADR 0018)
 SWEEP_EVERY_S = 600.0  # layout: how often expired rooms are looked for; `get` refuses an expired room at once anyway
 TIMER_TICK_S = 1.0  # layout: how often a timer (private turn, negotiation) reads the clock (seconds)
 MS = 1000  # layout: the welcome message gives the server's time in milliseconds, as the browser counts it
@@ -178,6 +179,42 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
             "infoSheetVersion": registry.sheet_version,
         }
 
+    @app.post("/rooms/{code}/transfers")
+    async def offer_transfer(code: str, body: TransferOffer) -> dict[str, str]:
+        """ADR 0018, issue #9: the Authority's device gets a one-time link that moves a role to another phone."""
+        try:
+            room = registry.get(code)
+        except Rejection as e:
+            raise http_error(e) from None
+        async with locks.setdefault(room.code, asyncio.Lock()):
+            try:
+                link = registry.offer_transfer(code, body.token, body.role)
+            except Rejection as e:
+                raise http_error(e) from None
+        return {"link": link, "role": body.role}
+
+    @app.post("/rooms/{code}/transfers/claim")
+    async def claim_transfer(code: str, body: TransferClaim) -> dict[str, str]:
+        """The new phone claims the link: the move is recorded and broadcast, the phone gets the role's new token, and
+        the role's old phone is disconnected with ROLE_MOVED (its token no longer works)."""
+        try:
+            room = registry.get(code)
+        except Rejection as e:
+            raise http_error(e) from None
+        async with locks.setdefault(room.code, asyncio.Lock()):
+            before = len(room.game.events)
+            try:
+                role, token = registry.claim_transfer(code, body.link, body.deviceHash)
+            except Rejection as e:
+                raise http_error(e) from None
+            log.info("role moved room=%s role=%s", room.code, role)
+            for conn in [c for c in connections.get(room.code, []) if c.role == role]:
+                connections[room.code].remove(conn)
+                with suppress(RuntimeError, WebSocketDisconnect):
+                    await conn.socket.close(code=ROLE_MOVED)  # the old phone shows that the role has moved
+            await broadcast(room, before)
+        return {"token": token, "role": role}
+
     @app.post("/rooms/{code}/join")
     async def join(code: str, body: JoinRequest) -> dict[str, str]:
         # Under the room's lock, like every intent, and broadcast, so the lobby sees who has joined.
@@ -280,7 +317,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
             role = room.role_of(token) if isinstance(token, str) else None
         except (Rejection, json.JSONDecodeError):
             role = None
-        if role is None:
+        if role is None or role.startswith(TRANSFER):  # a transfer link's token is for claiming, never for playing
             await websocket.close(code=POLICY_VIOLATION)
             return
         conn = Connection(websocket, role)

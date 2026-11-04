@@ -91,6 +91,11 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
             onCommit={(pumps, action, autoCommitted) => commitIntent({ intent: 'commit', pumps, action, ...(autoCommitted ? { autoCommitted } : {}) })} />
         : <p className="waiting">{!isPlayer ? 'Private turns: the player for each scheme decides on their own device.'
             : view.myCommit ? 'Committed. Waiting for the other schemes.' : 'Opening your private turn…'}</p>)}
+      {view.timeboxed
+        ? <p role="status" className="notice">The game ends after this season.</p>
+        : role === 'authority' && !view.tutorial && (
+          <TimeBox onIntent={onIntent} createdAt={events[0]?.t} clockOffsetMs={clockOffsetMs} now={view.phase === 'reveal'} />
+        )}
       {view.phase === 'reveal' && last && (
         <>
           <Reveal key={view.season} result={last.public} mine={last.mine} season={view.season} practice={view.tutorial} />
@@ -102,5 +107,29 @@ export function Season({ view, scenario, role, onIntent, trySend, resync, clockO
         </>
       )}
     </>
+  );
+}
+
+/** R20: the Authority ends play (`timebox`): after the current season, or at once between seasons (the reveal). The
+ * game still ends validly and reveals T. Asked twice, because it cannot be undone. `sessionMinute` is the minutes since
+ * the game was created, on the server's clock, read when the Authority confirms. */
+function TimeBox({ onIntent, createdAt, clockOffsetMs, now }: {
+  onIntent: (intent: Record<string, unknown>) => void; createdAt: string | undefined; clockOffsetMs: number; now: boolean;
+}) {
+  const [asking, setAsking] = useState(false);
+  const label = now ? 'End the game here' : 'End the game after this season';
+  if (!asking) return <button type="button" className="secondary" onClick={() => setAsking(true)}>{label}</button>;
+  const send = () => {
+    const created = createdAt ? Date.parse(createdAt) : Number.NaN;
+    const sessionMinute = Number.isNaN(created) ? 0 : Math.max(0, (Date.now() + clockOffsetMs - created) / 60_000);
+    onIntent({ intent: 'timebox', sessionMinute });
+    setAsking(false);
+  };
+  return (
+    <div role="group" aria-label={label} className="confirm">
+      <p>{now ? 'The game will end now' : 'The game will end after this season'}, for the whole table. This cannot be undone.</p>
+      <button type="button" className="cta" onClick={send}>{now ? 'Yes, end the game now' : 'Yes, end after this season'}</button>
+      <button type="button" onClick={() => setAsking(false)}>Keep playing</button>
+    </div>
   );
 }

@@ -5,6 +5,7 @@
 // a role to another phone; the new phone opens /transfer/{code}#link, claims it and plays the role; the old phone is
 // told the role has moved and stops reconnecting. The link sits in the URL fragment, which browsers never send.
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { claimTransfer, connect, hostStore, offerTransfer, tokenStore } from './api';
@@ -92,6 +93,18 @@ describe('moving a role (ADR 0018, #9)', () => {
     render(<App />);
     await waitFor(() => expect(hostStore.list()[0]?.facilitatorToken).toBe('NEW-AUTH'));
     expect(location.pathname).toBe('/');
+  });
+
+  it('claims a link once even when the page mounts twice (React StrictMode in development)', async () => {
+    history.replaceState(null, '', '/transfer/ABCDE#ONCE');
+    const fetchMock = vi.fn((url: string) => Promise.resolve(url.endsWith('/claim')
+      ? ok({ token: 'ONCE-TOKEN', role: 'A' })
+      : ok({ room: 'ABCDE', freeRoles: [], phase: 'lobby', scenario })));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<StrictMode><App /></StrictMode>);
+    await waitFor(() => expect(tokenStore.get('ABCDE')).toBe('ONCE-TOKEN'));
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/claim'))).toHaveLength(1);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('a used or replaced link says so', async () => {

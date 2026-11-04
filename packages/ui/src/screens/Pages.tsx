@@ -148,11 +148,19 @@ function MoveRole({ code, token }: { code: string; token: string }) {
 
 /** ADR 0018, issue #9: the new phone claims the one-time link, keeps the role's token, and plays the role. The link
  * leaves the address once claimed, so a reload cannot try it again. */
+const claims = new Map<string, Promise<{ token: string; role: string }>>(); // one claim per link, however often asked
+
 export function TransferPage({ code, link }: { code: string; link: string }) {
   const [state, setState] = useState<{ role: string } | { error: string } | null>(null);
   useEffect(() => {
     let live = true;
-    deviceHash().then(device => claimTransfer(code, link, device)).then(({ token, role }) => {
+    // A link works once: an effect that runs twice (React's StrictMode in development) must not claim it twice
+    let claim = claims.get(link);
+    if (!claim) {
+      claim = deviceHash().then(device => claimTransfer(code, link, device));
+      claims.set(link, claim);
+    }
+    claim.then(({ token, role }) => {
       if (role === 'authority') {
         hostStore.add({ room: code, facilitatorToken: token, displayToken: '', joinPath: `/join/${code}` });
         history.replaceState(null, '', '/');

@@ -103,3 +103,21 @@ def test_the_store_keeps_no_revoked_token(tmp_path: Path) -> None:
     room = reg.get(info["room"])
     assert room.role_of(new) == "C"
     assert room.role_of(info["C"]) is None and room.role_of(link) is None
+
+
+def test_an_intent_from_the_old_phone_after_the_move_is_refused(client: TestClient) -> None:
+    """An old phone's intent can be waiting for the room lock while the move happens; once it gets the lock, it must
+    be refused, not played as the role. Here the move is made directly, so the old socket is still open when it sends."""
+    info = open_room(client)
+    room = info["room"]
+    registry = client.app.state.registry  # type: ignore[attr-defined]
+    with ExitStack() as stack:
+        old = connect(client, stack, room, info["authority"])
+        link = registry.offer_transfer(room, info["authority"], "authority")
+        registry.claim_transfer(room, link, NEW_PHONE)
+        before = len(registry.get(room).game.events)
+        old.send_text(json.dumps({"intent": "start_season"}))
+        with pytest.raises(WebSocketDisconnect) as e:
+            old.receive_json()
+        assert e.value.code == ROLE_MOVED
+        assert len(registry.get(room).game.events) == before  # nothing was played

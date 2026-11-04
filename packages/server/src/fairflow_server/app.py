@@ -346,6 +346,9 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
                     await websocket.send_json({"type": "rejected", "code": "read_only", "message": "the display cannot act"})
                     continue
                 async with lock:
+                    if not isinstance(token, str) or room.role_of(token) != role:  # moved while this waited (ADR 0018)
+                        await websocket.close(code=ROLE_MOVED)
+                        break
                     before = len(room.game.events)
                     try:
                         room.game.submit(role, intent.intent, **intent.args())

@@ -61,3 +61,47 @@ test('a scheme moves to a new phone, then the Authority hands over, and both pla
     await expect(phone.getByText(/Waiting for the facilitator/)).toBeHidden();
   }
 });
+
+test('at the hand-over season the Authority is asked to pass the role on, and the next student plays on (ADR 0018)', async ({ browser }) => {
+  const host = await newPage(browser, PHONE); // the Authority is a student with a phone (ADR 0018, several tables)
+  await host.goto('/');
+  const choice = host.getByRole('combobox', { name: /Pass the Authority role to another student/ });
+  await choice.selectOption({ label: 'After season 1' });
+  await host.getByRole('button', { name: 'Open a room' }).click();
+  const heading = await host.getByRole('heading', { level: 1, name: /^Room / }).textContent();
+  const code = (heading ?? '').replace('Room ', '').trim();
+  const phones: Page[] = [];
+  for (let i = 0; i < 3; i++) {
+    const phone = await newPage(browser, PHONE);
+    await phone.goto(`/join/${code}`);
+    await phone.getByRole('checkbox', { name: /will take part/ }).check();
+    await phone.getByRole('list').getByRole('button').first().click();
+    await expect(phone.getByText(/Waiting for the facilitator/)).toBeVisible();
+    phones.push(phone);
+  }
+  await host.getByRole('button', { name: 'Skip it and open season 1' }).click();
+  await host.getByTestId('lens-proportional').getByRole('button', { name: 'Propose' }).click();
+  for (const phone of phones) await phone.getByTestId('lens-proportional').getByRole('button', { name: 'Vote' }).click();
+  for (const phone of phones) await expect(phone.getByTestId('lens-proportional').getByRole('button', { name: 'Your vote' })).toBeVisible();
+  await host.getByRole('button', { name: 'Close the vote' }).click();
+  for (const phone of phones) await phone.getByRole('button', { name: 'Commit my turn' }).click();
+
+  // the reveal of season 1: only the Authority's device asks, and the QR link moves the role
+  await expect(host.getByRole('heading', { name: 'Season 1: what happened' })).toBeVisible();
+  await expect(host.getByRole('heading', { name: 'Pass the Authority role' })).toBeVisible();
+  for (const phone of phones) await expect(phone.getByRole('heading', { name: 'Pass the Authority role' })).toHaveCount(0);
+  await host.getByRole('button', { name: 'Show the code for the next Authority' }).click();
+  const shown = host.locator('.handover .transfer-link p').filter({ hasText: '/transfer/' });
+  await expect(shown).toBeVisible();
+  await expect(host.getByRole('img', { name: /QR code to become the Authority/ })).toBeVisible();
+  const next = await newPage(browser, PHONE);
+  await next.goto((await shown.textContent()) ?? '');
+  await next.getByRole('button', { name: `Continue room ${code}` }).click();
+  await expect(host.getByText('This role now plays on another phone. You can close this page.')).toBeVisible();
+
+  // the new Authority is not asked again, and opens season 2 for the table
+  await expect(next.getByRole('heading', { name: 'Season 1: what happened' })).toBeVisible();
+  await expect(next.getByRole('heading', { name: 'Pass the Authority role' })).toHaveCount(0);
+  await next.getByRole('button', { name: 'Open the next season' }).click();
+  for (const phone of phones) await expect(phone.getByText('Season 2', { exact: true })).toBeVisible();
+});

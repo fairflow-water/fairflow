@@ -16,7 +16,7 @@ The printed script for one 120-minute session in **room mode with several tables
 ## 0–05 Arrival and table formation (facilitator)
 
 - Form tables of four, and name one Authority per table.
-- **The Authority** opens the game's address and taps **Open a room**. Their device now holds the Authority role and shows the room's QR code and the link **Open the projector view**.
+- **The Authority** opens the game's address. Under **Pass the Authority role to another student**, they choose when the role passes on (ADR 0018): **After season 2** (the default, as in §5.0) when the table has a fifth student to take over, or **Never** when it does not. Then they tap **Open a room**. Their device now holds the Authority role and shows the room's QR code and the link **Open the projector view**.
 - The Authority opens the projector view on the table's shared screen.
 - **The three scheme players** scan the QR code, read the information shown, tick that they will take part, and pick a free irrigation scheme.
 - Say: "Keep Fairflow open with your screen on until you have sent the review form. If your screen dims or locks during the game (for example on iPhones before iOS 16.4), turn off Low Power Mode and set Auto-Lock to Never for this session, then set it back afterwards." (Blueprint §5.4: Wake Lock needs iOS 16.4+; older iOS falls back to this reminder.)
@@ -35,7 +35,8 @@ The printed script for one 120-minute session in **room mode with several tables
 - **The private turn:** 45 seconds on each phone. An untouched turn commits "no pumping, no action", with 3 seconds to undo.
 - **The Authority's single veto per game** is on their phone during the vote.
 - *[When built (ADR 0018): at the start of each private turn, every scheme player guesses whether the table will pump more, about the same or less than last season. Nobody else sees the guess until the debrief.]*
-- **Moving a role** (ADR 0018): on the Authority's device, **Move a role to another phone** shows a one-time QR code for any irrigation scheme, or **Pass the Authority role**. The new phone scans it and plays on; the old phone says the role has moved. Use it for a hand-over after season 2, or when a phone fails. *[When built: a prompt at the hand-over season.]*
+- **Moving a role** (ADR 0018): on the Authority's device, **Move a role to another phone** shows a one-time QR code for any irrigation scheme, or **Pass the Authority role**. The new phone scans it and plays on; the old phone says the role has moved. Use it when a phone fails.
+- **The hand-over** (ADR 0018): at the reveal of the chosen season, the Authority's device shows **Pass the Authority role**. The Authority taps **Show the code for the next Authority**; the next student scans it, taps **Continue room**, and opens the next season. To keep the role on the same device, the Authority opens the next season instead.
 - **Your job:** move between tables, answer rule questions, and never comment on anyone's choices.
 - **Minute 80:** if a table is still playing, its Authority taps **End the game after this season** (during a season) or **End the game here** (at a reveal), and confirms. During a season, every device then shows that the game ends after this season; at a reveal, the game ends at once. Either way it ends validly and reveals its length (the time-box, R20).
 

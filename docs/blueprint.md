@@ -502,6 +502,7 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 | Event | Caused by (who may send the intent) | Recorded actor | Visibility | Payload fields (one level deep) |
 |---|---|---|---|---|
 | `game.created` | game creation | engine | public | `gameId`, `mode`, `…versions`, `schemeRoles`, `schemes`, `aquiferInitial`, `commitments` (`gameLength`, `deckOrder`), `lenses`, `defaultLens`, `floorRules`, `runtime`, `researchEnabled` |
+| `treatment.assigned` | game creation | engine | public | `silentMode`, `universalisationNudge`, `secretBallot`, `authorityHandoverSeason`, `deliberation`, `assignedBy` |
 | `player.joined` | irrigation scheme or authority (`join`) | the sender | public | `role`, `deviceId`, `participationAcknowledged`, `infoSheetVersion`, `presurveyComplete` |
 | `research.consent` | irrigation scheme (join; asked only of schemes while research is enabled, ADR 0011) | the sender | server | `role`, `researchConsent` |
 | `season.climate` | authority (`start_tutorial`); authority (`start_season`) | engine | public | `card`, `inflow`, `reserve`, `allocable`, `schemes`, `previews`, `tutorial?` |
@@ -529,7 +530,6 @@ Generated from the `_emit` calls in `packages/engine-py/src/fairflow_engine/reco
 
 **Not yet emitted.** Planned in the v3 design and not written by the engine yet, as the v3 table gave them; an event moves into the generated table above when `record.py` first emits it (`tests/test_event_table.py` keeps the two apart):
 
-- `treatment.assigned` (public): silentMode, universalisationNudge, secretBallot, authorityHandoverSeason, deliberation, assignedBy (facilitator \| random), randomisationSeed? — written before season 1 so analysis can recover arm membership
 - `linking.code` (self): role, code (participant-generated, e.g. mother's initials + birth month) — links pre-, post- and delayed-post surveys without identity; never stored with a name
 - `handover.accepted` (public): role, msSinceCommit (hand-over latency)
 - `prediction.answered` (public): role (the predictor), metric, predictedValue, actualValue filled at `season.resolved` **\[ADR 0018\]** `self`, with `{role, metric: "pumpsTotalObserved", answer: more | same | less}`; at `debrief.opened` a public `prediction.tally {season, more, same, less, outcome}` per season.

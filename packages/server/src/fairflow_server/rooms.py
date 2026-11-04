@@ -183,9 +183,11 @@ class RoomRegistry:
         room.tokens.update(tokens or {})
         room.last_event = at
 
-    def create(self, scenario_id: str, server_version: str) -> tuple[Room, str, str]:
-        """A new room on a shipped scenario. Returns the room, the facilitator's token (the Authority) and the
-        display token."""
+    def create(
+        self, scenario_id: str, server_version: str, authority_handover_season: int | None = None
+    ) -> tuple[Room, str, str]:
+        """A new room on a shipped scenario, with the facilitator's hand-over season when given (ADR 0018). Returns
+        the room, the facilitator's token (the Authority) and the display token."""
         path = (self.settings.scenarios_dir / f"{scenario_id}.json").resolve()
         if path.parent != self.settings.scenarios_dir.resolve() or not path.is_file():
             raise Rejection("unknown_scenario", scenario_id)
@@ -203,6 +205,7 @@ class RoomRegistry:
             _now,
             nonce=nonce,
             researchEnabled=self.settings.research_enabled,
+            authorityHandoverSeason=authority_handover_season,
         )
         room = Room(code, game, scenario)
         facilitator, display = secrets.token_urlsafe(32), secrets.token_urlsafe(32)

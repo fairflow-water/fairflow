@@ -99,13 +99,14 @@ export interface RoomView {
   seated: string[]; // roles that have joined, in join order (the lobby shows who is still missing)
   researchEnabled: boolean; // ADR 0011: the room asks the research question (off = course-only)
   joinedOn: Record<string, string>; // each role's join date (YYYY-MM-DD), for the withdrawal note
+  timeboxed: boolean; // R20: the Authority has ended play after the current season (game.timeboxed)
 }
 
 export const emptyView = (): RoomView => ({
   phase: 'lobby', season: 0, climate: null, voteOpenedAt: null, proposals: [], votes: {}, leaders: [], vetoed: null, vetoUsed: false, chosen: null, floorVotes: {},
   allocation: null, mapBands: null, privateTurn: null, myCommit: null, results: [], aquifer: null, ended: null,
   myGoal: null, debriefOpened: false, perPlayer: false, debriefWelfare: null, review: {}, climates: {},
-  tutorial: false, tutorialResult: null, seated: [], researchEnabled: false, joinedOn: {},
+  tutorial: false, tutorialResult: null, seated: [], researchEnabled: false, joinedOn: {}, timeboxed: false,
 });
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -145,6 +146,9 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
         break;
       case 'goal.result':
         v = { ...v, myGoal: p as unknown as GoalResult };
+        break;
+      case 'game.timeboxed':
+        v = { ...v, timeboxed: true };
         break;
       case 'debrief.opened':
         v = { ...v, debriefOpened: true, perPlayer: p['perPlayer'] === true };

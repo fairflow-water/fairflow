@@ -126,7 +126,7 @@ export function viewOf(events: readonly RecordEvent[]): RoomView {
           mapBands: v.allocation?.adequacyBands ?? null, results: v.results, aquifer: v.aquifer,
           climates: { ...v.climates, [e.season]: p as unknown as Climate },
           tutorial: p['tutorial'] === true, seated: v.seated, researchEnabled: v.researchEnabled, joinedOn: v.joinedOn,
-          vetoUsed: v.vetoUsed,
+          vetoUsed: v.vetoUsed, timeboxed: v.timeboxed,
         };
         break;
       case 'player.joined':

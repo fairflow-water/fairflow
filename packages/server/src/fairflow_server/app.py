@@ -347,7 +347,8 @@ def create_app(settings: Settings | None = None, now: Callable[[], float] = time
                     continue
                 async with lock:
                     if not isinstance(token, str) or room.role_of(token) != role:  # moved while this waited (ADR 0018)
-                        await websocket.close(code=ROLE_MOVED)
+                        with suppress(RuntimeError, WebSocketDisconnect):  # the claim may have closed it already
+                            await websocket.close(code=ROLE_MOVED)
                         break
                     before = len(room.game.events)
                     try:

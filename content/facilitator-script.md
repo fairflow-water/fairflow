@@ -35,7 +35,7 @@ The printed script for one 120-minute session in **room mode with several tables
 - **The private turn:** 45 seconds on each phone. An untouched turn commits "no pumping, no action", with 3 seconds to undo.
 - **The Authority's single veto per game** is on their phone during the vote.
 - *[When built (ADR 0018): at the start of each private turn, every scheme player guesses whether the table will pump more, about the same or less than last season. Nobody else sees the guess until the debrief.]*
-- *[When built (ADR 0018): the Authority hand-over after season 2 through the transfer link. Until then, the same student stays Authority.]*
+- **Moving a role** (ADR 0018): on the Authority's device, **Move a role to another phone** shows a one-time QR code for any irrigation scheme, or **Pass the Authority role**. The new phone scans it and plays on; the old phone says the role has moved. Use it for a hand-over after season 2, or when a phone fails. *[When built: a prompt at the hand-over season.]*
 - **Your job:** move between tables, answer rule questions, and never comment on anyone's choices.
 - **Minute 80:** if a table is still playing, its Authority taps **End the game after this season** (during a season) or **End the game here** (at a reveal), and confirms. During a season, every device then shows that the game ends after this season; at a reveal, the game ends at once. Either way it ends validly and reveals its length (the time-box, R20).
 
